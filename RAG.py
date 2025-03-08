@@ -1,4 +1,4 @@
-import getpass, os, bs4, base64, vertexai
+import os, bs4, vertexai
 from State import State
 from dotenv import load_dotenv
 from IPython.display import Image, display
