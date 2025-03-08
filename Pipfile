@@ -1,0 +1,20 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+langchain-text-splitters = "*"
+langchain-community = "*"
+langgraph = "*"
+langchain-openai = "*"
+python-dotenv = "*"
+langchain = {extras = ["google-vertexai"], version = "*"}
+langchain-google-vertexai = "*"
+beautifulsoup4 = "*"
+langchain-google-genai = "*"
+
+[dev-packages]
+
+[requires]
+python_version = "3.12"
