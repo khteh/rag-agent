@@ -28,6 +28,7 @@ vector_store = InMemoryVectorStore(embeddings)
 
 def LoadDocuments(url: str):
     # Load and chunk contents of the blog
+    print(f"\n=== {LoadDocuments.__name__} ===")
     loader = WebBaseLoader(
         web_paths=(url,),
         bs_kwargs=dict(
@@ -42,6 +43,7 @@ def LoadDocuments(url: str):
     return docs
 
 def SplitDocuments(docs):
+    print(f"\n=== {SplitDocuments.__name__} ===")
     text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
     subdocs = text_splitter.split_documents(docs)
     print(f"Split blog post into {len(subdocs)} sub-documents.")
@@ -49,6 +51,7 @@ def SplitDocuments(docs):
 
 def IndexChunks(subdocs):
     # Index chunks
+    print(f"\n=== {IndexChunks.__name__} ===")
     ids = vector_store.add_documents(documents=subdocs)
     print(f"Document IDs: {ids[:3]}")
 
@@ -67,9 +70,29 @@ def generate(state: State):
 
 def BuildGraph():
     # Compile application and test
+    print(f"\n=== {BuildGraph.__name__} ===")
     graph_builder = StateGraph(State).add_sequence([retrieve, generate])
     graph_builder.add_edge(START, "retrieve")
     return graph_builder.compile()
+
+def Invoke(graph):
+    print(f"\n=== {Invoke.__name__} ===")
+    response = graph.invoke({"question": "What is Task Decomposition?"})
+    print(f"Response: {response["answer"]}")
+
+def Stream(graph):
+    print(f"\n=== {Stream.__name__} ===")
+    for step in graph.stream(
+        {"question": "What is Task Decomposition?"}, stream_mode="updates"
+    ):
+        print(f"{step}\n\n----------------\n")
+
+def StreamTokens(graph):
+    print(f"\n=== {StreamTokens.__name__} ===")
+    for message, metadata in graph.stream(
+        {"question": "What is Task Decomposition?"}, stream_mode="messages"
+    ):
+        print(message.content, end="|")
 
 if __name__ == "__main__":
     docs = LoadDocuments("https://lilianweng.github.io/posts/2023-06-23-agent/")
@@ -77,5 +100,6 @@ if __name__ == "__main__":
     IndexChunks(subdocs)
     graph = BuildGraph()
     display(Image(graph.get_graph().draw_mermaid_png()))
-    response = graph.invoke({"question": "What is Task Decomposition?"})
-    print(f"Response: {response["answer"]}")
+    Invoke(graph)
+    Stream(graph)
+    StreamTokens(graph)
