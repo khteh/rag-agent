@@ -139,11 +139,10 @@ def BuildAgent():
     memory = MemorySaver()
     return create_react_agent(llm, [retrieve], checkpointer=memory)
 
-def TestDirectResponseWithoutRetrieval(graph):
+def TestDirectResponseWithoutRetrieval(graph, message):
     print(f"\n=== {TestDirectResponseWithoutRetrieval.__name__} ===")
-    input_message = "Hello"
     for step in graph.stream(
-        {"messages": [{"role": "user", "content": input_message}]},
+        {"messages": [{"role": "user", "content": message}]},
         stream_mode="values",
     ):
         step["messages"][-1].pretty_print()
@@ -181,7 +180,7 @@ if __name__ == "__main__":
         f.write(graph)
     img = Image.open("/tmp/simple_graph.png")
     img.show()        
-    TestDirectResponseWithoutRetrieval(simple_graph)
+    TestDirectResponseWithoutRetrieval(simple_graph, "Hello!")
     Chat(checkpoint_graph, datetime.now(), ["What is Task Decomposition?", "Can you look up some common ways of doing it?"])
     agent = BuildAgent()
     graph = agent.get_graph().draw_mermaid_png()

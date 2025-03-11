@@ -76,22 +76,25 @@ def BuildGraph():
     graph_builder.add_edge(START, "retrieve")
     return graph_builder.compile()
 
-def Invoke(graph):
+def Invoke(graph, question):
     print(f"\n=== {Invoke.__name__} ===")
-    response = graph.invoke({"question": "What is Task Decomposition?"})
+    response = graph.invoke({"question": question})
+    print(f"Question: {question}")
     print(f"Response: {response["answer"]}")
 
-def Stream(graph):
+def Stream(graph, question):
     print(f"\n=== {Stream.__name__} ===")
+    print(f"Question: {question}")
     for step in graph.stream(
-        {"question": "What is Task Decomposition?"}, stream_mode="updates"
+        {"question": question}, stream_mode="updates"
     ):
         print(f"{step}\n\n----------------\n")
 
-def StreamTokens(graph):
+def StreamTokens(graph, question):
     print(f"\n=== {StreamTokens.__name__} ===")
+    print(f"Question: {question}")
     for message, metadata in graph.stream(
-        {"question": "What is Task Decomposition?"}, stream_mode="messages"
+        {"question": question}, stream_mode="messages"
     ):
         print(message.content, end="|")
 
@@ -106,6 +109,6 @@ if __name__ == "__main__":
         f.write(image)
     img = Image.open("/tmp/graph.png")
     img.show()        
-    Invoke(graph)
-    Stream(graph)
-    StreamTokens(graph)
+    Invoke(graph, "What is Task Decomposition?")
+    Stream(graph, "What is Task Decomposition?")
+    StreamTokens(graph, "What is Task Decomposition?")
