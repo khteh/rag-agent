@@ -1,0 +1,10 @@
+{
+    "dependencies": [
+        "langchain_google_vertexai",
+        "./my_agent"
+    ],
+    "graphs": {
+        "my_agent": "./my_agent/RAG_Conversation.py:BuildGraph"
+    },
+    "env": "./.env"
+}

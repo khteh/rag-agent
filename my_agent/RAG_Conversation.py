@@ -2,14 +2,15 @@ import os, bs4, vertexai
 from datetime import datetime
 from dotenv import load_dotenv
 from PIL import Image
+from langchain import hub
 from langchain.chat_models import init_chat_model
 from langchain_openai import OpenAIEmbeddings
 from langchain_google_vertexai import VertexAIEmbeddings
 from langchain_core.vectorstores import InMemoryVectorStore
-from langchain import hub
 from langchain_community.document_loaders import WebBaseLoader
 from langchain_core.documents import Document
 from langchain_core.tools import tool
+from langchain.core.runnables import RunnableConfig
 from langchain_core.messages import SystemMessage
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langgraph.graph import START, END, StateGraph, MessagesState
@@ -114,7 +115,7 @@ def generate(state: MessagesState):
     response = llm.invoke(prompt)
     return {"messages": [response]}
 
-def BuildGraph():
+def BuildGraph(config: RunnableConfig):
     # Compile application and test
     print(f"\n=== {BuildGraph.__name__} ===")
     graph_builder = StateGraph(MessagesState)
@@ -173,7 +174,8 @@ if __name__ == "__main__":
     docs = LoadDocuments("https://lilianweng.github.io/posts/2023-06-23-agent/")
     subdocs = SplitDocuments(docs)
     IndexChunks(subdocs)
-    simple_graph, checkpoint_graph = BuildGraph()
+    config = RunnableConfig(run_name="RAG_Conversation")
+    simple_graph, checkpoint_graph = BuildGraph(config) # config input parameter is required by langgraph.json to define the graph
     graph = simple_graph.get_graph().draw_mermaid_png()
     # Save the PNG data to a file
     with open("/tmp/simple_graph.png", "wb") as f:
