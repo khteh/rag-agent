@@ -1,6 +1,14 @@
 {
     "dependencies": [
-        "langchain_google_vertexai",
+        "langchain-text-splitters",
+        "langchain-community",
+        "langgraph",
+        "langchain-openai",
+        "python-dotenv",
+        "langchain-google-vertexai",
+        "beautifulsoup4",
+        "langchain-google-genai",
+        "langchain-core",
         "./my_agent"
     ],
     "graphs": {

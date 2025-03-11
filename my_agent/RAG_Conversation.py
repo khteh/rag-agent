@@ -136,7 +136,7 @@ def BuildGraph(config: RunnableConfig):
     checkpoint_graph = graph_builder.compile(checkpointer=memory)
     return simple_graph,checkpoint_graph
 
-def BuildAgent():
+def BuildAgent(config: RunnableConfig):
     memory = MemorySaver()
     return create_react_agent(llm, [retrieve], checkpointer=memory)
 

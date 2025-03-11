@@ -32,6 +32,10 @@ $ gcloud auth application-default login
 $ gcloud auth application-default set-quota-project <ProjectID>
 ```
 
+## Launch LangGraph Server
+
+- `langgraph dev`
+
 ## LangSmith Application trace
 
 - https://smith.langchain.com/
