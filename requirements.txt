@@ -43,7 +43,7 @@ configobj==5.0.8
 contourpy==1.2.1
 coverage==7.4.4
 Crawl4AI==0.4.248
-cryptography==42.0.5
+cryptography==44.0.1
 cssselect==1.2.0
 cupshelpers==1.0
 cycler==0.12.1
