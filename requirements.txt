@@ -309,7 +309,7 @@ tomli==2.0.1
 tornado==6.4.1
 tqdm==4.67.1
 traitlets==5.14.3
-transformers==4.47.0
+transformers==4.48.0
 typeguard==4.3.0
 types-aiofiles==23.2
 types-aws-xray-sdk==2.12
