@@ -7,7 +7,7 @@ aiosqlite==0.21.0
 annotated-types==0.7.0
 ansible==9.2.0
 ansible-compat==24.7.0
-ansible-core==2.16.3
+ansible-core==2.16.14rc1
 ansible-lint==24.6.1
 anyio==4.8.0
 apache-libcloud==3.8.0
