@@ -1,7 +1,7 @@
 import os, bs4, vertexai
+from PIL import Image
 from State import State
 from dotenv import load_dotenv
-from IPython.display import Image, display
 from langchain.chat_models import init_chat_model
 from langchain_openai import OpenAIEmbeddings
 from langchain_google_vertexai import VertexAIEmbeddings
@@ -14,8 +14,9 @@ from langgraph.graph import START, StateGraph
 from typing_extensions import List, TypedDict
 
 load_dotenv()
+print(f"PROJECT_ID: {os.environ.get("VERTEXAI_PROJECT_ID")}")
 # https://python.langchain.com/api_reference/langchain/chat_models/langchain.chat_models.base.init_chat_model.html
-vertexai.init(project=os.environ.get("GEMINI_PROJECT_ID"), location=os.environ.get("GEMINI_PROJECT_LOCATION"))
+vertexai.init(project=os.environ.get("VERTEXAI_PROJECT_ID"), location=os.environ.get("VERTEXAI_PROJECT_LOCATION"))
 llm = init_chat_model("gemini-2.0-flash", model_provider="google_vertexai")
 embeddings = VertexAIEmbeddings(model="text-embedding-005")
 """
@@ -99,7 +100,12 @@ if __name__ == "__main__":
     subdocs = SplitDocuments(docs)
     IndexChunks(subdocs)
     graph = BuildGraph()
-    display(Image(graph.get_graph().draw_mermaid_png()))
+    image = graph.get_graph().draw_mermaid_png()
+    # Save the PNG data to a file
+    with open("/tmp/graph.png", "wb") as f:
+        f.write(image)
+    img = Image.open("/tmp/graph.png")
+    img.show()        
     Invoke(graph)
     Stream(graph)
     StreamTokens(graph)

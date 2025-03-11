@@ -1,7 +1,7 @@
 import os, bs4, vertexai
 from datetime import datetime
 from dotenv import load_dotenv
-from IPython.display import Image, display
+from PIL import Image
 from langchain.chat_models import init_chat_model
 from langchain_openai import OpenAIEmbeddings
 from langchain_google_vertexai import VertexAIEmbeddings
@@ -19,7 +19,7 @@ from typing_extensions import List, TypedDict
 
 load_dotenv()
 # https://python.langchain.com/api_reference/langchain/chat_models/langchain.chat_models.base.init_chat_model.html
-vertexai.init(project=os.environ.get("GEMINI_PROJECT_ID"), location=os.environ.get("GEMINI_PROJECT_LOCATION"))
+vertexai.init(project=os.environ.get("VERTEXAI_PROJECT_ID"), location=os.environ.get("VERTEXAI_PROJECT_LOCATION"))
 llm = init_chat_model("gemini-2.0-flash", model_provider="google_vertexai")
 embeddings = VertexAIEmbeddings(model="text-embedding-005")
 """
@@ -175,14 +175,23 @@ if __name__ == "__main__":
     subdocs = SplitDocuments(docs)
     IndexChunks(subdocs)
     simple_graph, checkpoint_graph = BuildGraph()
-    display(Image(simple_graph.get_graph().draw_mermaid_png()))
+    graph = simple_graph.get_graph().draw_mermaid_png()
+    # Save the PNG data to a file
+    with open("/tmp/simple_graph.png", "wb") as f:
+        f.write(graph)
+    img = Image.open("/tmp/simple_graph.png")
+    img.show()        
     TestDirectResponseWithoutRetrieval(simple_graph)
     Chat(checkpoint_graph, datetime.now(), ["What is Task Decomposition?", "Can you look up some common ways of doing it?"])
     agent = BuildAgent()
-    display(Image(agent.get_graph().draw_mermaid_png()))
+    graph = agent.get_graph().draw_mermaid_png()
+    # Save the PNG data to a file
+    with open("/tmp/agent_graph.png", "wb") as f:
+        f.write(graph)
+    img = Image.open("/tmp/agent_graph.png")
+    img.show()        
     input_message = (
         "What is the standard method for Task Decomposition?\n\n"
         "Once you get the answer, look up common extensions of that method."
     )
     ChatAgent(agent, datetime.now(), input_message)
-
