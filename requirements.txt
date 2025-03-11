@@ -31,7 +31,7 @@ bracex==2.4
 Brlapi==0.8.5
 Brotli==1.1.0
 cachetools==5.3.3
-certifi==2024.6.2
+certifi==2024.7.4
 chardet==5.2.0
 check50==3.3.11
 click==8.1.7
