@@ -1,4 +1,4 @@
-import os, bs4, vertexai
+import os, bs4, vertexai,asyncio
 from datetime import datetime
 from dotenv import load_dotenv
 from PIL import Image
@@ -70,18 +70,18 @@ def retrieve(query: str):
     )
     return serialized, retrieved_docs
 
-def query_or_respond(state: MessagesState):
+async def query_or_respond(state: MessagesState):
     """
     # Step 1: Generate an AIMessage that may include a tool-call to be sent.
     Generate tool call for retrieval or respond
     """
     llm_with_tools = llm.bind_tools([retrieve])
-    response = llm_with_tools.invoke(state["messages"])
+    response = await llm_with_tools.ainvoke(state["messages"])
     # MessageState appends messages to state instead of overwriting
     return {"messages": [response]}
 
 # Step 3: Generate a response using the retrieved content.
-def generate(state: MessagesState):
+async def generate(state: MessagesState):
     """Generate answer."""
     # Get generated ToolMessages
     recent_tool_messages = []
@@ -112,7 +112,7 @@ def generate(state: MessagesState):
     prompt = [SystemMessage(system_message_content)] + conversation_messages
 
     # Run
-    response = llm.invoke(prompt)
+    response = await llm.ainvoke(prompt)
     return {"messages": [response]}
 
 def BuildSimpleGraph(config: RunnableConfig) -> StateGraph:
@@ -120,8 +120,7 @@ def BuildSimpleGraph(config: RunnableConfig) -> StateGraph:
     print(f"\n=== {BuildSimpleGraph.__name__} ===")
     graph_builder = StateGraph(MessagesState)
     graph_builder.add_node(query_or_respond)
-    tools = ToolNode([retrieve]) # Execute the retrieval.
-    graph_builder.add_node(tools)
+    graph_builder.add_node("tools", ToolNode([retrieve])) # Execute the retrieval.
     graph_builder.add_node(generate)
     graph_builder.set_entry_point("query_or_respond")
     graph_builder.add_conditional_edges(
@@ -156,42 +155,38 @@ def BuildAgent(config: RunnableConfig) -> StateGraph:
     memory = MemorySaver()
     return create_react_agent(llm, [retrieve], checkpointer=memory)
 
-def TestDirectResponseWithoutRetrieval(graph, message):
+async def TestDirectResponseWithoutRetrieval(graph, message):
     print(f"\n=== {TestDirectResponseWithoutRetrieval.__name__} ===")
-    for step in graph.stream(
+    async for step in graph.astream(
         {"messages": [{"role": "user", "content": message}]},
         stream_mode="values",
     ):
         step["messages"][-1].pretty_print()
 
-def Chat(graph, threadId, messages: List[str]):
+async def Chat(graph, threadId, messages: List[str]):
     print(f"\n=== {Chat.__name__} ===")
     config = {"configurable": {"thread_id": threadId}}
     for message in messages:
         #input_message = "What is Task Decomposition?"
-        for step in graph.stream(
+        async for step in graph.astream(
             {"messages": [{"role": "user", "content": message}]},
             stream_mode="values",
             config = config
         ):
             step["messages"][-1].pretty_print()
 
-def ChatAgent(agent, threadId, message):
+async def ChatAgent(agent, threadId, message):
     print(f"\n=== {ChatAgent.__name__} ===")
     config = {"configurable": {"thread_id": threadId}}
-    for event in agent.stream(
+    async for event in agent.astream(
         {"messages": [{"role": "user", "content": message}]},
         stream_mode="values",
         config=config,
     ):
         event["messages"][-1].pretty_print()
 
-if __name__ == "__main__":
-    docs = LoadDocuments("https://lilianweng.github.io/posts/2023-06-23-agent/")
-    subdocs = SplitDocuments(docs)
-    IndexChunks(subdocs)
-    config = RunnableConfig(run_name="RAG_Conversation")
-    """
+async def SimpleGraph():
+    config = RunnableConfig(run_name="SimpleGraph_RAG_Conversation")
     simple_graph = BuildSimpleGraph(config) # config input parameter is required by langgraph.json to define the graph
     graph = simple_graph.get_graph().draw_mermaid_png()
     # Save the PNG data to a file
@@ -199,9 +194,10 @@ if __name__ == "__main__":
         f.write(graph)
     img = Image.open("/tmp/simple_graph.png")
     img.show()
-    TestDirectResponseWithoutRetrieval(simple_graph, "Hello!")
-    """
-    """
+    await TestDirectResponseWithoutRetrieval(simple_graph, "Hello!")
+
+async def CheckpointedGraph():
+    config = RunnableConfig(run_name="CheckpointGraph_RAG_Conversation")
     checkpoint_graph = BuildCheckpointedGraph(config) # config input parameter is required by langgraph.json to define the graph
     graph = checkpoint_graph.get_graph().draw_mermaid_png()
     # Save the PNG data to a file
@@ -209,8 +205,10 @@ if __name__ == "__main__":
         f.write(graph)
     img = Image.open("/tmp/checkpoint_graph.png")
     img.show()
-    Chat(checkpoint_graph, datetime.now(), ["What is Task Decomposition?", "Can you look up some common ways of doing it?"])"
-    """
+    await Chat(checkpoint_graph, datetime.now(), ["What is Task Decomposition?", "Can you look up some common ways of doing it?"])
+
+async def ReActAgent():
+    config = RunnableConfig(run_name="ReAct_RAG_Conversation")
     agent = BuildAgent(config)
     graph = agent.get_graph().draw_mermaid_png()
     # Save the PNG data to a file
@@ -222,4 +220,15 @@ if __name__ == "__main__":
         "What is the standard method for Task Decomposition?\n\n"
         "Once you get the answer, look up common extensions of that method."
     )
-    ChatAgent(agent, datetime.now(), input_message)
+    await ChatAgent(agent, datetime.now(), input_message)
+
+async def main():
+    #await SimpleGraph()
+    #await CheckpointedGraph()
+    await ReActAgent()
+
+if __name__ == "__main__":
+    docs = LoadDocuments("https://lilianweng.github.io/posts/2023-06-23-agent/")
+    subdocs = SplitDocuments(docs)
+    IndexChunks(subdocs)
+    asyncio.run(main())

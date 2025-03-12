@@ -1,4 +1,4 @@
-import os, bs4, vertexai
+import os, bs4, vertexai, asyncio
 from PIL import Image
 from State import State
 from dotenv import load_dotenv
@@ -9,6 +9,7 @@ from langchain_core.vectorstores import InMemoryVectorStore
 from langchain import hub
 from langchain_community.document_loaders import WebBaseLoader
 from langchain_core.documents import Document
+from langchain_core.runnables import RunnableConfig
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langgraph.graph import START, StateGraph
 from typing_extensions import List, TypedDict
@@ -69,46 +70,50 @@ def generate(state: State):
     response = llm.invoke(messages)
     return {"answer": response.content}
 
-def BuildGraph():
+def BuildGraph(config: RunnableConfig) -> StateGraph:
     # Compile application and test
     print(f"\n=== {BuildGraph.__name__} ===")
     graph_builder = StateGraph(State).add_sequence([retrieve, generate])
     graph_builder.add_edge(START, "retrieve")
     return graph_builder.compile()
 
-def Invoke(graph, question):
+async def Invoke(graph, question):
     print(f"\n=== {Invoke.__name__} ===")
-    response = graph.invoke({"question": question})
+    response = await graph.ainvoke({"question": question})
     print(f"Question: {question}")
     print(f"Response: {response["answer"]}")
 
-def Stream(graph, question):
+async def Stream(graph, question):
     print(f"\n=== {Stream.__name__} ===")
     print(f"Question: {question}")
-    for step in graph.stream(
+    async for step in graph.astream(
         {"question": question}, stream_mode="updates"
     ):
         print(f"{step}\n\n----------------\n")
 
-def StreamTokens(graph, question):
+async def StreamTokens(graph, question):
     print(f"\n=== {StreamTokens.__name__} ===")
     print(f"Question: {question}")
-    for message, metadata in graph.stream(
+    async for message, metadata in graph.astream(
         {"question": question}, stream_mode="messages"
     ):
         print(message.content, end="|")
+
+async def main(graph: StateGraph):
+    await Invoke(graph, "What is Task Decomposition?")
+    await Stream(graph, "What is Task Decomposition?")
+    await StreamTokens(graph, "What is Task Decomposition?")
 
 if __name__ == "__main__":
     docs = LoadDocuments("https://lilianweng.github.io/posts/2023-06-23-agent/")
     subdocs = SplitDocuments(docs)
     IndexChunks(subdocs)
-    graph = BuildGraph()
+    config = RunnableConfig(run_name="RAG")
+    graph = BuildGraph(config)
     image = graph.get_graph().draw_mermaid_png()
     # Save the PNG data to a file
     with open("/tmp/graph.png", "wb") as f:
         f.write(image)
     img = Image.open("/tmp/graph.png")
     img.show()        
-    Invoke(graph, "What is Task Decomposition?")
-    Stream(graph, "What is Task Decomposition?")
-    StreamTokens(graph, "What is Task Decomposition?")
+    asyncio.run(main())
