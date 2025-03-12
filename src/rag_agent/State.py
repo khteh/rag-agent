@@ -17,6 +17,7 @@ class State(TypedDict):
 
 @dataclass
 class CustomAgentState(AgentState):
+    question: str
     context: List[Document]
     is_last_step: IsLastStep
 

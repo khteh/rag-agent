@@ -1,7 +1,9 @@
 import os, bs4, vertexai,asyncio
+from State import CustomAgentState
 from datetime import datetime
 from dotenv import load_dotenv
 from PIL import Image
+from typing import Annotated
 from langchain import hub
 from langchain.chat_models import init_chat_model
 from langchain_openai import OpenAIEmbeddings
@@ -14,12 +16,13 @@ from langchain_core.runnables import RunnableConfig
 from langchain_core.messages import SystemMessage
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langgraph.graph import START, END, StateGraph, MessagesState
-from langgraph.prebuilt import ToolNode, tools_condition, create_react_agent
+from langgraph.prebuilt import ToolNode, tools_condition, create_react_agent, InjectedStore
 from langgraph.checkpoint.memory import MemorySaver
 from typing_extensions import List, TypedDict
 from langchain_core.prompts import ChatPromptTemplate
 from langgraph.managed import IsLastStep
-from State import CustomAgentState
+from langgraph.store.base import BaseStore
+from langgraph.store.memory import InMemoryStore
 # https://python.langchain.com/docs/tutorials/qa_chat_history/
 load_dotenv()
 # https://python.langchain.com/api_reference/langchain/chat_models/langchain.chat_models.base.init_chat_model.html
@@ -63,8 +66,25 @@ def IndexChunks(subdocs):
     ids = vector_store.add_documents(documents=subdocs)
     print(f"Document IDs: {ids[:3]}")
 
+def save_memory(memory: str, *, config: RunnableConfig, store: Annotated[BaseStore, InjectedStore()]) -> str:
+    '''Save the given memory for the current user.'''
+    # This is a **tool** the model can use to save memories to storage
+    user_id = config.get("configurable", {}).get("user_id")
+    namespace = ("memories", user_id)
+    store.put(namespace, f"memory_{len(store.search(namespace))}", {"data": memory})
+    return f"Saved memory: {memory}"
+
+def prepare_model_inputs(state: CustomAgentState, config: RunnableConfig, store: BaseStore):
+    # Retrieve user memories and add them to the system message
+    # This function is called **every time** the model is prompted. It converts the state to a prompt
+    user_id = config.get("configurable", {}).get("user_id")
+    namespace = ("memories", user_id)
+    memories = [m.value["data"] for m in store.search(namespace)]
+    system_msg = f"User memories: {', '.join(memories)}"
+    return [{"role": "system", "content": system_msg}] + state["messages"]
+
 @tool(response_format="content_and_artifact")
-def retrieve(query: str):
+def retrieve(query: str, *, config: RunnableConfig):
     """Retrieve information related to a query."""
     retrieved_docs = vector_store.similarity_search(query, k=2)
     serialized = "\n\n".join(
@@ -78,6 +98,7 @@ async def query_or_respond(state: MessagesState, config: RunnableConfig):
     # Step 1: Generate an AIMessage that may include a tool-call to be sent.
     Generate tool call for retrieval or respond
     """
+    print(f"state: {state}")
     llm_with_tools = llm.bind_tools([retrieve])
     response = await llm_with_tools.ainvoke(state["messages"], config)
     # MessageState appends messages to state instead of overwriting
@@ -133,7 +154,7 @@ def BuildSimpleGraph(config: RunnableConfig) -> StateGraph:
     )
     graph_builder.add_edge("tools", "generate")
     graph_builder.add_edge("generate", END)
-    return graph_builder.compile()
+    return graph_builder.compile(store=InMemoryStore(), checkpointer=MemorySaver(), name="Simple StateGraph")
 
 def BuildCheckpointedGraph(config: RunnableConfig) -> StateGraph:
     # Compile application and test
@@ -150,7 +171,7 @@ def BuildCheckpointedGraph(config: RunnableConfig) -> StateGraph:
     )
     graph_builder.add_edge("tools", "generate")
     graph_builder.add_edge("generate", END)
-    return graph_builder.compile(checkpointer=MemorySaver())
+    return graph_builder.compile(store=InMemoryStore(), checkpointer=MemorySaver(), name="Checkedpoint StateGraph")
 
 def BuildAgent(config: RunnableConfig) -> StateGraph:
     prompt = ChatPromptTemplate.from_messages([
@@ -159,7 +180,7 @@ def BuildAgent(config: RunnableConfig) -> StateGraph:
             ("user", "Remember, always provide accurate answer!"),
     ])
     # https://langchain-ai.github.io/langgraph/reference/prebuilt/#langgraph.prebuilt.chat_agent_executor.create_react_agent
-    return create_react_agent(llm, [retrieve], checkpointer=MemorySaver(), state_schema=CustomAgentState, name="RAG ReAct Agent", prompt=prompt)
+    return create_react_agent(llm, [retrieve, save_memory], store=InMemoryStore(), checkpointer=MemorySaver(), state_schema=CustomAgentState, name="RAG ReAct Agent", prompt=prompt)
 
 async def TestDirectResponseWithoutRetrieval(graph, message):
     print(f"\n=== {TestDirectResponseWithoutRetrieval.__name__} ===")
@@ -227,8 +248,8 @@ async def ReActAgent():
 
 async def main():
     #await SimpleGraph()
-    #await CheckpointedGraph()
-    await ReActAgent()
+    await CheckpointedGraph()
+    #await ReActAgent()
 
 if __name__ == "__main__":
     docs = LoadDocuments("https://lilianweng.github.io/posts/2023-06-23-agent/")
