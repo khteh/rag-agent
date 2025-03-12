@@ -103,8 +103,8 @@ Task decomposition can be done (1) by LLM with simple prompting like "Steps for 
 ================================== Ai Message ==================================
 Name: RAG ReAct Agent
 Tool Calls:
-  retrieve (8c1c7734-5f43-4c75-b9f3-d1fcb4c8a1a7)
- Call ID: 8c1c7734-5f43-4c75-b9f3-d1fcb4c8a1a7
+  retrieve (7361a1a4-f7fb-4d43-9268-a41ea2bc0ea6)
+ Call ID: 7361a1a4-f7fb-4d43-9268-a41ea2bc0ea6
   Args:
     query: standard method for Task Decomposition
 ================================= Tool Message =================================
@@ -125,12 +125,14 @@ With the input and the inference results, the AI assistant needs to describe the
 ================================== Ai Message ==================================
 Name: RAG ReAct Agent
 
-Okay, I will make sure to provide accurate answers. Based on the information I found, Chain of Thought (CoT) is becoming a standard prompting technique for task decomposition, where a model is instructed to "think step by step" to break down complex tasks into smaller, simpler steps.
+Okay, I will provide accurate answers to the best of my ability.
+
+Based on the information I retrieved, Chain of Thought (CoT) is a standard prompting technique for task decomposition. It involves instructing the model to "think step by step" to break down complex tasks into smaller, simpler steps.
 
 Now I will look up common extensions of the Chain of Thought method.
 Tool Calls:
-  retrieve (ff990bb9-015f-4ef1-9319-6d72f21d3ad9)
- Call ID: ff990bb9-015f-4ef1-9319-6d72f21d3ad9
+  retrieve (b56a0638-f232-4ef7-999c-9cab24a09681)
+ Call ID: b56a0638-f232-4ef7-999c-9cab24a09681
   Args:
     query: common extensions of Chain of Thought prompting
 ================================= Tool Message =================================
@@ -149,7 +151,16 @@ Chain of thought (CoT; Wei et al. 2022) has become a standard prompting techniqu
 ================================== Ai Message ==================================
 Name: RAG ReAct Agent
 
-Okay, I will make sure to provide accurate answers. Based on the information I found, Tree of Thoughts is a common extension of Chain of Thought. Tree of Thoughts explores multiple reasoning possibilities at each step, decomposes the problem into multiple thought steps and generates multiple thoughts per step, creating a tree structure. The search process can be BFS (breadth-first search) or DFS (depth-first search) with each state evaluated by a classifier (via a prompt) or majority vote. Task decomposition can also be done by LLM with simple prompting, by using task-specific instructions, or with human inputs.
+Okay, I will provide accurate answers to the best of my ability.
+
+Based on the information I retrieved, Chain of Thought (CoT) is a standard prompting technique for task decomposition. It involves instructing the model to "think step by step" to break down complex tasks into smaller, simpler steps.
+
+The common extensions of the Chain of Thought method include:
+
+*   **Tree of Thoughts:** This extends CoT by exploring multiple reasoning possibilities at each step, creating a tree structure. The search process can be BFS (breadth-first search) or DFS (depth-first search).
+*   **Task decomposition by LLM with simple prompting:** Using prompts like "Steps for XYZ. 1." or "What are the subgoals for achieving XYZ?".
+*   **Task decomposition using task-specific instructions:** For example, "Write a story outline." for writing a novel.
+*   **Task decomposition with human inputs.**
 ```
 
 ## LangSmith Application trace

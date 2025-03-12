@@ -150,8 +150,7 @@ def BuildCheckpointedGraph(config: RunnableConfig) -> StateGraph:
     )
     graph_builder.add_edge("tools", "generate")
     graph_builder.add_edge("generate", END)
-    memory = MemorySaver()
-    return graph_builder.compile(checkpointer=memory)
+    return graph_builder.compile(checkpointer=MemorySaver())
 
 def BuildAgent(config: RunnableConfig) -> StateGraph:
     prompt = ChatPromptTemplate.from_messages([
@@ -159,9 +158,8 @@ def BuildAgent(config: RunnableConfig) -> StateGraph:
             ("placeholder", "{messages}"),
             ("user", "Remember, always provide accurate answer!"),
     ])
-    memory = MemorySaver()
     # https://langchain-ai.github.io/langgraph/reference/prebuilt/#langgraph.prebuilt.chat_agent_executor.create_react_agent
-    return create_react_agent(llm, [retrieve], checkpointer=memory, state_schema=CustomAgentState, name="RAG ReAct Agent", prompt=prompt)
+    return create_react_agent(llm, [retrieve], checkpointer=MemorySaver(), state_schema=CustomAgentState, name="RAG ReAct Agent", prompt=prompt)
 
 async def TestDirectResponseWithoutRetrieval(graph, message):
     print(f"\n=== {TestDirectResponseWithoutRetrieval.__name__} ===")
