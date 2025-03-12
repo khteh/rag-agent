@@ -1,4 +1,6 @@
-# LangChain
+# LangChain, LangGraph, LangSmith
+
+Python RAG using LangChain, LangGraph and LangSmith with local memory checkpoints
 
 ## Environment
 
