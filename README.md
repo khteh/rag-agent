@@ -38,10 +38,6 @@ $ gcloud auth application-default set-quota-project <ProjectID>
 
 - `langgraph dev`
 
-## LangSmith Application trace
-
-- https://smith.langchain.com/
-
 ### StateGraph with Checkpoint
 
 ![StateGraph with Checkpoint](./checkpoint_graph.png?raw=true "StateGraph with Checkpoint")
@@ -159,3 +155,7 @@ The common extensions of the Chain of Thought method include:
 *   **Task decomposition using task-specific instructions:** For example, "Write a story outline." for writing a novel.
 *   **Task decomposition with human inputs.**
 ```
+
+## LangSmith Application trace
+
+- https://smith.langchain.com/
