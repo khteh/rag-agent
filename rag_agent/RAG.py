@@ -62,12 +62,12 @@ def retrieve(state: State):
     retrieved_docs = vector_store.similarity_search(state["question"])
     return {"context": retrieved_docs}
 
-def generate(state: State):
+async def generate(state: State, config: RunnableConfig):
     # Define prompt for question-answering
     prompt = hub.pull("rlm/rag-prompt")
     docs_content = "\n\n".join(doc.page_content for doc in state["context"])
-    messages = prompt.invoke({"question": state["question"], "context": docs_content})
-    response = llm.invoke(messages)
+    messages = await prompt.ainvoke({"question": state["question"], "context": docs_content}, config)
+    response = await llm.ainvoke(messages, config)
     return {"answer": response.content}
 
 def BuildGraph(config: RunnableConfig) -> StateGraph:
@@ -115,5 +115,5 @@ if __name__ == "__main__":
     with open("/tmp/graph.png", "wb") as f:
         f.write(image)
     img = Image.open("/tmp/graph.png")
-    img.show()        
-    asyncio.run(main())
+    img.show()
+    asyncio.run(main(graph))

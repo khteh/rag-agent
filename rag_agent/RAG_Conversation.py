@@ -70,18 +70,18 @@ def retrieve(query: str):
     )
     return serialized, retrieved_docs
 
-async def query_or_respond(state: MessagesState):
+async def query_or_respond(state: MessagesState, config: RunnableConfig):
     """
     # Step 1: Generate an AIMessage that may include a tool-call to be sent.
     Generate tool call for retrieval or respond
     """
     llm_with_tools = llm.bind_tools([retrieve])
-    response = await llm_with_tools.ainvoke(state["messages"])
+    response = await llm_with_tools.ainvoke(state["messages"], config)
     # MessageState appends messages to state instead of overwriting
     return {"messages": [response]}
 
 # Step 3: Generate a response using the retrieved content.
-async def generate(state: MessagesState):
+async def generate(state: MessagesState, config: RunnableConfig):
     """Generate answer."""
     # Get generated ToolMessages
     recent_tool_messages = []
@@ -112,16 +112,16 @@ async def generate(state: MessagesState):
     prompt = [SystemMessage(system_message_content)] + conversation_messages
 
     # Run
-    response = await llm.ainvoke(prompt)
+    response = await llm.ainvoke(prompt, config)
     return {"messages": [response]}
 
 def BuildSimpleGraph(config: RunnableConfig) -> StateGraph:
     # Compile application and test
     print(f"\n=== {BuildSimpleGraph.__name__} ===")
     graph_builder = StateGraph(MessagesState)
-    graph_builder.add_node(query_or_respond)
+    graph_builder.add_node("query_or_respond", query_or_respond)
     graph_builder.add_node("tools", ToolNode([retrieve])) # Execute the retrieval.
-    graph_builder.add_node(generate)
+    graph_builder.add_node("generate", generate)
     graph_builder.set_entry_point("query_or_respond")
     graph_builder.add_conditional_edges(
         "query_or_respond",
@@ -136,10 +136,9 @@ def BuildCheckpointedGraph(config: RunnableConfig) -> StateGraph:
     # Compile application and test
     print(f"\n=== {BuildCheckpointedGraph.__name__} ===")
     graph_builder = StateGraph(MessagesState)
-    graph_builder.add_node(query_or_respond)
-    tools = ToolNode([retrieve]) # Execute the retrieval.
-    graph_builder.add_node(tools)
-    graph_builder.add_node(generate)
+    graph_builder.add_node("query_or_respond", query_or_respond)
+    graph_builder.add_node("tools", ToolNode([retrieve])) # Execute the retrieval.
+    graph_builder.add_node("generate", generate)
     graph_builder.set_entry_point("query_or_respond")
     graph_builder.add_conditional_edges(
         "query_or_respond",
