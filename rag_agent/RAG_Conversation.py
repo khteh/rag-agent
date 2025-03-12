@@ -17,7 +17,7 @@ from langgraph.graph import START, END, StateGraph, MessagesState
 from langgraph.prebuilt import ToolNode, tools_condition, create_react_agent
 from langgraph.checkpoint.memory import MemorySaver
 from typing_extensions import List, TypedDict
-
+# https://python.langchain.com/docs/tutorials/qa_chat_history/
 load_dotenv()
 # https://python.langchain.com/api_reference/langchain/chat_models/langchain.chat_models.base.init_chat_model.html
 vertexai.init(project=os.environ.get("VERTEXAI_PROJECT_ID"), location=os.environ.get("VERTEXAI_PROJECT_LOCATION"))
@@ -115,9 +115,27 @@ def generate(state: MessagesState):
     response = llm.invoke(prompt)
     return {"messages": [response]}
 
-def BuildGraph(config: RunnableConfig):
+def BuildSimpleGraph(config: RunnableConfig) -> StateGraph:
     # Compile application and test
-    print(f"\n=== {BuildGraph.__name__} ===")
+    print(f"\n=== {BuildSimpleGraph.__name__} ===")
+    graph_builder = StateGraph(MessagesState)
+    graph_builder.add_node(query_or_respond)
+    tools = ToolNode([retrieve]) # Execute the retrieval.
+    graph_builder.add_node(tools)
+    graph_builder.add_node(generate)
+    graph_builder.set_entry_point("query_or_respond")
+    graph_builder.add_conditional_edges(
+        "query_or_respond",
+        tools_condition,
+        {END: END, "tools": "tools"},
+    )
+    graph_builder.add_edge("tools", "generate")
+    graph_builder.add_edge("generate", END)
+    return graph_builder.compile()
+
+def BuildCheckpointedGraph(config: RunnableConfig) -> StateGraph:
+    # Compile application and test
+    print(f"\n=== {BuildCheckpointedGraph.__name__} ===")
     graph_builder = StateGraph(MessagesState)
     graph_builder.add_node(query_or_respond)
     tools = ToolNode([retrieve]) # Execute the retrieval.
@@ -132,11 +150,9 @@ def BuildGraph(config: RunnableConfig):
     graph_builder.add_edge("tools", "generate")
     graph_builder.add_edge("generate", END)
     memory = MemorySaver()
-    simple_graph = graph_builder.compile()
-    checkpoint_graph = graph_builder.compile(checkpointer=memory)
-    return simple_graph,checkpoint_graph
+    return graph_builder.compile(checkpointer=memory)
 
-def BuildAgent(config: RunnableConfig):
+def BuildAgent(config: RunnableConfig) -> StateGraph:
     memory = MemorySaver()
     return create_react_agent(llm, [retrieve], checkpointer=memory)
 
@@ -175,16 +191,27 @@ if __name__ == "__main__":
     subdocs = SplitDocuments(docs)
     IndexChunks(subdocs)
     config = RunnableConfig(run_name="RAG_Conversation")
-    simple_graph, checkpoint_graph = BuildGraph(config) # config input parameter is required by langgraph.json to define the graph
+    """
+    simple_graph = BuildSimpleGraph(config) # config input parameter is required by langgraph.json to define the graph
     graph = simple_graph.get_graph().draw_mermaid_png()
     # Save the PNG data to a file
     with open("/tmp/simple_graph.png", "wb") as f:
         f.write(graph)
     img = Image.open("/tmp/simple_graph.png")
-    img.show()        
+    img.show()
     TestDirectResponseWithoutRetrieval(simple_graph, "Hello!")
-    Chat(checkpoint_graph, datetime.now(), ["What is Task Decomposition?", "Can you look up some common ways of doing it?"])
-    agent = BuildAgent()
+    """
+    """
+    checkpoint_graph = BuildCheckpointedGraph(config) # config input parameter is required by langgraph.json to define the graph
+    graph = checkpoint_graph.get_graph().draw_mermaid_png()
+    # Save the PNG data to a file
+    with open("/tmp/checkpoint_graph.png", "wb") as f:
+        f.write(graph)
+    img = Image.open("/tmp/checkpoint_graph.png")
+    img.show()
+    Chat(checkpoint_graph, datetime.now(), ["What is Task Decomposition?", "Can you look up some common ways of doing it?"])"
+    """
+    agent = BuildAgent(config)
     graph = agent.get_graph().draw_mermaid_png()
     # Save the PNG data to a file
     with open("/tmp/agent_graph.png", "wb") as f:

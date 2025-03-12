@@ -12,7 +12,7 @@ from langchain_core.documents import Document
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langgraph.graph import START, StateGraph
 from typing_extensions import List, TypedDict
-
+# https://python.langchain.com/docs/tutorials/rag/
 load_dotenv()
 print(f"PROJECT_ID: {os.environ.get("VERTEXAI_PROJECT_ID")}")
 # https://python.langchain.com/api_reference/langchain/chat_models/langchain.chat_models.base.init_chat_model.html

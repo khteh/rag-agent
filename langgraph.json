@@ -9,10 +9,12 @@
         "beautifulsoup4",
         "langchain-google-genai",
         "langchain-core",
-        "./my_agent"
+        "./rag_agent"
     ],
     "graphs": {
-        "my_agent": "./my_agent/RAG_Conversation.py:BuildGraph"
+        "rag_agent": "./rag_agent/RAG_Conversation.py:BuildAgent"
     },
-    "env": "./.env"
+    "env": "./.env",
+    "python_version": "3.12",
+    "pip_config_file": "Pipfile"
 }
