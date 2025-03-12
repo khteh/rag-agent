@@ -17,6 +17,9 @@ from langgraph.graph import START, END, StateGraph, MessagesState
 from langgraph.prebuilt import ToolNode, tools_condition, create_react_agent
 from langgraph.checkpoint.memory import MemorySaver
 from typing_extensions import List, TypedDict
+from langchain_core.prompts import ChatPromptTemplate
+from langgraph.managed import IsLastStep
+from State import CustomAgentState
 # https://python.langchain.com/docs/tutorials/qa_chat_history/
 load_dotenv()
 # https://python.langchain.com/api_reference/langchain/chat_models/langchain.chat_models.base.init_chat_model.html
@@ -151,8 +154,14 @@ def BuildCheckpointedGraph(config: RunnableConfig) -> StateGraph:
     return graph_builder.compile(checkpointer=memory)
 
 def BuildAgent(config: RunnableConfig) -> StateGraph:
+    prompt = ChatPromptTemplate.from_messages([
+            ("system", "You are a helpful AI assistant named Bob."),
+            ("placeholder", "{messages}"),
+            ("user", "Remember, always provide accurate answer!"),
+    ])
     memory = MemorySaver()
-    return create_react_agent(llm, [retrieve], checkpointer=memory)
+    # https://langchain-ai.github.io/langgraph/reference/prebuilt/#langgraph.prebuilt.chat_agent_executor.create_react_agent
+    return create_react_agent(llm, [retrieve], checkpointer=memory, state_schema=CustomAgentState, name="RAG ReAct Agent", prompt=prompt)
 
 async def TestDirectResponseWithoutRetrieval(graph, message):
     print(f"\n=== {TestDirectResponseWithoutRetrieval.__name__} ===")
@@ -174,11 +183,11 @@ async def Chat(graph, threadId, messages: List[str]):
         ):
             step["messages"][-1].pretty_print()
 
-async def ChatAgent(agent, threadId, message):
+async def ChatAgent(agent, threadId, messages):
     print(f"\n=== {ChatAgent.__name__} ===")
     config = {"configurable": {"thread_id": threadId}}
     async for event in agent.astream(
-        {"messages": [{"role": "user", "content": message}]},
+        {"messages": [{"role": "user", "content": messages}]},
         stream_mode="values",
         config=config,
     ):
@@ -215,10 +224,7 @@ async def ReActAgent():
         f.write(graph)
     img = Image.open("/tmp/agent_graph.png")
     img.show()        
-    input_message = (
-        "What is the standard method for Task Decomposition?\n\n"
-        "Once you get the answer, look up common extensions of that method."
-    )
+    input_message = ("What is the standard method for Task Decomposition?", "Once you get the answer, look up common extensions of that method.")
     await ChatAgent(agent, datetime.now(), input_message)
 
 async def main():
