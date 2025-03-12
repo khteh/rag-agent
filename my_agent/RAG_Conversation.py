@@ -10,7 +10,7 @@ from langchain_core.vectorstores import InMemoryVectorStore
 from langchain_community.document_loaders import WebBaseLoader
 from langchain_core.documents import Document
 from langchain_core.tools import tool
-from langchain.core.runnables import RunnableConfig
+from langchain_core.runnables import RunnableConfig
 from langchain_core.messages import SystemMessage
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langgraph.graph import START, END, StateGraph, MessagesState
