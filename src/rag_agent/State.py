@@ -1,6 +1,7 @@
 """Define the state structures for the agent."""
 from __future__ import annotations
 from langchain_core.documents import Document
+from langchain_core.vectorstores import InMemoryVectorStore
 from typing_extensions import List, TypedDict
 from dataclasses import dataclass, field
 from typing import Sequence
@@ -9,6 +10,7 @@ from langgraph.graph import add_messages
 from langgraph.managed import IsLastStep
 from langgraph.prebuilt.chat_agent_executor import AgentState
 from typing_extensions import Annotated
+
 # Define state for application
 class State(TypedDict):
     question: str
@@ -17,7 +19,6 @@ class State(TypedDict):
 
 @dataclass
 class CustomAgentState(AgentState):
-    question: str
     context: List[Document]
     is_last_step: IsLastStep
 

@@ -26,16 +26,18 @@ from langgraph.store.memory import InMemoryStore
 # https://python.langchain.com/docs/tutorials/qa_chat_history/
 load_dotenv()
 # https://python.langchain.com/api_reference/langchain/chat_models/langchain.chat_models.base.init_chat_model.html
-vertexai.init(project=os.environ.get("VERTEXAI_PROJECT_ID"), location=os.environ.get("VERTEXAI_PROJECT_LOCATION"))
+vertexai.init(project=os.environ.get("GOOGLE_CLOUD_PROJECT"), location=os.environ.get("VERTEXAI_PROJECT_LOCATION"))
 llm = init_chat_model("gemini-2.0-flash", model_provider="google_vertexai")
-embeddings = VertexAIEmbeddings(model="text-embedding-005")
+#embeddings = VertexAIEmbeddings(model="text-embedding-005")
 """
 llm = init_chat_model("gpt-4o-mini", model_provider="openai")
 embeddings = OpenAIEmbeddings(model="text-embedding-3-large")"
 """
 
 # https://cloud.google.com/vertex-ai/generative-ai/docs/embeddings/get-text-embeddings
-vector_store = InMemoryVectorStore(embeddings)
+#vector_store = InMemoryVectorStore(embeddings)
+from Tools import TOOLS
+from VectorStore import vector_store
 
 def LoadDocuments(url: str):
     # Load and chunk contents of the blog
@@ -60,6 +62,7 @@ def SplitDocuments(docs):
     print(f"Split blog post into {len(subdocs)} sub-documents.")
     return subdocs
 
+
 def IndexChunks(subdocs):
     # Index chunks
     print(f"\n=== {IndexChunks.__name__} ===")
@@ -70,6 +73,17 @@ docs = LoadDocuments("https://lilianweng.github.io/posts/2023-06-23-agent/")
 subdocs = SplitDocuments(docs)
 IndexChunks(subdocs)
 
+"""
+@tool(response_format="content_and_artifact")
+def retrieve(query: str, *, config: RunnableConfig):
+    '''Retrieve information related to a query.'''
+    retrieved_docs = vector_store.similarity_search(query, k=2)
+    serialized = "\n\n".join(
+        (f"Source: {doc.metadata}\n" f"Content: {doc.page_content}")
+        for doc in retrieved_docs
+    )
+    return serialized, retrieved_docs
+
 async def save_memory(memory: str, *, config: RunnableConfig, store: Annotated[BaseStore, InjectedStore()]) -> str:
     '''Save the given memory for the current user.'''
     # This is a **tool** the model can use to save memories to storage
@@ -77,7 +91,7 @@ async def save_memory(memory: str, *, config: RunnableConfig, store: Annotated[B
     namespace = ("memories", user_id)
     store.put(namespace, f"memory_{len(await store.asearch(namespace))}", {"data": memory})
     return f"Saved memory: {memory}"
-
+"""
 async def prepare_model_inputs(state: CustomAgentState, config: RunnableConfig, store: BaseStore):
     # Retrieve user memories and add them to the system message
     # This function is called **every time** the model is prompted. It converts the state to a prompt
@@ -87,23 +101,14 @@ async def prepare_model_inputs(state: CustomAgentState, config: RunnableConfig, 
     system_msg = f"User memories: {', '.join(memories)}"
     return [{"role": "system", "content": system_msg}] + state["messages"]
 
-@tool(response_format="content_and_artifact")
-def retrieve(query: str, *, config: RunnableConfig):
-    """Retrieve information related to a query."""
-    retrieved_docs = vector_store.similarity_search(query, k=2)
-    serialized = "\n\n".join(
-        (f"Source: {doc.metadata}\n" f"Content: {doc.page_content}")
-        for doc in retrieved_docs
-    )
-    return serialized, retrieved_docs
 
 async def query_or_respond(state: MessagesState, config: RunnableConfig):
     """
     # Step 1: Generate an AIMessage that may include a tool-call to be sent.
     Generate tool call for retrieval or respond
     """
-    print(f"state: {state}")
-    llm_with_tools = llm.bind_tools([retrieve])
+    #print(f"state: {state}")
+    llm_with_tools = llm.bind_tools(TOOLS)
     response = await llm_with_tools.ainvoke(state["messages"], config)
     # MessageState appends messages to state instead of overwriting
     return {"messages": [response]}
@@ -148,7 +153,7 @@ def BuildSimpleGraph(config: RunnableConfig) -> StateGraph:
     print(f"\n=== {BuildSimpleGraph.__name__} ===")
     graph_builder = StateGraph(MessagesState)
     graph_builder.add_node("query_or_respond", query_or_respond)
-    graph_builder.add_node("tools", ToolNode([retrieve])) # Execute the retrieval.
+    graph_builder.add_node("tools", ToolNode(TOOLS)) # Execute the retrieval.
     graph_builder.add_node("generate", generate)
     graph_builder.set_entry_point("query_or_respond")
     graph_builder.add_conditional_edges(
@@ -165,7 +170,7 @@ def BuildCheckpointedGraph(config: RunnableConfig) -> StateGraph:
     print(f"\n=== {BuildCheckpointedGraph.__name__} ===")
     graph_builder = StateGraph(MessagesState)
     graph_builder.add_node("query_or_respond", query_or_respond)
-    graph_builder.add_node("tools", ToolNode([retrieve])) # Execute the retrieval.
+    graph_builder.add_node("tools", ToolNode(TOOLS)) # Execute the retrieval.
     graph_builder.add_node("generate", generate)
     graph_builder.set_entry_point("query_or_respond")
     graph_builder.add_conditional_edges(
@@ -185,7 +190,7 @@ def BuildAgent(config: RunnableConfig) -> StateGraph:
             ("user", "Remember, always provide accurate answer!"),
     ])
     # https://langchain-ai.github.io/langgraph/reference/prebuilt/#langgraph.prebuilt.chat_agent_executor.create_react_agent
-    return create_react_agent(llm, [retrieve, save_memory], store=InMemoryStore(), checkpointer=MemorySaver(), state_schema=CustomAgentState, name="RAG ReAct Agent", prompt=prompt)
+    return create_react_agent(llm, TOOLS, store=InMemoryStore(), checkpointer=MemorySaver(), state_schema=CustomAgentState, name="RAG ReAct Agent", prompt=prompt)
 
 async def TestDirectResponseWithoutRetrieval(graph, message):
     print(f"\n=== {TestDirectResponseWithoutRetrieval.__name__} ===")

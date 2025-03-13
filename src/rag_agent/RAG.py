@@ -15,9 +15,9 @@ from langgraph.graph import START, StateGraph
 from typing_extensions import List, TypedDict
 # https://python.langchain.com/docs/tutorials/rag/
 load_dotenv()
-print(f"PROJECT_ID: {os.environ.get("VERTEXAI_PROJECT_ID")}")
+print(f"PROJECT_ID: {os.environ.get("GOOGLE_CLOUD_PROJECT")}")
 # https://python.langchain.com/api_reference/langchain/chat_models/langchain.chat_models.base.init_chat_model.html
-vertexai.init(project=os.environ.get("VERTEXAI_PROJECT_ID"), location=os.environ.get("VERTEXAI_PROJECT_LOCATION"))
+vertexai.init(project=os.environ.get("GOOGLE_CLOUD_PROJECT"), location=os.environ.get("VERTEXAI_PROJECT_LOCATION"))
 llm = init_chat_model("gemini-2.0-flash", model_provider="google_vertexai")
 embeddings = VertexAIEmbeddings(model="text-embedding-005")
 """

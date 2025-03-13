@@ -14,7 +14,7 @@ LANGSMITH_ENDPOINT="https://api.smith.langchain.com"
 LANGSMITH_API_KEY="<foo>"
 LANGSMITH_PROJECT="<foo>"
 OPENAI_API_KEY="<foo>"
-VERTEXAI_PROJECT_ID="<foo>"
+GOOGLE_CLOUD_PROJECT="<foo>"
 VERTEXAI_PROJECT_LOCATION="<foo>"
 ```
 
