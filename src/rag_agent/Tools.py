@@ -5,7 +5,6 @@ It includes a basic Tavily search function (as an example)
 These tools are intended as free examples to get started. For production use,
 consider implementing more robust and specialized tools tailored to your needs.
 """
-from VectorStore import vector_store
 from typing import Any, Callable, List, Optional, cast
 from langchain_community.tools.tavily_search import TavilySearchResults
 from langchain_core.runnables import RunnableConfig
@@ -14,6 +13,7 @@ from langgraph.store.base import BaseStore
 from langgraph.prebuilt import InjectedStore
 from typing_extensions import Annotated
 from configuration import Configuration
+from VectorStore import VectorStore
 
 async def search(
     query: str, *, config: Annotated[RunnableConfig, InjectedToolArg]
@@ -31,9 +31,10 @@ async def search(
     return cast(list[dict[str, Any]], result)
 
 @tool(response_format="content_and_artifact")
-def retrieve(query: str, *, config: RunnableConfig):
+async def retrieve(query: str, *, config: RunnableConfig):
     """Retrieve information related to a query."""
-    retrieved_docs = vector_store.similarity_search(query, k=2)
+    vector_store = VectorStore()
+    retrieved_docs = await vector_store.asimilarity_search(query, k=2)
     serialized = "\n\n".join(
         (f"Source: {doc.metadata}\n" f"Content: {doc.page_content}")
         for doc in retrieved_docs

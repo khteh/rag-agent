@@ -37,8 +37,8 @@ embeddings = OpenAIEmbeddings(model="text-embedding-3-large")"
 # https://cloud.google.com/vertex-ai/generative-ai/docs/embeddings/get-text-embeddings
 #vector_store = InMemoryVectorStore(embeddings)
 from Tools import TOOLS
-from VectorStore import vector_store
-
+from VectorStore import VectorStore
+vector_store = VectorStore()
 def LoadDocuments(url: str):
     # Load and chunk contents of the blog
     print(f"\n=== {LoadDocuments.__name__} ===")

@@ -19,14 +19,16 @@ print(f"PROJECT_ID: {os.environ.get("GOOGLE_CLOUD_PROJECT")}")
 # https://python.langchain.com/api_reference/langchain/chat_models/langchain.chat_models.base.init_chat_model.html
 vertexai.init(project=os.environ.get("GOOGLE_CLOUD_PROJECT"), location=os.environ.get("VERTEXAI_PROJECT_LOCATION"))
 llm = init_chat_model("gemini-2.0-flash", model_provider="google_vertexai")
-embeddings = VertexAIEmbeddings(model="text-embedding-005")
+#embeddings = VertexAIEmbeddings(model="text-embedding-005")
 """
 llm = init_chat_model("gpt-4o-mini", model_provider="openai")
 embeddings = OpenAIEmbeddings(model="text-embedding-3-large")"
 """
+from VectorStore import VectorStore
+vector_store = VectorStore()
 
 # https://cloud.google.com/vertex-ai/generative-ai/docs/embeddings/get-text-embeddings
-vector_store = InMemoryVectorStore(embeddings)
+#vector_store = InMemoryVectorStore(embeddings)
 
 def LoadDocuments(url: str):
     # Load and chunk contents of the blog
@@ -51,15 +53,15 @@ def SplitDocuments(docs):
     print(f"Split blog post into {len(subdocs)} sub-documents.")
     return subdocs
 
-def IndexChunks(subdocs):
+async def IndexChunks(subdocs):
     # Index chunks
     print(f"\n=== {IndexChunks.__name__} ===")
-    ids = vector_store.add_documents(documents=subdocs)
+    ids = await vector_store.aadd_documents(documents=subdocs)
     print(f"Document IDs: {ids[:3]}")
 
 # Define application steps
-def retrieve(state: State):
-    retrieved_docs = vector_store.similarity_search(state["question"])
+async def retrieve(state: State):
+    retrieved_docs = await vector_store.asimilarity_search(state["question"])
     return {"context": retrieved_docs}
 
 async def generate(state: State, config: RunnableConfig):
