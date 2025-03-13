@@ -62,7 +62,6 @@ def SplitDocuments(docs):
     print(f"Split blog post into {len(subdocs)} sub-documents.")
     return subdocs
 
-
 def IndexChunks(subdocs):
     # Index chunks
     print(f"\n=== {IndexChunks.__name__} ===")
@@ -73,25 +72,6 @@ docs = LoadDocuments("https://lilianweng.github.io/posts/2023-06-23-agent/")
 subdocs = SplitDocuments(docs)
 IndexChunks(subdocs)
 
-"""
-@tool(response_format="content_and_artifact")
-def retrieve(query: str, *, config: RunnableConfig):
-    '''Retrieve information related to a query.'''
-    retrieved_docs = vector_store.similarity_search(query, k=2)
-    serialized = "\n\n".join(
-        (f"Source: {doc.metadata}\n" f"Content: {doc.page_content}")
-        for doc in retrieved_docs
-    )
-    return serialized, retrieved_docs
-
-async def save_memory(memory: str, *, config: RunnableConfig, store: Annotated[BaseStore, InjectedStore()]) -> str:
-    '''Save the given memory for the current user.'''
-    # This is a **tool** the model can use to save memories to storage
-    user_id = config.get("configurable", {}).get("user_id")
-    namespace = ("memories", user_id)
-    store.put(namespace, f"memory_{len(await store.asearch(namespace))}", {"data": memory})
-    return f"Saved memory: {memory}"
-"""
 async def prepare_model_inputs(state: CustomAgentState, config: RunnableConfig, store: BaseStore):
     # Retrieve user memories and add them to the system message
     # This function is called **every time** the model is prompted. It converts the state to a prompt
