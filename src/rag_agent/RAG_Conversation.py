@@ -66,20 +66,24 @@ def IndexChunks(subdocs):
     ids = vector_store.add_documents(documents=subdocs)
     print(f"Document IDs: {ids[:3]}")
 
-def save_memory(memory: str, *, config: RunnableConfig, store: Annotated[BaseStore, InjectedStore()]) -> str:
+docs = LoadDocuments("https://lilianweng.github.io/posts/2023-06-23-agent/")
+subdocs = SplitDocuments(docs)
+IndexChunks(subdocs)
+
+async def save_memory(memory: str, *, config: RunnableConfig, store: Annotated[BaseStore, InjectedStore()]) -> str:
     '''Save the given memory for the current user.'''
     # This is a **tool** the model can use to save memories to storage
     user_id = config.get("configurable", {}).get("user_id")
     namespace = ("memories", user_id)
-    store.put(namespace, f"memory_{len(store.search(namespace))}", {"data": memory})
+    store.put(namespace, f"memory_{len(await store.asearch(namespace))}", {"data": memory})
     return f"Saved memory: {memory}"
 
-def prepare_model_inputs(state: CustomAgentState, config: RunnableConfig, store: BaseStore):
+async def prepare_model_inputs(state: CustomAgentState, config: RunnableConfig, store: BaseStore):
     # Retrieve user memories and add them to the system message
     # This function is called **every time** the model is prompted. It converts the state to a prompt
     user_id = config.get("configurable", {}).get("user_id")
     namespace = ("memories", user_id)
-    memories = [m.value["data"] for m in store.search(namespace)]
+    memories = [m.value["data"] for m in await store.asearch(namespace)]
     system_msg = f"User memories: {', '.join(memories)}"
     return [{"role": "system", "content": system_msg}] + state["messages"]
 
@@ -174,6 +178,7 @@ def BuildCheckpointedGraph(config: RunnableConfig) -> StateGraph:
     return graph_builder.compile(store=InMemoryStore(), checkpointer=MemorySaver(), name="Checkedpoint StateGraph")
 
 def BuildAgent(config: RunnableConfig) -> StateGraph:
+    print(f"\n=== {BuildAgent.__name__} ===")
     prompt = ChatPromptTemplate.from_messages([
             ("system", "You are a helpful AI assistant named Bob."),
             ("placeholder", "{messages}"),
@@ -248,11 +253,8 @@ async def ReActAgent():
 
 async def main():
     #await SimpleGraph()
-    await CheckpointedGraph()
-    #await ReActAgent()
+    #await CheckpointedGraph()
+    await ReActAgent()
 
 if __name__ == "__main__":
-    docs = LoadDocuments("https://lilianweng.github.io/posts/2023-06-23-agent/")
-    subdocs = SplitDocuments(docs)
-    IndexChunks(subdocs)
     asyncio.run(main())

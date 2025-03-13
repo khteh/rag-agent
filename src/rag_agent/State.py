@@ -27,7 +27,6 @@ class InputState:
 
     This class is used to define the initial state and structure of incoming data.
     """
-
     messages: Annotated[Sequence[AnyMessage], add_messages] = field(
         default_factory=list
     )
