@@ -36,6 +36,30 @@ $ gcloud auth application-default set-quota-project <ProjectID>
 
 ## Launch LangGraph Server
 
+### Checkpointed RAG
+
+- Configure `langgraph.json` with:
+
+```
+    "graphs": {
+        "rag_agent": "./src/rag_agent/CheckpointedRAG.py:make_graph"
+    },
+
+```
+
+### RAG ReAct Agent
+
+- Configure `langgraph.json` with:
+
+```
+    "graphs": {
+        "rag_agent": "./src/rag_agent/rag-agent.py:make_graph"
+    },
+
+```
+
+### Run local Langgraph server
+
 - `langgraph dev`
 
 ### StateGraph with Checkpoint

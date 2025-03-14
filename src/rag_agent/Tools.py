@@ -13,7 +13,7 @@ from langgraph.store.base import BaseStore
 from langgraph.prebuilt import InjectedStore
 from typing_extensions import Annotated
 from configuration import Configuration
-from VectorStore import VectorStore
+from VectorStore import vector_store
 
 async def search(
     query: str, *, config: Annotated[RunnableConfig, InjectedToolArg]
@@ -33,7 +33,6 @@ async def search(
 @tool(response_format="content_and_artifact")
 async def retrieve(query: str, *, config: RunnableConfig):
     """Retrieve information related to a query."""
-    vector_store = VectorStore()
     retrieved_docs = await vector_store.asimilarity_search(query, k=2)
     serialized = "\n\n".join(
         (f"Source: {doc.metadata}\n" f"Content: {doc.page_content}")
