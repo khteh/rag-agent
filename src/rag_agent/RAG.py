@@ -1,5 +1,6 @@
 import os, bs4, vertexai, asyncio
 from PIL import Image
+from image import show_graph
 from State import State
 from dotenv import load_dotenv
 from langchain.chat_models import init_chat_model
@@ -17,7 +18,7 @@ from typing_extensions import List, TypedDict
 load_dotenv()
 print(f"PROJECT_ID: {os.environ.get("GOOGLE_CLOUD_PROJECT")}")
 # https://python.langchain.com/api_reference/langchain/chat_models/langchain.chat_models.base.init_chat_model.html
-vertexai.init(project=os.environ.get("GOOGLE_CLOUD_PROJECT"), location=os.environ.get("VERTEXAI_PROJECT_LOCATION"))
+vertexai.init(project=os.environ.get("GOOGLE_CLOUD_PROJECT"), location=os.environ.get("GOOGLE_CLOUD_LOCATION"))
 llm = init_chat_model("gemini-2.0-flash", model_provider="google_vertexai")
 #embeddings = VertexAIEmbeddings(model="text-embedding-005")
 """
@@ -112,10 +113,13 @@ if __name__ == "__main__":
     IndexChunks(subdocs)
     config = RunnableConfig(run_name="RAG")
     graph = BuildGraph(config)
+    show_graph(graph, "RAG")
+    """
     image = graph.get_graph().draw_mermaid_png()
     # Save the PNG data to a file
     with open("/tmp/graph.png", "wb") as f:
         f.write(image)
     img = Image.open("/tmp/graph.png")
     img.show()
+    """
     asyncio.run(main(graph))

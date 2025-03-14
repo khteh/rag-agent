@@ -3,14 +3,14 @@ from __future__ import annotations
 from dataclasses import dataclass, field, fields
 from typing import Annotated, Optional
 from langchain_core.runnables import RunnableConfig, ensure_config
-import prompts
+from prompts import SYSTEM_PROMPT
 
 @dataclass(kw_only=True)
 class Configuration:
     """The configuration for the agent."""
 
     system_prompt: str = field(
-        default=prompts.SYSTEM_PROMPT,
+        default=SYSTEM_PROMPT,
         metadata={
             "description": "The system prompt to use for the agent's interactions. "
             "This prompt sets the context and behavior for the agent."

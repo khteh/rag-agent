@@ -5,16 +5,21 @@ It includes a basic Tavily search function (as an example)
 These tools are intended as free examples to get started. For production use,
 consider implementing more robust and specialized tools tailored to your needs.
 """
+import os
+from dotenv import load_dotenv
 from typing import Any, Callable, List, Optional, cast
 from langchain_community.tools.tavily_search import TavilySearchResults
 from langchain_core.runnables import RunnableConfig
 from langchain_core.tools import InjectedToolArg, tool
 from langgraph.store.base import BaseStore
 from langgraph.prebuilt import InjectedStore
+from google import genai
+from google.genai import types
+from google.genai.types import Tool, GenerateContentConfig, GoogleSearch
 from typing_extensions import Annotated
 from configuration import Configuration
 from VectorStore import vector_store
-
+load_dotenv()
 async def search(
     query: str, *, config: Annotated[RunnableConfig, InjectedToolArg]
 ) -> Optional[list[dict[str, Any]]]:
@@ -29,6 +34,32 @@ async def search(
     wrapped = TavilySearchResults(max_results=configuration.max_search_results)
     result = await wrapped.ainvoke({"query": query})
     return cast(list[dict[str, Any]], result)
+
+# https://github.com/langchain-ai/langchain/discussions/30282
+@tool
+async def GoogleSearch(
+    query: str, *, config: Annotated[RunnableConfig, InjectedToolArg]
+)-> Optional[list[dict[str, Any]]]:
+    """Search for general web results.
+
+    This function performs a search using the Google search engine, which is designed
+    to provide comprehensive, accurate, and trusted results. It's particularly useful
+    for answering questions about current events.
+    """
+    client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
+    model_id = "gemini-2.0-flash"
+    google_search_tool = Tool(
+        google_search = GoogleSearch()
+    )
+    response = client.models.generate_content(
+        model=model_id,
+        contents=query,
+        config=GenerateContentConfig(
+            tools=[google_search_tool],
+            response_modalities=["TEXT"],
+        )
+    )
+    return cast(list[dict[str, Any]], response)
 
 @tool(response_format="content_and_artifact")
 async def retrieve(query: str, *, config: RunnableConfig):

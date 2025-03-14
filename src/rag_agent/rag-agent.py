@@ -1,7 +1,8 @@
-import os, bs4, vertexai,asyncio
+import os, bs4, vertexai, asyncio
 from State import CustomAgentState
 from datetime import datetime
 from PIL import Image
+from image import show_graph
 from typing import Annotated
 from langchain import hub
 from langchain.chat_models import init_chat_model
@@ -33,7 +34,7 @@ from langgraph.store.memory import InMemoryStore
 # https://python.langchain.com/api_reference/langchain/chat_models/langchain.chat_models.base.init_chat_model.html
 """
 llm = init_chat_model("gpt-4o-mini", model_provider="openai")
-embeddings = OpenAIEmbeddings(model="text-embedding-3-large")"
+embeddings = OpenAIEmbeddings(model="text-embedding-3-large")
 """
 
 # https://cloud.google.com/vertex-ai/generative-ai/docs/embeddings/get-text-embeddings
@@ -53,7 +54,7 @@ class RAGAgent():
         """
         Class RAGAgent Constructor
         """
-        #vertexai.init(project=os.environ.get("GOOGLE_CLOUD_PROJECT"), location=os.environ.get("VERTEXAI_PROJECT_LOCATION"))
+        #vertexai.init(project=os.environ.get("GOOGLE_CLOUD_PROJECT"), location=os.environ.get("GOOGLE_CLOUD_LOCATION"))
         self._config = config
         self._llm = init_chat_model("gemini-2.0-flash", model_provider="google_vertexai")
         self._llm = self._llm.bind_tools(TOOLS)
@@ -133,12 +134,15 @@ async def ChatAgent(agent, config, messages):
 async def ReActAgent():
     config = RunnableConfig(run_name="RAG ReAct Agent", thread_id=datetime.now())
     agent = await make_graph(config)
+    show_graph(agent, "RAG ReAct Agent") # This blocks
+    """
     graph = agent.get_graph().draw_mermaid_png()
     # Save the PNG data to a file
     with open("/tmp/agent_graph.png", "wb") as f:
         f.write(graph)
     img = Image.open("/tmp/agent_graph.png")
-    img.show()        
+    img.show()
+    """
     input_message = ("What is the standard method for Task Decomposition?", "Once you get the answer, look up common extensions of that method.")
     await ChatAgent(agent, config, input_message)
 

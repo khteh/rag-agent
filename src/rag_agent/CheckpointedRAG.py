@@ -1,6 +1,7 @@
 import os, bs4, vertexai,asyncio
 from State import State
 from datetime import datetime
+from image import show_graph
 from PIL import Image
 from typing import Annotated
 from langchain import hub
@@ -53,7 +54,7 @@ class CheckpointedRAG():
         """
         Class CheckpointedRAG Constructor
         """
-        #vertexai.init(project=os.environ.get("GOOGLE_CLOUD_PROJECT"), location=os.environ.get("VERTEXAI_PROJECT_LOCATION"))
+        #vertexai.init(project=os.environ.get("GOOGLE_CLOUD_PROJECT"), location=os.environ.get("GOOGLE_CLOUD_LOCATION"))
         self._config = config
         self._llm = init_chat_model("gemini-2.0-flash", model_provider="google_vertexai")
         self._llm = self._llm.bind_tools(TOOLS)
@@ -119,7 +120,7 @@ class CheckpointedRAG():
         )
         graph_builder.add_edge("tools", "generate")
         graph_builder.add_edge("generate", END)
-        return graph_builder.compile(store=InMemoryStore(), checkpointer=MemorySaver(), name="Checkedpoint StateGraph")
+        return graph_builder.compile(store=InMemoryStore(), checkpointer=MemorySaver(), name="Checkedpoint StateGraph RAG")
 
 async def make_graph(config: RunnableConfig) -> CompiledGraph:
     return await CheckpointedRAG(config).CreateGraph(config)
@@ -145,14 +146,17 @@ async def Chat(graph, config, messages: List[str]):
             step["messages"][-1].pretty_print()
 
 async def CheckpointedGraph():
-    config = RunnableConfig(run_name="CheckpointGraph_RAG_Conversation", thread_id=datetime.now())
+    config = RunnableConfig(run_name="Checkedpoint StateGraph RAG", thread_id=datetime.now())
     checkpoint_graph = await make_graph(config) # config input parameter is required by langgraph.json to define the graph
+    show_graph(checkpoint_graph, "Checkedpoint StateGraph RAG") # This blocks
+    """
     graph = checkpoint_graph.get_graph().draw_mermaid_png()
     # Save the PNG data to a file
     with open("/tmp/checkpoint_graph.png", "wb") as f:
         f.write(graph)
     img = Image.open("/tmp/checkpoint_graph.png")
     img.show()
+    """
     await TestDirectResponseWithoutRetrieval(checkpoint_graph, config, "Hello, who are you?")
     await Chat(checkpoint_graph, config, ["What is Task Decomposition?", "Can you look up some common ways of doing it?"])
 
