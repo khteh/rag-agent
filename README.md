@@ -31,6 +31,7 @@ $ sudo snap install google-cloud-cli --classic
 - Setup Google Cloud Authentication and Project:
 
 ```
+$ gcloud init
 $ gcloud auth application-default login
 $ gcloud auth application-default set-quota-project <ProjectID>
 ```

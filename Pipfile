@@ -13,9 +13,9 @@ langchain = {extras = ["google-vertexai"], version = "*"}
 langchain-google-vertexai = "*"
 beautifulsoup4 = "*"
 langchain-google-genai = "*"
-langchain-core = "*"
 google-genai = "*"
 pillow = "*"
+langchain-core = "*"
 
 [dev-packages]
 
