@@ -54,7 +54,7 @@ $ gcloud auth application-default set-quota-project <ProjectID>
 
 ```
     "graphs": {
-        "rag_agent": "./src/rag_agent/rag-agent.py:make_graph"
+        "rag_agent": "./src/rag_agent/RAGAgent.py:make_graph"
     },
 
 ```

@@ -12,7 +12,7 @@
         "./src/rag_agent"
     ],
     "graphs": {
-        "rag_agent": "./src/rag_agent/rag-agent.py:make_graph"
+        "rag_agent": "./src/rag_agent/RAGAgent.py:make_graph"
     },
     "env": "./.env",
     "python_version": "3.12",

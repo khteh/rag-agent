@@ -16,8 +16,23 @@ langchain-google-genai = "*"
 langchain-core = "*"
 google-genai = "*"
 pillow = "*"
+flask-healthz = "*"
+psycopg = {extras = ["binary"], version = "*"}
+psycopg2-binary = "*"
+hypercorn = {extras = ["asyncio"], version = "*"}
+quart = "*"
+quart-wtforms = "*"
+pydantic = "*"
+flask-bcrypt = "*"
+quart-flask-patch = "*"
+Quart-CORS = "*"
+langgraph-checkpoint-postgres = "*"
+uuid7 = "*"
 
 [dev-packages]
+pytest-flask = "*"
+pytest = "*"
+pytest-asyncio = "*"
 
 [requires]
 python_version = "3.12"

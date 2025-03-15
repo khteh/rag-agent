@@ -17,8 +17,8 @@ from google import genai
 from google.genai import types
 from google.genai.types import Tool, GenerateContentConfig, GoogleSearch
 from typing_extensions import Annotated
-from configuration import Configuration
-from VectorStore import vector_store
+from .configuration import Configuration
+from .VectorStore import vector_store
 load_dotenv()
 async def search(
     query: str, *, config: Annotated[RunnableConfig, InjectedToolArg]
