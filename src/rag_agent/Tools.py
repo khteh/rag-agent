@@ -59,9 +59,7 @@ async def GoogleSearch(
             response_modalities=["TEXT"],
         )
     )
-    result = []
-    for each in response.candidates[0].content.parts:
-        result.append(each.text)
+    return [content.text for content in response.candidates[0].content.parts]
     # Example response:
     # The next total solar eclipse visible in the contiguous United States will be on ...
 
