@@ -80,4 +80,4 @@ async def save_memory(memory: str, *, config: RunnableConfig, store: Annotated[B
     store.put(namespace, f"memory_{len(await store.asearch(namespace))}", {"data": memory})
     return f"Saved memory: {memory}"
 
-TOOLS: List[Callable[..., Any]] = [retrieve, save_memory]
+TOOLS: List[Callable[..., Any]] = [retrieve, GoogleSearch, save_memory]
