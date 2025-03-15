@@ -29,7 +29,7 @@ async def lifespan():
     print(f"\n=== {lifespan.__name__} ===")
     async with AsyncConnectionPool(
         conninfo=app.config["SQLALCHEMY_DATABASE_URI"],
-        #max_size=DB_MAX_CONNECTIONS,
+        max_size=app.config["DB_MAX_CONNECTIONS"],
         kwargs=connection_kwargs,
     ) as pool:
         # Create the AsyncPostgresSaver
