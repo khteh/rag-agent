@@ -39,7 +39,7 @@ async def search(
 @tool
 async def GoogleSearch(
     query: str, *, config: Annotated[RunnableConfig, InjectedToolArg]
-)-> Optional[list[dict[str, Any]]]:
+)-> Optional[list[str]]:
     """Search for general web results.
 
     This function performs a search using the Google search engine, which is designed
@@ -51,15 +51,23 @@ async def GoogleSearch(
     google_search_tool = Tool(
         google_search = GoogleSearch()
     )
-    response = client.models.generate_content(
+    response = await client.models.generate_content(
         model=model_id,
-        contents=query,
+        contents=[{"role": "user", "parts": [{"text": query}]}], 
         config=GenerateContentConfig(
             tools=[google_search_tool],
             response_modalities=["TEXT"],
         )
     )
-    return cast(list[dict[str, Any]], response)
+    result = []
+    for each in response.candidates[0].content.parts:
+        result.append(each.text)
+    # Example response:
+    # The next total solar eclipse visible in the contiguous United States will be on ...
+
+    # To get grounding metadata as web content.
+    #print(response.candidates[0].grounding_metadata.search_entry_point.rendered_content)
+    return result
 
 @tool(response_format="content_and_artifact")
 async def retrieve(query: str, *, config: RunnableConfig):
