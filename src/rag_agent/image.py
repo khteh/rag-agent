@@ -1,9 +1,10 @@
-import tkinter as tk
+#import tkinter as tk
+from tkinter import *
 from PIL import Image as PILImage, ImageTk
 import io    
 
 def show_graph(graph, title: str):
-    root = tk.Tk()
+    root = Tk()
     root.title(title)
     
     # Get the image in memory buffer
@@ -17,6 +18,6 @@ def show_graph(graph, title: str):
     img = PILImage.open(img_buffer)
     #img.show() This does NOT block
     img = ImageTk.PhotoImage(img)
-    panel = tk.Label(root, image=img)
+    panel = Label(root, image=img)
     panel.pack(side="bottom", fill="both", expand="yes")
     root.mainloop()# This blocks

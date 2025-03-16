@@ -19,6 +19,12 @@ GOOGLE_CLOUD_LOCATION="<foo>"
 GEMINI_API_KEY="<foo>"
 ```
 
+- Install `tkinter`:
+
+```
+$ sudo apt install -y python3.13-tk
+```
+
 ## Google VertexAI
 
 - Install Google Cloud CLI:

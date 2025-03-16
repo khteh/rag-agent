@@ -9,16 +9,16 @@ langchain-community = "*"
 langgraph = "*"
 langchain-openai = "*"
 python-dotenv = "*"
-langchain = {extras = ["google-vertexai"], version = "*"}
+langchain = {extras = ["google-vertexai"] }
 langchain-google-vertexai = "*"
 beautifulsoup4 = "*"
 langchain-google-genai = "*"
 google-genai = "*"
 pillow = "*"
 flask-healthz = "*"
-psycopg = {extras = ["binary"], version = "*"}
+psycopg = {extras = ["binary"] }
 psycopg2-binary = "*"
-hypercorn = {extras = ["asyncio"], version = "*"}
+hypercorn = {extras = ["asyncio"] }
 quart = "*"
 quart-wtforms = "*"
 pydantic = "*"
@@ -28,6 +28,7 @@ Quart-CORS = "*"
 langgraph-checkpoint-postgres = "*"
 uuid7 = "*"
 langchain-core = "*"
+vertexai = "*"
 
 [dev-packages]
 pytest-flask = "*"
@@ -35,4 +36,4 @@ pytest = "*"
 pytest-asyncio = "*"
 
 [requires]
-python_version = "3.13"
+python_version = "3.12"

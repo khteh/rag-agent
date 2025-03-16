@@ -1,4 +1,5 @@
 import os, bs4, vertexai, asyncio
+from dotenv import load_dotenv
 from State import CustomAgentState
 from datetime import datetime
 from PIL import Image
@@ -150,4 +151,5 @@ async def main():
     await ReActAgent()
 
 if __name__ == "__main__":
+    load_dotenv()
     asyncio.run(main())

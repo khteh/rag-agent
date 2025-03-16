@@ -9,6 +9,7 @@ from langchain_core.runnables import RunnableConfig
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
 from psycopg_pool import AsyncConnectionPool
 load_dotenv()
+print(f"GEMINI_API_KEY: {os.environ.get("GEMINI_API_KEY")}")
 config = Config()
 #from .common.Authentication import oidc
 config.from_toml("/etc/pythonrestapi.toml")

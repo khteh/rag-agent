@@ -37,7 +37,7 @@ class VectorStore(metaclass=VectorStoreSingleton):
         #vertexai.init(project=os.environ.get("GOOGLE_CLOUD_PROJECT"), location=os.environ.get("GOOGLE_CLOUD_LOCATION"))
         self._embeddings = VertexAIEmbeddings(model=self._model) # "text-embedding-005"
         self._vector_store = InMemoryVectorStore(self._embeddings)
-        print(f"VectorStore::__init__ {self._model}")
+        #print(f"VectorStore::__init__ {self._model}")
 
     async def LoadDocuments(self, url: str):
         # Load and chunk contents of the blog
