@@ -11,11 +11,9 @@ from psycopg_pool import AsyncConnectionPool
 load_dotenv()
 print(f"GEMINI_API_KEY: {os.environ.get("GEMINI_API_KEY")}")
 config = Config()
-#from .common.Authentication import oidc
 config.from_toml("/etc/pythonrestapi.toml")
 app = create_app()
 logging.basicConfig(format='%(asctime)s %(levelname)-8s %(message)s', level=logging.INFO, datefmt='%Y-%m-%d %H:%M:%S')	
-#oidc.init_app(app)
 connection_kwargs = {
     "autocommit": True,
     "prepare_threshold": 0,
