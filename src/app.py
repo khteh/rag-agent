@@ -5,9 +5,8 @@ It contains the definition of routes and views for the application.
 import quart_flask_patch
 import json, logging, os, vertexai, psycopg
 from quart import Quart, request
-from flask_healthz import HealthError
+from flask_healthz import Healthz, HealthError
 from flask_bcrypt import Bcrypt
-from flask_healthz import Healthz
 from quart_wtf.csrf import CSRFProtect
 from quart_cors import cors
 from langchain_core.callbacks import AsyncCallbackHandler
