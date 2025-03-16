@@ -8,15 +8,15 @@ Add a `.env` with the following environment variables:
 
 ```
 LANGSMITH_TRACING="true"
-LANGSMITH_API_KEY="<foo>"
+LANGSMITH_API_KEY=""
 LANGSMITH_TRACING="true"
 LANGSMITH_ENDPOINT="https://api.smith.langchain.com"
-LANGSMITH_API_KEY="<foo>"
-LANGSMITH_PROJECT="<foo>"
-OPENAI_API_KEY="<foo>"
-GOOGLE_CLOUD_PROJECT="<foo>"
-GOOGLE_CLOUD_LOCATION="<foo>"
-GEMINI_API_KEY="<foo>"
+LANGSMITH_PROJECT=""
+OPENAI_API_KEY=""
+GOOGLE_CLOUD_PROJECT=""
+GOOGLE_CLOUD_LOCATION="us-central1"
+GEMINI_API_KEY=""
+GOOGLE_GENAI_USE_VERTEXAI="true"
 ```
 
 - Install `tkinter`:
