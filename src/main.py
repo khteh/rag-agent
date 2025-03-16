@@ -58,7 +58,6 @@ async def lifespan():
                     print(f"Error checking for checkpoints table: {e}")
                     # Optionally, you might want to raise this error
                     # raise
-        
         # Assign the checkpointer to the assistant
         agent.checkpointer = checkpointer
         app.state.agent = agent
@@ -66,4 +65,4 @@ async def lifespan():
 
 #app.run(HOST, PORT)
 print(f"Running asyncio...")
-asyncio.run(serve(app, config), debug=True)
+#asyncio.run(serve(app, config), debug=True)
