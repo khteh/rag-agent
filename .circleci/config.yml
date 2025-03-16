@@ -23,8 +23,8 @@ jobs:
       - restore_cache:
           key: v1-dependencies-{{ .Branch }}-{{ checksum "Pipfile.lock" }}
       - run: pipenv install
-      - run: pytest -v # Error importing modules/packages using relative paths
-      #- run: python -m pytest
+      #- run: pytest -v # Error importing modules/packages using relative paths
+      - run: python -m pytest -v
       - run:
           name: Build docker image
           command: docker build -t khteh/ragagent:latest .
