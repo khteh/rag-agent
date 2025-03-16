@@ -1,3 +1,4 @@
 #!/bin/bash
-langgraph build -t khteh/rag_agent
-docker push khteh/rag_agent:latest
+#langgraph build -t khteh/ragagent
+docker build -t khteh/ragagent .
+docker push khteh/ragagent:latest

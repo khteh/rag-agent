@@ -1,0 +1,45 @@
+version: 2.1
+references:
+  workspace_root: &workspace_root ~/workspace
+
+  attach_workspace: &attach_workspace
+    attach_workspace:
+      at: *workspace_root
+
+defaults: &defaults # Default directory to run the steps in.
+  working_directory: *workspace_root
+
+jobs:
+  build_and_test:
+    <<: *defaults
+    docker:
+      #- image: circleci/python:latest
+      - image: khteh/ubuntu:latest
+    #    restart: on-failure # Restart the container if it exits due to an error
+    steps:
+      - setup_remote_docker:
+          docker_layer_caching: true
+      - checkout
+      - restore_cache:
+          key: v1-dependencies-{{ .Branch }}-{{ checksum "Pipfile.lock" }}
+      - run: pipenv install
+      - run: pytest -v # Error importing modules/packages using relative paths
+      #- run: python -m pytest
+      - run:
+          name: Build docker image
+          command: docker build -t khteh/ragagent:latest .
+      - run:
+          name: Login to docker hub
+          command: docker login -u $DOCKER_USER -p $DOCKER_PASS
+      - run:
+          name: Push images to docker hub
+          command: docker push khteh/ragagent:latest
+      - save_cache:
+          key: v1-dependencies-{{ .Branch }}-{{ checksum "Pipfile.lock" }}
+          paths:
+            - /home/circleci/.local/bin
+            - /home/circleci/.local/lib
+workflows:
+  main:
+    jobs:
+      - build_and_test
