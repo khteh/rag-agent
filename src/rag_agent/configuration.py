@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field, fields
 from typing import Annotated, Optional
 from langchain_core.runnables import RunnableConfig, ensure_config
-from .prompts import SYSTEM_PROMPT
+from prompts import SYSTEM_PROMPT
 
 @dataclass(kw_only=True)
 class Configuration:
