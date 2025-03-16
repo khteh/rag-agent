@@ -2,9 +2,9 @@ accesslog = "/var/log/pythonrestapi"
 errorlog = "/var/log/pythonrestapi"
 loglevel = "DEBUG"
 alt_svc_headers = ["h3=\":4433\"; ma=3600, h3-29=\":4433\"; ma=3600"]
-bind = ["127.0.0.1:4433"]
-quic_bind = ["127.0.0.1:4433"]
-insecure_bind = ["127.0.0.1:8080"]
+bind = ["0.0.0.0:4433"]
+quic_bind = ["0.0.0.0:4433"]
+insecure_bind = ["0.0.0.0:8080"]
 certfile = "/tmp/server.crt"
 keyfile = "/tmp/server.key"
 #server_names = ["pythonrestapi"]
