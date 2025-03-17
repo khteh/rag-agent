@@ -16,7 +16,6 @@ from langchain_core.runnables import RunnableConfig
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
 from langgraph.graph.graph import CompiledGraph
 from psycopg_pool import AsyncConnectionPool
-from src.controllers.HomeController import home_api as home_blueprint
 bcrypt = Bcrypt()
 # Make the WSGI interface available at the top level so wfastcgi can get it.
 load_dotenv()
@@ -39,6 +38,7 @@ async def create_app() -> Quart:
     if "SQLALCHEMY_DATABASE_URI" not in app.config:
         app.config["SQLALCHEMY_DATABASE_URI"] = f"postgresql://{os.getenv('POSTGRESQL_USER')}:{os.getenv('POSTGRESQL_PASSWORD')}@{app.config['DB_HOST']}/rag-agent"
     app = cors(app, allow_credentials=True, allow_origin="https://localhost:4433")
+    from src.controllers.HomeController import home_api as home_blueprint
     app.register_blueprint(home_blueprint, url_prefix="/")
     Healthz(app, no_log=True)
     # https://quart-wtf.readthedocs.io/en/stable/how_to_guides/configuration.html
