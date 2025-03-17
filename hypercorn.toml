@@ -1,5 +1,5 @@
-accesslog = "/var/log/pythonrestapi"
-errorlog = "/var/log/pythonrestapi"
+accesslog = "/var/log/hypercorn/access.log"
+errorlog = "/var/log/hypercorn/errors.log"
 loglevel = "DEBUG"
 alt_svc_headers = ["h3=\":4433\"; ma=3600, h3-29=\":4433\"; ma=3600"]
 bind = ["0.0.0.0:4433"]
