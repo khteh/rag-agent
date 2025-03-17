@@ -42,6 +42,32 @@ $ gcloud auth application-default login
 $ gcloud auth application-default set-quota-project <ProjectID>
 ```
 
+### Google account setup in Docker to run on k8s
+
+(1) Create a service account:
+
+```
+$ gcloud iam service-accounts create <sa-name> --display-name=<display_name>
+```
+
+(2) Create service account keys
+
+```
+$ gcloud iam service-account keys create service-account.json --iam-account=<sa-name>@<project>.gserviceaccount.com
+```
+
+- To get FQDN of the service account:
+
+```
+$  gcloud iam service-accounts list
+```
+
+(3) Create a secret from the json file:
+
+```
+$ k create secret generic gcloud-service-account --from-file=service-account.json
+```
+
 ## Launch LangGraph Server
 
 ### Checkpointed RAG
