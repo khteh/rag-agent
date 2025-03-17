@@ -1,10 +1,11 @@
 import os, bs4, vertexai, asyncio
 from dotenv import load_dotenv
-from State import CustomAgentState
+from .State import CustomAgentState
+from .image import show_graph
 from datetime import datetime
 from PIL import Image
-from image import show_graph
 from typing import Annotated
+from google.api_core.exceptions import ResourceExhausted
 from langchain import hub
 from langchain.chat_models import init_chat_model
 from langchain_openai import OpenAIEmbeddings
@@ -39,9 +40,9 @@ embeddings = OpenAIEmbeddings(model="text-embedding-3-large")
 """
 
 # https://cloud.google.com/vertex-ai/generative-ai/docs/embeddings/get-text-embeddings
-from Tools import TOOLS
-from VectorStore import vector_store
-
+from .Tools import TOOLS
+from .VectorStore import vector_store
+agent = None
 class RAGAgent():
     _llm = None
     _config = None
@@ -116,9 +117,12 @@ class RAGAgent():
 
     async def CreateGraph(self, config: RunnableConfig) -> CompiledGraph:
         print(f"\n=== {self.CreateGraph.__name__} ===")
-        await vector_store.LoadDocuments("https://lilianweng.github.io/posts/2023-06-23-agent/")
-        # https://langchain-ai.github.io/langgraph/reference/prebuilt/#langgraph.prebuilt.chat_agent_executor.create_react_agent
-        return create_react_agent(self._llm, TOOLS, store=InMemoryStore(), checkpointer=MemorySaver(), state_schema=CustomAgentState, name="RAG ReAct Agent", prompt=self._prompt)
+        try:
+            await vector_store.LoadDocuments("https://lilianweng.github.io/posts/2023-06-23-agent/")
+            # https://langchain-ai.github.io/langgraph/reference/prebuilt/#langgraph.prebuilt.chat_agent_executor.create_react_agent
+            return create_react_agent(self._llm, TOOLS, store=InMemoryStore(), checkpointer=MemorySaver(), state_schema=CustomAgentState, name="RAG ReAct Agent", prompt=self._prompt)
+        except ResourceExhausted as e:
+            print(f"google.api_core.exceptions.ResourceExhausted")
 
 async def make_graph(config: RunnableConfig) -> CompiledGraph:
     return await RAGAgent(config).CreateGraph(config)

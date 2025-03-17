@@ -11,7 +11,7 @@ from src.schema.schema import ChatMessage, UserInput, StreamInput
 from langchain_core.callbacks import AsyncCallbackHandler
 from langgraph.graph.graph import CompiledGraph
 from langchain_core.runnables import RunnableConfig
-from src import app
+from src.rag_agent.RAGAgent import agent
 home_api = Blueprint("home", __name__)
 @home_api.context_processor
 
@@ -45,7 +45,6 @@ async def invoke(user_input: UserInput) -> ChatMessage:
     Use thread_id to persist and continue a multi-turn conversation. run_id kwarg
     is also attached to messages for recording feedback.
     """
-    agent: CompiledGraph = app.state.agent
     kwargs, run_id = _parse_input(user_input)
     print(kwargs)
     try:
@@ -62,7 +61,6 @@ async def message_generator(user_input: StreamInput) -> AsyncGenerator[str, None
 
     This is the workhorse method for the /stream endpoint.
     """
-    agent: CompiledGraph = app.state.agent
     kwargs, run_id = _parse_input(user_input)
 
     # Use an asyncio queue to process both messages and tokens in

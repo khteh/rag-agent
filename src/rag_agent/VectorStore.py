@@ -1,4 +1,4 @@
-import os, vertexai, bs4
+import bs4
 from dotenv import load_dotenv
 from typing_extensions import List, TypedDict, Optional, Any
 from langchain_google_vertexai import VertexAIEmbeddings
@@ -54,41 +54,22 @@ class VectorStore(metaclass=VectorStoreSingleton):
             docs = loader.load()
             assert len(docs) == 1
             print(f"Total characters: {len(docs[0].page_content)}")
-            subdocs = self.SplitDocuments(docs)
-            await self.IndexChunks(subdocs)
+            subdocs = self._SplitDocuments(docs)
+            await self._IndexChunks(subdocs)
             self._docs.add(url)
 
-    def SplitDocuments(self, docs):
-        print(f"\n=== {self.SplitDocuments.__name__} ===")
+    def _SplitDocuments(self, docs):
+        print(f"\n=== {self._SplitDocuments.__name__} ===")
         text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
         subdocs = text_splitter.split_documents(docs)
         print(f"Split blog post into {len(subdocs)} sub-documents.")
         return subdocs
 
-    async def IndexChunks(self, subdocs):
+    async def _IndexChunks(self, subdocs):
         # Index chunks
-        print(f"\n=== {self.IndexChunks.__name__} ===")
-        ids = await self.aadd_documents(documents=subdocs)
+        print(f"\n=== {self._IndexChunks.__name__} ===")
+        ids = await self._vector_store.aadd_documents(documents=subdocs)
         print(f"{len(ids)} documents added successfully!")
-
-    def add_documents(
-        self,
-        documents: list[Document],
-        ids: Optional[list[str]] = None,
-        **kwargs: Any,
-    ) -> list[str]:
-        return self._vector_store.add_documents(documents=documents, ids=ids, **kwargs)
-    
-    async def aadd_documents(
-        self, documents: list[Document], ids: Optional[list[str]] = None, **kwargs: Any
-    ) -> list[str]:
-        print(f"\n=== {self.aadd_documents.__name__} ===")
-        return await self._vector_store.aadd_documents(documents=documents, ids=ids, **kwargs)
-    
-    def similarity_search(
-        self, query: str, k: int = 4, **kwargs: Any
-    ) -> list[Document]:
-        return self._vector_store.similarity_search(query-query, k=k, **kwargs)
     
     async def asimilarity_search(
         self, query: str, k: int = 4, **kwargs: Any
