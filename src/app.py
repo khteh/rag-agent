@@ -28,7 +28,7 @@ def create_app() -> Quart:
     app = Quart(__name__, static_url_path='')
     app.config.from_file("/etc/ragagent_config.json", json.load)
     if "SQLALCHEMY_DATABASE_URI" not in app.config:
-        app.config["SQLALCHEMY_DATABASE_URI"] = f"postgresql://{os.getenv('POSTGRESQL_USER')}:{os.getenv('POSTGRESQL_PASSWORD')}@svc-postgresql/rag-agent"
+        app.config["SQLALCHEMY_DATABASE_URI"] = f"postgresql://{os.getenv('POSTGRESQL_USER')}:{os.getenv('POSTGRESQL_PASSWORD')}@{app.config['DB_HOST']}/rag-agent"
     app = cors(app, allow_credentials=True, allow_origin="https://localhost:4433")
     app.register_blueprint(home_blueprint, url_prefix="/")
     Healthz(app, no_log=True)

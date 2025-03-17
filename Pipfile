@@ -29,6 +29,8 @@ langgraph-checkpoint-postgres = "*"
 uuid7 = "*"
 langchain-core = "*"
 vertexai = "*"
+psycopg-pool = "*"
+aioquic = "*"
 
 [dev-packages]
 pytest-flask = "*"
