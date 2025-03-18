@@ -46,6 +46,7 @@ async def ground_search(
     to provide comprehensive, accurate, and trusted results. It's particularly useful
     for answering questions about current events.
     """
+    print(f"GEMINI_API_KEY: {os.environ.get("GEMINI_API_KEY")}")
     client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
     model_id = "gemini-2.0-flash"
     google_search_tool = Tool(
