@@ -102,6 +102,7 @@ $ k create secret generic gcloud-service-account --from-file=service-account.jso
 ![StateGraph with Checkpoint](./checkpoint_graph.png?raw=true "StateGraph with Checkpoint")
 
 ```
+$ p -m src.rag_agent.CheckpointedRAG
 ================================ Human Message =================================
 
 What is Task Decomposition?

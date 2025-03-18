@@ -61,9 +61,6 @@ def ground_search(
         )
     )
     return [content.text for content in response.candidates[0].content.parts]
-    # Example response:
-    # The next total solar eclipse visible in the contiguous United States will be on ...
-
     # To get grounding metadata as web content.
     #print(response.candidates[0].grounding_metadata.search_entry_point.rendered_content)
     return result
