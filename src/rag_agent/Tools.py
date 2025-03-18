@@ -37,7 +37,7 @@ async def search(
 
 # https://github.com/langchain-ai/langchain/discussions/30282
 @tool
-async def GoogleSearch(
+async def ground_search(
     query: str, *, config: Annotated[RunnableConfig, InjectedToolArg]
 )-> Optional[list[str]]:
     """Search for general web results.
@@ -86,4 +86,4 @@ async def save_memory(memory: str, *, config: RunnableConfig, store: Annotated[B
     store.put(namespace, f"memory_{len(await store.asearch(namespace))}", {"data": memory})
     return f"Saved memory: {memory}"
 
-TOOLS: List[Callable[..., Any]] = [retrieve, GoogleSearch, save_memory]
+TOOLS: List[Callable[..., Any]] = [retrieve, ground_search, save_memory]

@@ -50,7 +50,7 @@ async def create_app() -> Quart:
     from src.rag_agent.RAGAgent import make_graph, agent
     agent = await make_graph(config)
     async with AsyncConnectionPool(
-        conninfo=app.config["SQLALCHEMY_DATABASE_URI"],
+        conninfo=app.config["POSTGRESQL_DATABASE_URI"],
         max_size=app.config["DB_MAX_CONNECTIONS"],
         kwargs=connection_kwargs,
     ) as pool:
