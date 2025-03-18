@@ -44,7 +44,8 @@ $ gcloud auth application-default set-quota-project <ProjectID>
 
 ### Google account setup in Docker to run on k8s
 
-(1) Create a service account:
+- https://cloud.google.com/docs/authentication/set-up-adc-local-dev-environment
+  (1) Create a service account:
 
 ```
 $ gcloud iam service-accounts create <sa-name> --display-name=<display_name>

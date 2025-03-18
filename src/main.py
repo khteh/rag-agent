@@ -1,10 +1,12 @@
 import quart_flask_patch
 import logging, os, re, json, asyncio, psycopg, json, logging, vertexai
+from urllib import parse
 from dotenv import load_dotenv
 from datetime import datetime
 from hypercorn.config import Config
 from hypercorn.asyncio import serve
-from psycopg_pool import AsyncConnectionPool
+from psycopg import Error
+from psycopg_pool import AsyncConnectionPool, ConnectionPool
 from datetime import datetime
 from quart import Quart, request
 from flask_healthz import Healthz, HealthError
@@ -15,7 +17,6 @@ from langchain_core.callbacks import AsyncCallbackHandler
 from langchain_core.runnables import RunnableConfig
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
 from langgraph.graph.graph import CompiledGraph
-from psycopg_pool import AsyncConnectionPool
 bcrypt = Bcrypt()
 # Make the WSGI interface available at the top level so wfastcgi can get it.
 load_dotenv()
@@ -36,7 +37,8 @@ async def create_app() -> Quart:
     app = Quart(__name__, static_url_path='')
     app.config.from_file("/etc/ragagent_config.json", json.load)
     if "SQLALCHEMY_DATABASE_URI" not in app.config:
-        app.config["SQLALCHEMY_DATABASE_URI"] = f"postgresql://{os.getenv('POSTGRESQL_USER')}:{os.getenv('POSTGRESQL_PASSWORD')}@{app.config['DB_HOST']}/rag-agent"
+        app.config["SQLALCHEMY_DATABASE_URI"] = f"postgresql+psycopg://{os.environ.get('DB_USERNAME')}:{parse.quote(os.environ.get('DB_PASSWORD'))}@{app.config['DB_HOST']}/ragagent"
+        app.config["POSTGRESQL_DATABASE_URI"] = f"postgresql://{os.environ.get('DB_USERNAME')}:{parse.quote(os.environ.get('DB_PASSWORD'))}@{app.config['DB_HOST']}/ragagent"
     app = cors(app, allow_credentials=True, allow_origin="https://localhost:4433")
     from src.controllers.HomeController import home_api as home_blueprint
     app.register_blueprint(home_blueprint, url_prefix="/")
@@ -87,38 +89,38 @@ async def create_app() -> Quart:
 
 # https://quart.palletsprojects.com/en/latest/how_to_guides/startup_shutdown.html
 def liveness():
-    print("liveness")
+    print("Alive!")
     pass 
 
-async def readiness():
+def readiness():
     try:
         connection_kwargs = {
             "autocommit": True,
             "prepare_threshold": 0,
         }
-        async with AsyncConnectionPool(
-            conninfo=app.config["SQLALCHEMY_DATABASE_URI"],
-            #max_size=DB_MAX_CONNECTIONS,
-            kwargs=connection_kwargs,
+        with ConnectionPool(
+            conninfo = app.config["POSTGRESQL_DATABASE_URI"],
+            max_size = app.config["DB_MAX_CONNECTIONS"],
+            kwargs = connection_kwargs,
         ) as pool:
             # Check if the checkpoints table exists
-            async with pool.connection() as conn:
-                async with conn.cursor() as cur:
+            with pool.connection() as conn:
+                with conn.cursor() as cur:
                     try:
-                        await cur.execute("""
+                        cur.execute("""
                             SELECT EXISTS (
                                 SELECT FROM information_schema.tables 
                                 WHERE  table_schema = 'public'
-                                AND    table_name   = 'checkpoints'
+                                AND    table_name   = 'library'
                             );
                         """)
-                    except psycopg.Error as e:
-                        raise HealthError(f"Error checking for checkpoints table: {e}")
+                    except Error as e:
+                        raise HealthError(f"Error checking for library table: {e}")
                         # Optionally, you might want to raise this error
                         # raise
         print("Ready!")
     except Exception:
-        raise HealthError(f"Failed to connect to the database!")
+        raise HealthError(f"Failed to connect to the database! {app.config['POSTGRESQL_DATABASE_URI']}")
 
 app = asyncio.get_event_loop().run_until_complete(create_app())
 print(f"Running asyncio...")
