@@ -34,7 +34,10 @@ async def search(
     result = await wrapped.ainvoke({"query": query})
     return cast(list[dict[str, Any]], result)
 
-# https://github.com/langchain-ai/langchain/discussions/30282
+"""
+https://github.com/langchain-ai/langchain/discussions/30282
+https://ai.google.dev/gemini-api/docs/text-generation?lang=python
+"""
 @tool
 def ground_search(
     query: str, *, config: Annotated[RunnableConfig, InjectedToolArg]
@@ -50,20 +53,21 @@ def ground_search(
     google_search_tool = Tool(
         google_search = GoogleSearch()
     )
+    # https://cloud.google.com/vertex-ai/docs/reference/rest/v1/GenerateContentResponse
     response = client.models.generate_content(
         model=model_id,
         contents=[{"role": "user", "parts": [{"text": query}]}], 
-        config=GenerateContentConfig(
+        config=GenerateContentConfig( #https://googleapis.github.io/python-genai/genai.html#genai.types.GenerateContentConfig
             tools=[google_search_tool],
             system_instruction="You are a helpful AI assistant named Bob.",
-            response_modalities=["TEXT"],
+            response_modalities=["TEXT"], # https://ai.google.dev/api/generate-content#Modality
         )
     )
     # To get grounding metadata as web content. https://cloud.google.com/vertex-ai/docs/reference/rest/v1/GenerateContentResponse#GroundingMetadata
     #print(f"metadata: {response.candidates[0].grounding_metadata}")
     #print(response.candidates[0].grounding_metadata.search_entry_point.rendered_content)
     #return [content.text for content in response.candidates[0].content.parts]
-    #return Document(page_content="\n\n".join(content.text for content in response.candidates[0].content.parts)) This doesn't work well.
+    #return Document(page_content="\n\n".join(content.text for content in response.candidates[0].content.parts)) This doesn't work well. https://api.python.langchain.com/en/v0.0.339/schema/langchain.schema.document.Document.html
     return "\n\n".join(content.text for content in response.candidates[0].content.parts)
 
 @tool(response_format="content_and_artifact")
