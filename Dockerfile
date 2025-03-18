@@ -3,6 +3,7 @@ MAINTAINER Kok How, Teh <funcoolgeek@gmail.com>
 WORKDIR /app
 RUN apt update -y --fix-missing
 RUN apt upgrade -y
+RUN apt install -y python3-tk
 ADD src src
 ADD Pipfile .
 ADD Pipfile.lock .
