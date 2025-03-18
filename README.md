@@ -156,16 +156,33 @@ Task decomposition can be done (1) by LLM with simple prompting like "Steps for 
 ![ReAct Agent with Checkpoint](./agent_graph.png?raw=true "ReAct Agent with Checkpoint")
 
 ```
+$ p -m src.rag_agent.RAGAgent
+USER_AGENT environment variable not set, consider setting it to identify your requests.
+
+=== CreateGraph ===
+
+=== LoadDocuments ===
+Total characters: 43130
+
+=== _SplitDocuments ===
+Split blog post into 66 sub-documents.
+
+=== _IndexChunks ===
+66 documents added successfully!
+
+=== ChatAgent ===
 ================================ Human Message =================================
 
 ['What is the standard method for Task Decomposition?', 'Once you get the answer, look up common extensions of that method.']
 ================================== Ai Message ==================================
 Name: RAG ReAct Agent
 Tool Calls:
-  retrieve (7361a1a4-f7fb-4d43-9268-a41ea2bc0ea6)
- Call ID: 7361a1a4-f7fb-4d43-9268-a41ea2bc0ea6
+  retrieve (c53aee07-1702-4731-b9c4-f4822822db30)
+ Call ID: c53aee07-1702-4731-b9c4-f4822822db30
   Args:
     query: standard method for Task Decomposition
+
+=== asimilarity_search ===
 ================================= Tool Message =================================
 Name: retrieve
 
@@ -184,42 +201,32 @@ With the input and the inference results, the AI assistant needs to describe the
 ================================== Ai Message ==================================
 Name: RAG ReAct Agent
 
-Okay, I will provide accurate answers to the best of my ability.
-
-Based on the information I retrieved, Chain of Thought (CoT) is a standard prompting technique for task decomposition. It involves instructing the model to "think step by step" to break down complex tasks into smaller, simpler steps.
+Okay, I will make sure to provide accurate answers. Based on the information I have, Chain of Thought (CoT) is a standard prompting technique for task decomposition, where the model is instructed to "think step by step" to break down complex tasks into smaller, simpler steps.
 
 Now I will look up common extensions of the Chain of Thought method.
 Tool Calls:
-  retrieve (b56a0638-f232-4ef7-999c-9cab24a09681)
- Call ID: b56a0638-f232-4ef7-999c-9cab24a09681
+  ground_search (81a3e74f-991b-48f2-b545-5956822be14d)
+ Call ID: 81a3e74f-991b-48f2-b545-5956822be14d
   Args:
-    query: common extensions of Chain of Thought prompting
+    query: extensions of Chain of Thought prompting
 ================================= Tool Message =================================
-Name: retrieve
+Name: ground_search
 
-Source: {'source': 'https://lilianweng.github.io/posts/2023-06-23-agent/'}
-Content: Tree of Thoughts (Yao et al. 2023) extends CoT by exploring multiple reasoning possibilities at each step. It first decomposes the problem into multiple thought steps and generates multiple thoughts per step, creating a tree structure. The search process can be BFS (breadth-first search) or DFS (depth-first search) with each state evaluated by a classifier (via a prompt) or majority vote.
-Task decomposition can be done (1) by LLM with simple prompting like "Steps for XYZ.\n1.", "What are the subgoals for achieving XYZ?", (2) by using task-specific instructions; e.g. "Write a story outline." for writing a novel, or (3) with human inputs.
-
-Source: {'source': 'https://lilianweng.github.io/posts/2023-06-23-agent/'}
-Content: Fig. 1. Overview of a LLM-powered autonomous agent system.
-Component One: Planning#
-A complicated task usually involves many steps. An agent needs to know what they are and plan ahead.
-Task Decomposition#
-Chain of thought (CoT; Wei et al. 2022) has become a standard prompting technique for enhancing model performance on complex tasks. The model is instructed to “think step by step” to utilize more test-time computation to decompose hard tasks into smaller and simpler steps. CoT transforms big tasks into multiple manageable tasks and shed lights into an interpretation of the model’s thinking process.
+["Chain of Thought (CoT) prompting has spurred the development of several extensions and variations that aim to improve the reasoning capabilities of large language models (LLMs). Here are some notable extensions:\n\n*   **Chain of Thought with Self-Consistency (CoT-SC):** This technique generates multiple reasoning paths and then selects the most consistent answer or path.\n*   **Automatic Chain of Thought (Auto-CoT):** This approach automatically generates intermediate reasoning steps. It uses a procedure to generate reasoning chains for CoT prompting, extending the automation introduced by zero-shot prompting. To use Auto-CoT, you need to apply BERT or a similar model to embed and cluster questions based on semantic similarity to ensure the selected demonstrations cover a diverse range of reasoning patterns.\n*   **Contrastive Chain-of-Thought Prompting:** This extends the standard CoT by providing examples of both positive and negative answers in the context to guide the model in reasoning step-by-step while reducing mistakes.\n*   **Graph of Thoughts (GoT):** This involves building a graph framework through LLMs. The GoT architecture includes modules like a prompter, parser, scoring module, and controller to coordinate the reasoning process.\n*   **Program of Thoughts (PoT):** This technique delegates computation steps to an external language interpreter like Python to get accurate responses, as LLMs are not ideal for solving complex mathematical expressions or performing iterative numerical computations.\n*   **Tree of Thoughts:** This extends CoT by exploring multiple reasoning possibilities at each step, creating a tree structure. The search process can be BFS (Breadth-First Search) or DFS (Depth-First Search), with each state evaluated by a classifier or majority vote.\n*   **Augment-Prune-Select:** This three-step process automatically constructs chain-of-thought prompts:\n\n    *   **Augment:** Generate multiple pseudo-chains of thought given a question using few-shot or zero-shot CoT prompts.\n    *   **Prune:** Prune pseudo chains based on whether generated answers match ground truths.\n    *   **Select:** Apply a variance-reduced policy gradient strategy to learn the probability distribution over selected examples, considering the probability distribution over examples as policy and the validation set accuracy as reward.\n\nThese extensions often aim to improve accuracy, reduce errors, and enhance the transparency and interpretability of the reasoning process in LLMs.\n"]
 ================================== Ai Message ==================================
 Name: RAG ReAct Agent
 
-Okay, I will provide accurate answers to the best of my ability.
+Okay, I apologize for any previous inaccuracies. Based on my search, here are some common extensions of Chain of Thought (CoT) prompting:
 
-Based on the information I retrieved, Chain of Thought (CoT) is a standard prompting technique for task decomposition. It involves instructing the model to "think step by step" to break down complex tasks into smaller, simpler steps.
+*   **Chain of Thought with Self-Consistency (CoT-SC):** Generates multiple reasoning paths and selects the most consistent answer.
+*   **Automatic Chain of Thought (Auto-CoT):** Automatically generates intermediate reasoning steps using semantic similarity clustering.
+*   **Contrastive Chain-of-Thought Prompting:** Provides examples of both positive and negative answers to guide reasoning and reduce mistakes.
+*   **Graph of Thoughts (GoT):** Builds a graph framework to coordinate the reasoning process.
+*   **Program of Thoughts (PoT):** Delegates computation steps to an external language interpreter like Python.
+*   **Tree of Thoughts:** Explores multiple reasoning possibilities at each step in a tree structure.
+*   **Augment-Prune-Select:** Automatically constructs chain-of-thought prompts through augmentation, pruning, and selection.
 
-The common extensions of the Chain of Thought method include:
-
-*   **Tree of Thoughts:** This extends CoT by exploring multiple reasoning possibilities at each step, creating a tree structure. The search process can be BFS (breadth-first search) or DFS (depth-first search).
-*   **Task decomposition by LLM with simple prompting:** Using prompts like "Steps for XYZ. 1." or "What are the subgoals for achieving XYZ?".
-*   **Task decomposition using task-specific instructions:** For example, "Write a story outline." for writing a novel.
-*   **Task decomposition with human inputs.**
+These extensions aim to improve accuracy, reduce errors, and enhance the transparency and interpretability of the reasoning process in large language models.
 ```
 
 ## LangSmith Application trace

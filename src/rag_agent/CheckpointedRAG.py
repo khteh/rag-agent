@@ -1,7 +1,7 @@
 import os, bs4, vertexai,asyncio
-from State import State
+from .State import State
 from datetime import datetime
-from image import show_graph
+from .image import show_graph
 from PIL import Image
 from typing import Annotated
 from langchain import hub
@@ -38,8 +38,8 @@ embeddings = OpenAIEmbeddings(model="text-embedding-3-large")"
 """
 
 # https://cloud.google.com/vertex-ai/generative-ai/docs/embeddings/get-text-embeddings
-from Tools import TOOLS
-from VectorStore import vector_store
+from .Tools import TOOLS
+from .VectorStore import vector_store
 
 class CheckpointedRAG():
     _llm = None
