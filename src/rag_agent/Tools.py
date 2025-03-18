@@ -1,7 +1,5 @@
 """This module provides example tools for web scraping and search functionality.
-
 It includes a basic Tavily search function (as an example)
-
 These tools are intended as free examples to get started. For production use,
 consider implementing more robust and specialized tools tailored to your needs.
 """
@@ -13,6 +11,7 @@ from langchain_core.runnables import RunnableConfig
 from langchain_core.tools import InjectedToolArg, tool
 from langgraph.store.base import BaseStore
 from langgraph.prebuilt import InjectedStore
+from langchain.schema import Document
 from google import genai
 from google.genai import types
 from google.genai.types import Tool, GenerateContentConfig, GoogleSearch
@@ -39,7 +38,7 @@ async def search(
 @tool
 def ground_search(
     query: str, *, config: Annotated[RunnableConfig, InjectedToolArg]
-)-> Optional[list[str]]:
+)-> Optional[str]: #Optional[list[str]]
     """Search for general web results.
 
     This function performs a search using the Google search engine, which is designed
@@ -60,10 +59,12 @@ def ground_search(
             response_modalities=["TEXT"],
         )
     )
-    return [content.text for content in response.candidates[0].content.parts]
-    # To get grounding metadata as web content.
+    # To get grounding metadata as web content. https://cloud.google.com/vertex-ai/docs/reference/rest/v1/GenerateContentResponse#GroundingMetadata
+    #print(f"metadata: {response.candidates[0].grounding_metadata}")
     #print(response.candidates[0].grounding_metadata.search_entry_point.rendered_content)
-    return result
+    #return [content.text for content in response.candidates[0].content.parts]
+    #return Document(page_content="\n\n".join(content.text for content in response.candidates[0].content.parts)) This doesn't work well.
+    return "\n\n".join(content.text for content in response.candidates[0].content.parts)
 
 @tool(response_format="content_and_artifact")
 async def retrieve(query: str, *, config: RunnableConfig):

@@ -180,12 +180,14 @@ Split blog post into 66 sub-documents.
 ================================== Ai Message ==================================
 Name: RAG ReAct Agent
 Tool Calls:
-  retrieve (c53aee07-1702-4731-b9c4-f4822822db30)
- Call ID: c53aee07-1702-4731-b9c4-f4822822db30
+  retrieve (485afded-5e53-4c71-8783-b90f6db287b7)
+ Call ID: 485afded-5e53-4c71-8783-b90f6db287b7
   Args:
     query: standard method for Task Decomposition
 
 === asimilarity_search ===
+Retrying vertexai.language_models._language_models._TextEmbeddingModel.get_embeddings in 4.0 seconds as it raised ResourceExhausted: 429 Quota exceeded for aiplatform.googleapis.com/online_prediction_requests_per_base_model with base model: textembedding-gecko. Please submit a quota increase request. https://cloud.google.com/vertex-ai/docs/generative-ai/quotas-genai..
+Retrying vertexai.language_models._language_models._TextEmbeddingModel.get_embeddings in 4.0 seconds as it raised ResourceExhausted: 429 Quota exceeded for aiplatform.googleapis.com/online_prediction_requests_per_base_model with base model: textembedding-gecko. Please submit a quota increase request. https://cloud.google.com/vertex-ai/docs/generative-ai/quotas-genai..
 ================================= Tool Message =================================
 Name: retrieve
 
@@ -204,32 +206,49 @@ With the input and the inference results, the AI assistant needs to describe the
 ================================== Ai Message ==================================
 Name: RAG ReAct Agent
 
-Okay, I will make sure to provide accurate answers. Based on the information I have, Chain of Thought (CoT) is a standard prompting technique for task decomposition, where the model is instructed to "think step by step" to break down complex tasks into smaller, simpler steps.
+Okay, I will strive to provide accurate answers. Based on the information I have, Chain of Thought (CoT) prompting is becoming a standard technique for task decomposition, where the model is instructed to "think step by step" to break down complex tasks into smaller, simpler steps.
 
-Now I will look up common extensions of the Chain of Thought method.
+Now I will search for common extensions of the Chain of Thought method.
 Tool Calls:
-  ground_search (81a3e74f-991b-48f2-b545-5956822be14d)
- Call ID: 81a3e74f-991b-48f2-b545-5956822be14d
+  ground_search (6e940bcb-73df-4951-a3b7-18e1cb8c373d)
+ Call ID: 6e940bcb-73df-4951-a3b7-18e1cb8c373d
   Args:
-    query: extensions of Chain of Thought prompting
+    query: common extensions of Chain of Thought prompting
 ================================= Tool Message =================================
 Name: ground_search
 
-["Chain of Thought (CoT) prompting has spurred the development of several extensions and variations that aim to improve the reasoning capabilities of large language models (LLMs). Here are some notable extensions:\n\n*   **Chain of Thought with Self-Consistency (CoT-SC):** This technique generates multiple reasoning paths and then selects the most consistent answer or path.\n*   **Automatic Chain of Thought (Auto-CoT):** This approach automatically generates intermediate reasoning steps. It uses a procedure to generate reasoning chains for CoT prompting, extending the automation introduced by zero-shot prompting. To use Auto-CoT, you need to apply BERT or a similar model to embed and cluster questions based on semantic similarity to ensure the selected demonstrations cover a diverse range of reasoning patterns.\n*   **Contrastive Chain-of-Thought Prompting:** This extends the standard CoT by providing examples of both positive and negative answers in the context to guide the model in reasoning step-by-step while reducing mistakes.\n*   **Graph of Thoughts (GoT):** This involves building a graph framework through LLMs. The GoT architecture includes modules like a prompter, parser, scoring module, and controller to coordinate the reasoning process.\n*   **Program of Thoughts (PoT):** This technique delegates computation steps to an external language interpreter like Python to get accurate responses, as LLMs are not ideal for solving complex mathematical expressions or performing iterative numerical computations.\n*   **Tree of Thoughts:** This extends CoT by exploring multiple reasoning possibilities at each step, creating a tree structure. The search process can be BFS (Breadth-First Search) or DFS (Depth-First Search), with each state evaluated by a classifier or majority vote.\n*   **Augment-Prune-Select:** This three-step process automatically constructs chain-of-thought prompts:\n\n    *   **Augment:** Generate multiple pseudo-chains of thought given a question using few-shot or zero-shot CoT prompts.\n    *   **Prune:** Prune pseudo chains based on whether generated answers match ground truths.\n    *   **Select:** Apply a variance-reduced policy gradient strategy to learn the probability distribution over selected examples, considering the probability distribution over examples as policy and the validation set accuracy as reward.\n\nThese extensions often aim to improve accuracy, reduce errors, and enhance the transparency and interpretability of the reasoning process in LLMs.\n"]
+Chain of Thought (CoT) prompting has evolved into various extensions and variations that aim to improve its performance, address specific challenges, and broaden its applicability. Here are some common extensions of Chain of Thought prompting:
+
+*   **Zero-Shot CoT:** This approach leverages the inherent knowledge within models to tackle problems without requiring prior specific examples or fine-tuning. It typically involves adding the phrase "Let's think step by step" to the prompt.
+*   **Automatic Chain of Thought (Auto-CoT):** This method automatically generates intermediate reasoning steps, further automating the prompting process. It uses techniques like clustering questions based on semantic similarity to ensure diverse reasoning patterns are covered.
+*   **Contrastive Chain-of-Thought:** This extends the standard CoT by providing examples of both positive and negative answers in the context. This helps the model learn what mistakes to avoid, potentially leading to fewer errors.
+*   **Multimodal CoT:** Traditional CoT focuses on the language modality. Multimodal CoT incorporates text and vision into a two-stage framework. The first step involves rationale generation based on multimodal information.
+*   **Program of Thoughts (PoT):** In Chain-of-Thought (CoT) Prompting, LLMs perform both reasoning and computations. The LLM generates mathematical expressions as a reasoning step and then solves it to get the final answer. However, LLMs are not the ideal candidate for solving mathematical expressions as they are not capable of solving complex mathematical expressions and are inefficient for performing iterative numerical computations. Program of Thoughts (PoT) prompting technique delegates the computation steps to an external language interpreter such as a python to get accurate response.
+*   **Tree of Thoughts (ToT):** ToT extends CoT by exploring multiple reasoning possibilities at each step. It decomposes the problem into multiple thought steps and generates multiple thoughts per step, creating a tree structure. The search process can be BFS or DFS while each state is evaluated by a classifier (via a prompt) or majority vote.
+*   **Graph of Thoughts (GoT):** This extension requires building a graph framework through LLMs. The GoT architecture includes a set of interacting modules consisting of a prompter, parser, scoring module, and controller.
+*   **Self-Consistency:** This technique improves performance by sampling multiple, diverse chains of thought for the same problem and then selecting the most consistent answer from these chains.
+*   **Active Prompting with Chain-of-Thought:** This involves actively selecting the most informative examples to include in the prompt, which can improve the model's performance and data efficiency.
+
+These extensions demonstrate the ongoing research and development in the field of chain-of-thought prompting, with the goal of enhancing the reasoning and problem-solving capabilities of large language models.
+
 ================================== Ai Message ==================================
 Name: RAG ReAct Agent
 
-Okay, I apologize for any previous inaccuracies. Based on my search, here are some common extensions of Chain of Thought (CoT) prompting:
+Okay, I will strive to provide accurate answers. Based on the information I have:
 
-*   **Chain of Thought with Self-Consistency (CoT-SC):** Generates multiple reasoning paths and selects the most consistent answer.
-*   **Automatic Chain of Thought (Auto-CoT):** Automatically generates intermediate reasoning steps using semantic similarity clustering.
-*   **Contrastive Chain-of-Thought Prompting:** Provides examples of both positive and negative answers to guide reasoning and reduce mistakes.
-*   **Graph of Thoughts (GoT):** Builds a graph framework to coordinate the reasoning process.
-*   **Program of Thoughts (PoT):** Delegates computation steps to an external language interpreter like Python.
-*   **Tree of Thoughts:** Explores multiple reasoning possibilities at each step in a tree structure.
-*   **Augment-Prune-Select:** Automatically constructs chain-of-thought prompts through augmentation, pruning, and selection.
+The standard method for task decomposition is Chain of Thought (CoT) prompting, where the model is instructed to "think step by step" to break down complex tasks into smaller, simpler steps.
 
-These extensions aim to improve accuracy, reduce errors, and enhance the transparency and interpretability of the reasoning process in large language models.
+Common extensions of Chain of Thought prompting include:
+
+*   **Zero-Shot CoT:** Adding "Let's think step by step" to the prompt.
+*   **Automatic Chain of Thought (Auto-CoT):** Automatically generates intermediate reasoning steps.
+*   **Contrastive Chain-of-Thought:** Providing examples of both positive and negative answers.
+*   **Multimodal CoT:** Incorporates text and vision.
+*   **Program of Thoughts (PoT):** Delegates computation steps to an external language interpreter.
+*   **Tree of Thoughts (ToT):** Explores multiple reasoning possibilities at each step, creating a tree structure.
+*   **Graph of Thoughts (GoT):** Builds a graph framework.
+*   **Self-Consistency:** Samples multiple chains of thought and selects the most consistent answer.
+*   **Active Prompting with Chain-of-Thought:** Actively selects informative examples to include in the prompt.
 ```
 
 ## LangSmith Application trace
