@@ -37,7 +37,7 @@ async def search(
 
 # https://github.com/langchain-ai/langchain/discussions/30282
 @tool
-async def ground_search(
+def ground_search(
     query: str, *, config: Annotated[RunnableConfig, InjectedToolArg]
 )-> Optional[list[str]]:
     """Search for general web results.
@@ -46,17 +46,17 @@ async def ground_search(
     to provide comprehensive, accurate, and trusted results. It's particularly useful
     for answering questions about current events.
     """
-    print(f"GEMINI_API_KEY: {os.environ.get("GEMINI_API_KEY")}")
-    client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
+    client = genai.Client(api_key=os.environ.get("VERTEX_API_KEY"))
     model_id = "gemini-2.0-flash"
     google_search_tool = Tool(
         google_search = GoogleSearch()
     )
-    response = await client.models.generate_content(
+    response = client.models.generate_content(
         model=model_id,
         contents=[{"role": "user", "parts": [{"text": query}]}], 
         config=GenerateContentConfig(
             tools=[google_search_tool],
+            system_instruction="You are a helpful AI assistant named Bob.",
             response_modalities=["TEXT"],
         )
     )
