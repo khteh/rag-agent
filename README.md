@@ -254,3 +254,11 @@ Common extensions of Chain of Thought prompting include:
 ## LangSmith Application trace
 
 - https://smith.langchain.com/
+
+## Diagnostics
+
+- HTTP/3 curl:
+
+```
+$ docker run --rm ymuski/curl-http3 curl --http3 --verbose https://<nodeport service>:<nodeport>/healthz/ready
+```
