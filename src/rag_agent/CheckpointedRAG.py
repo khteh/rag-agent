@@ -1,20 +1,10 @@
-import os, bs4, vertexai,asyncio
-from .State import State
+import asyncio
 from datetime import datetime
 from .image import show_graph
 from PIL import Image
-from typing import Annotated
-from langchain import hub
 from langchain.chat_models import init_chat_model
-from langchain_openai import OpenAIEmbeddings
-from langchain_google_vertexai import VertexAIEmbeddings
-from langchain_core.vectorstores import InMemoryVectorStore
-from langchain_community.document_loaders import WebBaseLoader
-from langchain_core.documents import Document
-from langchain_core.tools import tool
 from langchain_core.runnables import RunnableConfig
 from langchain_core.messages import SystemMessage
-from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langgraph.graph import StateGraph, MessagesState
 from langgraph.graph.graph import (
     END,
@@ -23,12 +13,10 @@ from langgraph.graph.graph import (
     Graph,
     Send,
 )
-from langgraph.prebuilt import ToolNode, tools_condition, create_react_agent, InjectedStore
+from langgraph.prebuilt import ToolNode, tools_condition
 from langgraph.checkpoint.memory import MemorySaver
 from typing_extensions import List, TypedDict
 from langchain_core.prompts import ChatPromptTemplate
-from langgraph.managed import IsLastStep
-from langgraph.store.base import BaseStore
 from langgraph.store.memory import InMemoryStore
 # https://python.langchain.com/docs/tutorials/qa_chat_history/
 # https://python.langchain.com/api_reference/langchain/chat_models/langchain.chat_models.base.init_chat_model.html
@@ -70,8 +58,10 @@ class CheckpointedRAG():
         return {"messages": [response]}
 
     # Step 3: Generate a response using the retrieved content.
-    async def generate(self, state: MessagesState, config: RunnableConfig):
+    async def Generate(self, state: MessagesState, config: RunnableConfig):
         """Generate answer."""
+        print(f"\n=== {self.Generate.__name__} ===")
+        #print(f"state['messages']: {state['messages']}")
         # Get generated ToolMessages
         recent_tool_messages = []
         for message in reversed(state["messages"]):
@@ -80,7 +70,7 @@ class CheckpointedRAG():
             else:
                 break
         tool_messages = recent_tool_messages[::-1]
-
+        #print(f"tool_messages: {tool_messages}")
         # Format into prompt
         docs_content = "\n\n".join(doc.content for doc in tool_messages)
         system_message_content = f"""
@@ -99,9 +89,12 @@ class CheckpointedRAG():
             or (message.type == "ai" and not message.tool_calls)
         ]
         prompt = [SystemMessage(system_message_content)] + conversation_messages
-
+        #print(f"system_message_content: {system_message_content}")
+        #print(f"conversation_messages: {conversation_messages}")
+        #print(f"prompt: {prompt}")
         # Run
         response = await self._llm.ainvoke(prompt, config)
+        #print(f"generate() response: {response}")
         return {"messages": [response]}
 
     async def CreateGraph(self, config: RunnableConfig) -> StateGraph:
@@ -111,7 +104,7 @@ class CheckpointedRAG():
         graph_builder = StateGraph(MessagesState)
         graph_builder.add_node("query_or_respond", self.query_or_respond)
         graph_builder.add_node("tools", ToolNode(TOOLS)) # Execute the retrieval.
-        graph_builder.add_node("generate", self.generate)
+        graph_builder.add_node("generate", self.Generate)
         graph_builder.set_entry_point("query_or_respond")
         graph_builder.add_conditional_edges(
             "query_or_respond",
@@ -148,7 +141,7 @@ async def Chat(graph, config, messages: List[str]):
 async def CheckpointedGraph():
     config = RunnableConfig(run_name="Checkedpoint StateGraph RAG", thread_id=datetime.now())
     checkpoint_graph = await make_graph(config) # config input parameter is required by langgraph.json to define the graph
-    show_graph(checkpoint_graph, "Checkedpoint StateGraph RAG") # This blocks
+    #show_graph(checkpoint_graph, "Checkedpoint StateGraph RAG") # This blocks
     """
     graph = checkpoint_graph.get_graph().draw_mermaid_png()
     # Save the PNG data to a file
