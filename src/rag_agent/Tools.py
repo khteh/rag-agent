@@ -34,19 +34,19 @@ async def search(
     result = await wrapped.ainvoke({"query": query})
     return cast(list[dict[str, Any]], result)
 
-"""
-https://github.com/langchain-ai/langchain/discussions/30282
-https://ai.google.dev/gemini-api/docs/text-generation?lang=python
-"""
 @tool
 def ground_search(
     query: str, *, config: Annotated[RunnableConfig, InjectedToolArg]
 )-> Optional[str]: #Optional[list[str]]
-    """Search for general web results.
-
+    """
+    Search for general web results.
+    
     This function performs a search using the Google search engine, which is designed
     to provide comprehensive, accurate, and trusted results. It's particularly useful
     for answering questions about current events.
+
+    https://github.com/langchain-ai/langchain/discussions/30282
+    https://ai.google.dev/gemini-api/docs/text-generation?lang=python
     """
     client = genai.Client(api_key=os.environ.get("VERTEX_API_KEY"))
     model_id = "gemini-2.0-flash"
