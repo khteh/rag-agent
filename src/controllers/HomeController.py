@@ -1,4 +1,4 @@
-import re, asyncio, json
+import re, asyncio, json, logging
 from uuid_extensions import uuid7
 from typing import AsyncGenerator, Dict, Any, Tuple
 from quart import Blueprint, render_template, session
@@ -46,7 +46,7 @@ async def invoke(user_input: UserInput) -> ChatMessage:
     is also attached to messages for recording feedback.
     """
     kwargs, run_id = _parse_input(user_input)
-    print(kwargs)
+    logging.debug(kwargs)
     try:
         response = await agent.ainvoke(**kwargs)
         output = ChatMessage.from_langchain(response["messages"][-1])

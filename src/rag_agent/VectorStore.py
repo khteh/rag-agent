@@ -1,4 +1,4 @@
-import bs4
+import bs4, logging
 from dotenv import load_dotenv
 from typing_extensions import List, TypedDict, Optional, Any
 from langchain_google_vertexai import VertexAIEmbeddings
@@ -42,7 +42,7 @@ class VectorStore(metaclass=VectorStoreSingleton):
     async def LoadDocuments(self, url: str):
         # Load and chunk contents of the blog
         if url not in self._docs:
-            print(f"\n=== {self.LoadDocuments.__name__} ===")
+            logging.info(f"\n=== {self.LoadDocuments.__name__} ===")
             loader = WebBaseLoader(
                 web_paths=(url,),
                 bs_kwargs=dict(
@@ -53,28 +53,28 @@ class VectorStore(metaclass=VectorStoreSingleton):
             )
             docs = loader.load()
             assert len(docs) == 1
-            print(f"Total characters: {len(docs[0].page_content)}")
+            logging.debug(f"Total characters: {len(docs[0].page_content)}")
             subdocs = self._SplitDocuments(docs)
             await self._IndexChunks(subdocs)
             self._docs.add(url)
 
     def _SplitDocuments(self, docs):
-        print(f"\n=== {self._SplitDocuments.__name__} ===")
+        logging.info(f"\n=== {self._SplitDocuments.__name__} ===")
         text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
         subdocs = text_splitter.split_documents(docs)
-        print(f"Split blog post into {len(subdocs)} sub-documents.")
+        logging.debug(f"Split blog post into {len(subdocs)} sub-documents.")
         return subdocs
 
     async def _IndexChunks(self, subdocs):
         # Index chunks
-        print(f"\n=== {self._IndexChunks.__name__} ===")
+        logging.info(f"\n=== {self._IndexChunks.__name__} ===")
         ids = await self._vector_store.aadd_documents(documents=subdocs)
-        print(f"{len(ids)} documents added successfully!")
+        logging.debug(f"{len(ids)} documents added successfully!")
     
     async def asimilarity_search(
         self, query: str, k: int = 4, **kwargs: Any
     ) -> list[Document]:
-        print(f"\n=== {self.asimilarity_search.__name__} ===")
+        logging.info(f"\n=== {self.asimilarity_search.__name__} ===")
         return await self._vector_store.asimilarity_search(query=query, k=k, **kwargs)
 
 vector_store = VectorStore()    

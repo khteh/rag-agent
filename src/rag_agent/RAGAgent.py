@@ -1,4 +1,4 @@
-import os, bs4, vertexai, asyncio
+import os, bs4, vertexai, asyncio, logging
 from dotenv import load_dotenv
 from .State import CustomAgentState
 from .image import show_graph
@@ -71,19 +71,19 @@ class RAGAgent():
         return [{"role": "system", "content": system_msg}] + state["messages"]
 
     async def CreateGraph(self, config: RunnableConfig) -> CompiledGraph:
-        print(f"\n=== {self.CreateGraph.__name__} ===")
+        logging.debug(f"\n=== {self.CreateGraph.__name__} ===")
         try:
             await vector_store.LoadDocuments("https://lilianweng.github.io/posts/2023-06-23-agent/")
             # https://langchain-ai.github.io/langgraph/reference/prebuilt/#langgraph.prebuilt.chat_agent_executor.create_react_agent
             return create_react_agent(self._llm, TOOLS, store=InMemoryStore(), checkpointer=MemorySaver(), state_schema=CustomAgentState, name="RAG ReAct Agent", prompt=self._prompt)
         except ResourceExhausted as e:
-            print(f"google.api_core.exceptions.ResourceExhausted")
+            logging.exception(f"google.api_core.exceptions.ResourceExhausted")
 
 async def make_graph(config: RunnableConfig) -> CompiledGraph:
     return await RAGAgent(config).CreateGraph(config)
 
 async def ChatAgent(agent, config, messages):
-    print(f"\n=== {ChatAgent.__name__} ===")
+    logging.info(f"\n=== {ChatAgent.__name__} ===")
     async for event in agent.astream(
         {"messages": [{"role": "user", "content": messages}]},
         stream_mode="values",

@@ -71,25 +71,25 @@ async def create_app() -> Quart:
                     """)
                     table_exists = (await cur.fetchone())[0]
                     if not table_exists:
-                        print("Checkpoints table does not exist. Running setup...")
+                        logging.info("Checkpoints table does not exist. Running setup...")
                         await checkpointer.setup()
                     else:
-                        print("Checkpoints table already exists. Skipping setup.")
+                        logging.info("Checkpoints table already exists. Skipping setup.")
                 except psycopg.Error as e:
-                    print(f"Error checking for checkpoints table: {e}")
+                    logging.exception(f"Error checking for checkpoints table: {e}")
                     # Optionally, you might want to raise this error
                     # raise
         # Assign the checkpointer to the assistant
         if agent:
             agent.checkpointer = checkpointer
-            print("Agent is assigned a checkpointer")
+            logging.info("Agent is assigned a checkpointer")
         else:
-            print(f"Agent not ready")
+            logging.warning(f"Agent not ready")
     return app
 
 # https://quart.palletsprojects.com/en/latest/how_to_guides/startup_shutdown.html
 def liveness():
-    print("Alive!")
+    logging.debug("Alive!")
     pass 
 
 def readiness():
@@ -118,10 +118,10 @@ def readiness():
                         raise HealthError(f"Error checking for library table: {e}")
                         # Optionally, you might want to raise this error
                         # raise
-        print("Ready!")
+        logging.debug("Ready!")
     except Exception:
         raise HealthError(f"Failed to connect to the database! {app.config['POSTGRESQL_DATABASE_URI']}")
 
 app = asyncio.get_event_loop().run_until_complete(create_app())
-print(f"Running app...")
+logging.info(f"Running app...")
 #asyncio.run(serve(app, config), debug=True)

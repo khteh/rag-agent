@@ -1,4 +1,4 @@
-import asyncio
+import asyncio, logging
 from datetime import datetime
 from .image import show_graph
 from PIL import Image
@@ -52,7 +52,7 @@ class CheckpointedRAG():
         # Step 1: Generate an AIMessage that may include a tool-call to be sent.
         Generate tool call for retrieval or respond
         """
-        #print(f"state: {state}")
+        #logging.debug(f"state: {state}")
         response = await self._llm.ainvoke(state["messages"], config)
         # MessageState appends messages to state instead of overwriting
         return {"messages": [response]}
@@ -60,8 +60,8 @@ class CheckpointedRAG():
     # Step 3: Generate a response using the retrieved content.
     async def Generate(self, state: MessagesState, config: RunnableConfig):
         """Generate answer."""
-        print(f"\n=== {self.Generate.__name__} ===")
-        #print(f"\nstate['messages']: {state['messages']}")
+        logging.info(f"\n=== {self.Generate.__name__} ===")
+        #logging.debug(f"\nstate['messages']: {state['messages']}")
         # Get generated ToolMessages
         recent_tool_messages = []
         for message in reversed(state["messages"]):
@@ -70,7 +70,7 @@ class CheckpointedRAG():
             else:
                 break
         tool_messages = recent_tool_messages[::-1]
-        #print(f"\ntool_messages: {tool_messages}")
+        #logging.debug(f"\ntool_messages: {tool_messages}")
         # Format into prompt
         docs_content = "\n\n".join(doc.content for doc in tool_messages)
         system_message_content = f"""
@@ -89,17 +89,17 @@ class CheckpointedRAG():
             or (message.type == "ai" and not message.tool_calls)
         ]
         prompt = [SystemMessage(system_message_content)] + conversation_messages
-        #print(f"\nsystem_message_content: {system_message_content}")
-        #print(f"\nconversation_messages: {conversation_messages}")
-        #print(f"\nprompt: {prompt}")
+        #logging.debug(f"\nsystem_message_content: {system_message_content}")
+        #logging.debug(f"\nconversation_messages: {conversation_messages}")
+        #logging.debug(f"\nprompt: {prompt}")
         # Run
         response = await self._llm.ainvoke(prompt, config)
-        #print(f"\nGenerate() response: {response}")
+        #logging.debug(f"\nGenerate() response: {response}")
         return {"messages": [response]}
 
     async def CreateGraph(self, config: RunnableConfig) -> StateGraph:
         # Compile application and test
-        print(f"\n=== {self.CreateGraph.__name__} ===")
+        logging.info(f"\n=== {self.CreateGraph.__name__} ===")
         await vector_store.LoadDocuments("https://lilianweng.github.io/posts/2023-06-23-agent/")
         graph_builder = StateGraph(MessagesState)
         graph_builder.add_node("query_or_respond", self.query_or_respond)
@@ -119,7 +119,7 @@ async def make_graph(config: RunnableConfig) -> CompiledGraph:
     return await CheckpointedRAG(config).CreateGraph(config)
 
 async def TestDirectResponseWithoutRetrieval(graph, config, message):
-    print(f"\n=== {TestDirectResponseWithoutRetrieval.__name__} ===")
+    logging.info(f"\n=== {TestDirectResponseWithoutRetrieval.__name__} ===")
     async for step in graph.astream(
         {"messages": [{"role": "user", "content": message}]},
         stream_mode="values",
@@ -128,7 +128,7 @@ async def TestDirectResponseWithoutRetrieval(graph, config, message):
         step["messages"][-1].pretty_print()
 
 async def Chat(graph, config, messages: List[str]):
-    print(f"\n=== {Chat.__name__} ===")
+    logging.info(f"\n=== {Chat.__name__} ===")
     for message in messages:
         #input_message = "What is Task Decomposition?"
         async for step in graph.astream(
