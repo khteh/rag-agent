@@ -61,7 +61,7 @@ class CheckpointedRAG():
     async def Generate(self, state: MessagesState, config: RunnableConfig):
         """Generate answer."""
         print(f"\n=== {self.Generate.__name__} ===")
-        print(f"state['messages']: {state['messages']}")
+        #print(f"\nstate['messages']: {state['messages']}")
         # Get generated ToolMessages
         recent_tool_messages = []
         for message in reversed(state["messages"]):
@@ -70,7 +70,7 @@ class CheckpointedRAG():
             else:
                 break
         tool_messages = recent_tool_messages[::-1]
-        print(f"\ntool_messages: {tool_messages}")
+        #print(f"\ntool_messages: {tool_messages}")
         # Format into prompt
         docs_content = "\n\n".join(doc.content for doc in tool_messages)
         system_message_content = f"""
@@ -89,12 +89,12 @@ class CheckpointedRAG():
             or (message.type == "ai" and not message.tool_calls)
         ]
         prompt = [SystemMessage(system_message_content)] + conversation_messages
-        print(f"\nsystem_message_content: {system_message_content}")
-        print(f"\nconversation_messages: {conversation_messages}")
-        print(f"\nprompt: {prompt}")
+        #print(f"\nsystem_message_content: {system_message_content}")
+        #print(f"\nconversation_messages: {conversation_messages}")
+        #print(f"\nprompt: {prompt}")
         # Run
         response = await self._llm.ainvoke(prompt, config)
-        print(f"\nGenerate() response: {response}")
+        #print(f"\nGenerate() response: {response}")
         return {"messages": [response]}
 
     async def CreateGraph(self, config: RunnableConfig) -> StateGraph:
