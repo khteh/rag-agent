@@ -26,7 +26,7 @@ embeddings = OpenAIEmbeddings(model="text-embedding-3-large")"
 """
 
 # https://cloud.google.com/vertex-ai/generative-ai/docs/embeddings/get-text-embeddings
-from .Tools import TOOLS
+from .Tools import TOOLS, retrieve
 from .VectorStore import vector_store
 
 class CheckpointedRAG():
@@ -45,7 +45,7 @@ class CheckpointedRAG():
         #vertexai.init(project=os.environ.get("GOOGLE_CLOUD_PROJECT"), location=os.environ.get("GOOGLE_CLOUD_LOCATION"))
         self._config = config
         self._llm = init_chat_model("gemini-2.0-flash", model_provider="google_vertexai")
-        self._llm = self._llm.bind_tools(TOOLS)
+        self._llm = self._llm.bind_tools([retrieve])
 
     async def query_or_respond(self, state: MessagesState, config: RunnableConfig):
         """
@@ -61,7 +61,7 @@ class CheckpointedRAG():
     async def Generate(self, state: MessagesState, config: RunnableConfig):
         """Generate answer."""
         print(f"\n=== {self.Generate.__name__} ===")
-        #print(f"state['messages']: {state['messages']}")
+        print(f"state['messages']: {state['messages']}")
         # Get generated ToolMessages
         recent_tool_messages = []
         for message in reversed(state["messages"]):
@@ -70,7 +70,7 @@ class CheckpointedRAG():
             else:
                 break
         tool_messages = recent_tool_messages[::-1]
-        #print(f"tool_messages: {tool_messages}")
+        print(f"\ntool_messages: {tool_messages}")
         # Format into prompt
         docs_content = "\n\n".join(doc.content for doc in tool_messages)
         system_message_content = f"""
@@ -89,12 +89,12 @@ class CheckpointedRAG():
             or (message.type == "ai" and not message.tool_calls)
         ]
         prompt = [SystemMessage(system_message_content)] + conversation_messages
-        #print(f"system_message_content: {system_message_content}")
-        #print(f"conversation_messages: {conversation_messages}")
-        #print(f"prompt: {prompt}")
+        print(f"\nsystem_message_content: {system_message_content}")
+        print(f"\nconversation_messages: {conversation_messages}")
+        print(f"\nprompt: {prompt}")
         # Run
         response = await self._llm.ainvoke(prompt, config)
-        #print(f"generate() response: {response}")
+        print(f"\nGenerate() response: {response}")
         return {"messages": [response]}
 
     async def CreateGraph(self, config: RunnableConfig) -> StateGraph:
@@ -103,7 +103,7 @@ class CheckpointedRAG():
         await vector_store.LoadDocuments("https://lilianweng.github.io/posts/2023-06-23-agent/")
         graph_builder = StateGraph(MessagesState)
         graph_builder.add_node("query_or_respond", self.query_or_respond)
-        graph_builder.add_node("tools", ToolNode(TOOLS)) # Execute the retrieval.
+        graph_builder.add_node("tools", ToolNode([retrieve])) # Execute the retrieval.
         graph_builder.add_node("generate", self.Generate)
         graph_builder.set_entry_point("query_or_respond")
         graph_builder.add_conditional_edges(

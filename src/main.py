@@ -123,5 +123,5 @@ def readiness():
         raise HealthError(f"Failed to connect to the database! {app.config['POSTGRESQL_DATABASE_URI']}")
 
 app = asyncio.get_event_loop().run_until_complete(create_app())
-print(f"Running asyncio...")
+print(f"Running app...")
 #asyncio.run(serve(app, config), debug=True)

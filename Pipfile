@@ -18,7 +18,8 @@ pillow = "*"
 flask-healthz = "*"
 psycopg = {extras = ["binary"] }
 psycopg2-binary = "*"
-hypercorn = {extras = ["asyncio"] }
+hypercorn = {extras = ["h3"], version = "*"}
+quart-trio = "*"
 quart = "*"
 quart-wtforms = "*"
 pydantic = "*"
