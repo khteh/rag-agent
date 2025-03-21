@@ -58,6 +58,17 @@ class CheckpointedRAG():
         self._config = config
         # https://python.langchain.com/api_reference/langchain/chat_models/langchain.chat_models.base.init_chat_model.html
         self._llm = init_chat_model("gemini-2.0-flash", model_provider="google_vertexai", streaming=True)
+        # https://python.langchain.com/docs/integrations/chat/google_vertex_ai_palm/
+        """
+        self._llm = ChatVertexAI(
+                        model="gemini-2.0-flash",
+                        temperature=0,
+                        max_tokens=None,
+                        max_retries=6,
+                        stop=None,
+                        streaming=True
+                    )
+        """
         self._llm = self._llm.bind_tools([vector_store.retriever_tool])
 
     async def Agent(self, state: State, config: RunnableConfig):

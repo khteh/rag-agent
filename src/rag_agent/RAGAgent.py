@@ -62,6 +62,17 @@ class RAGAgent():
         #vertexai.init(project=os.environ.get("GOOGLE_CLOUD_PROJECT"), location=os.environ.get("GOOGLE_CLOUD_LOCATION"))
         self._config = config
         self._llm = init_chat_model("gemini-2.0-flash", model_provider="google_vertexai", streaming=True)
+        # https://python.langchain.com/docs/integrations/chat/google_vertex_ai_palm/
+        """
+        self._llm = ChatVertexAI(
+                        model="gemini-2.0-flash",
+                        temperature=0,
+                        max_tokens=None,
+                        max_retries=6,
+                        stop=None,
+                        streaming=True
+                    )
+        """
         self._llm = self._llm.bind_tools(TOOLS)
 
     async def prepare_model_inputs(self, state: CustomAgentState, config: RunnableConfig, store: BaseStore):
