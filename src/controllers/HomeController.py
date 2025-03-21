@@ -1,7 +1,7 @@
 import re, asyncio, json, logging
 from uuid_extensions import uuid7
 from typing import AsyncGenerator, Dict, Any, Tuple
-from quart import Blueprint, render_template, session
+from quart import Blueprint, render_template, session, current_app
 from datetime import datetime, timezone
 from quart import Quart
 from werkzeug.exceptions import HTTPException
@@ -11,7 +11,7 @@ from src.schema.schema import ChatMessage, UserInput, StreamInput
 from langchain_core.callbacks import AsyncCallbackHandler
 from langgraph.graph.graph import CompiledGraph
 from langchain_core.runnables import RunnableConfig
-from src.rag_agent.RAGAgent import agent
+#from src.rag_agent.RAGAgent import agent
 home_api = Blueprint("home", __name__)
 @home_api.context_processor
 
@@ -48,7 +48,7 @@ async def invoke(user_input: UserInput) -> ChatMessage:
     kwargs, run_id = _parse_input(user_input)
     logging.debug(kwargs)
     try:
-        response = await agent.ainvoke(**kwargs)
+        response = await current_app.agent.ainvoke(**kwargs)
         output = ChatMessage.from_langchain(response["messages"][-1])
         output.run_id = str(run_id)
         return output
@@ -72,7 +72,7 @@ async def message_generator(user_input: StreamInput) -> AsyncGenerator[str, None
     # Pass the agent's stream of messages to the queue in a separate task, so
     # we can yield the messages to the client in the main thread.
     async def run_agent_stream():
-        async for s in agent.astream(**kwargs, stream_mode="updates"):
+        async for s in current_app.agent.astream(**kwargs, stream_mode="updates"):
             await output_queue.put(s)
         await output_queue.put(None)
 

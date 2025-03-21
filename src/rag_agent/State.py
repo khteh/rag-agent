@@ -6,7 +6,8 @@ from typing_extensions import List, TypedDict
 from dataclasses import dataclass, field
 from typing import Sequence
 from langchain_core.messages import AnyMessage
-from langgraph.graph import add_messages
+from langchain_core.messages import BaseMessage
+from langgraph.graph.message import add_messages
 from langgraph.managed import IsLastStep
 from langgraph.prebuilt.chat_agent_executor import AgentState
 from typing_extensions import Annotated

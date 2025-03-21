@@ -1,10 +1,12 @@
-import asyncio, logging
+import asyncio, logging, os, vertexai
+from dotenv import load_dotenv
+from typing import Annotated, Literal, Sequence
 from datetime import datetime
-from .image import show_graph
-from PIL import Image
+from langchain import hub
 from langchain.chat_models import init_chat_model
 from langchain_core.runnables import RunnableConfig
-from langchain_core.messages import SystemMessage
+from langchain_core.messages import SystemMessage, HumanMessage
+from langchain_core.output_parsers import StrOutputParser
 from langgraph.graph import StateGraph, MessagesState
 from langgraph.graph.graph import (
     END,
@@ -18,49 +20,168 @@ from langgraph.checkpoint.memory import MemorySaver
 from typing_extensions import List, TypedDict
 from langchain_core.prompts import ChatPromptTemplate
 from langgraph.store.memory import InMemoryStore
-# https://python.langchain.com/docs/tutorials/qa_chat_history/
-# https://python.langchain.com/api_reference/langchain/chat_models/langchain.chat_models.base.init_chat_model.html
+from langchain_core.prompts import PromptTemplate
+from pydantic import BaseModel, Field
 """
-llm = init_chat_model("gpt-4o-mini", model_provider="openai")
-embeddings = OpenAIEmbeddings(model="text-embedding-3-large")"
+https://langchain-ai.github.io/langgraph/tutorials/rag/langgraph_agentic_rag/
+https://python.langchain.com/docs/tutorials/qa_chat_history/
+https://python.langchain.com/api_reference/langchain/chat_models/langchain.chat_models.base.init_chat_model.html
+https://github.com/langchain-ai/langgraph/blob/main/libs/langgraph/langgraph/graph/message.py
+https://langchain-ai.github.io/langgraph/how-tos/streaming/#values
 """
-
+load_dotenv()
 # https://cloud.google.com/vertex-ai/generative-ai/docs/embeddings/get-text-embeddings
-from .Tools import TOOLS, retrieve
+from ..utils.image import show_graph
+#from .State import State
 from .VectorStore import vector_store
-
 class CheckpointedRAG():
     _llm = None
     _config = None
-    _prompt = ChatPromptTemplate.from_messages([
-                ("system", "You are a helpful AI assistant named Bob."),
-                ("placeholder", "{messages}"),
-                ("user", "Remember, always provide accurate answer!"),
-        ])
+    _prompt = PromptTemplate(
+            template="""You are a grader assessing relevance of a retrieved document to a user question. \n 
+            Here is the retrieved document: \n\n {context} \n\n
+            Here is the user question: {question} \n
+            If the document contains keyword(s) or semantic meaning related to the user question, grade it as relevant. \n
+            Give a binary score 'yes' or 'no' score to indicate whether the document is relevant to the question.""",
+            input_variables=["context", "question"],
+        )
+    _urls = [
+        "https://lilianweng.github.io/posts/2023-06-23-agent/",
+        "https://lilianweng.github.io/posts/2023-03-15-prompt-engineering/",
+        "https://lilianweng.github.io/posts/2023-10-25-adv-attack-llm/",
+    ]
     # Class constructor
     def __init__(self, config: RunnableConfig={}):
         """
         Class CheckpointedRAG Constructor
         """
-        #vertexai.init(project=os.environ.get("GOOGLE_CLOUD_PROJECT"), location=os.environ.get("GOOGLE_CLOUD_LOCATION"))
         self._config = config
-        self._llm = init_chat_model("gemini-2.0-flash", model_provider="google_vertexai")
-        self._llm = self._llm.bind_tools([retrieve])
+        # https://python.langchain.com/api_reference/langchain/chat_models/langchain.chat_models.base.init_chat_model.html
+        self._llm = init_chat_model("gemini-2.0-flash", model_provider="google_vertexai", streaming=True)
+        self._llm = self._llm.bind_tools([vector_store.retriever_tool])
 
-    async def query_or_respond(self, state: MessagesState, config: RunnableConfig):
+    async def Agent(self, state: MessagesState, config: RunnableConfig):
         """
         # Step 1: Generate an AIMessage that may include a tool-call to be sent.
         Generate tool call for retrieval or respond
+
+        Invokes the agent model to generate a response based on the current state. Given
+        the question, it will decide to retrieve using the retriever tool, or simply end.
+
+        Args:
+            state (messages): The current state
+
+        Returns:
+            dict: The updated state with the agent response appended to messages
         """
-        #logging.debug(f"state: {state}")
+        logging.info(f"\n=== {self.Agent.__name__} ===")
+        logging.debug(f"state: {state}")
         response = await self._llm.ainvoke(state["messages"], config)
         # MessageState appends messages to state instead of overwriting
         return {"messages": [response]}
 
-    # Step 3: Generate a response using the retrieved content.
-    async def Generate(self, state: MessagesState, config: RunnableConfig):
-        """Generate answer."""
+    async def GradeDocuments(self, state: MessagesState) -> Literal["Generate", "Rewrite"]:
+        """
+        Determines whether the retrieved documents are relevant to the question.
+
+        Args:
+            state (messages): The current state
+
+        Returns:
+            str: A decision for whether the documents are relevant or not
+        """
+        logging.info(f"\n=== {self.GradeDocuments.__name__} CHECK RELEVANCE ===")
+        # Data model
+        class grade(BaseModel):
+            """Binary score for relevance check."""
+            binary_score: str = Field(description="Relevance score 'yes' or 'no'")
+
+        # LLM with tool and validation
+        llm_with_tool = self._llm.with_structured_output(grade)
+
+        # Chain
+        chain = self._prompt | llm_with_tool
+
+        messages = state["messages"]
+        last_message = messages[-1]
+
+        question = messages[0].content
+        docs = last_message.content
+
+        scored_result = await chain.ainvoke({"question": question, "context": docs})
+        score = scored_result.binary_score
+
+        if score == "yes":
+            logging.debug("---DECISION: DOCS RELEVANT---")
+            return "Generate"
+
+        else:
+            logging.debug(f"---DECISION: DOCS NOT RELEVANT (score: {score})---")
+            return "Rewrite"
+        
+    async def Rewrite(self, state: MessagesState, config: RunnableConfig):
+        """
+        Transform the query to produce a better question.
+
+        Args:
+            state (messages): The current state
+
+        Returns:
+            dict: The updated state with re-phrased question
+        """
+        logging.info(f"\n=== {self.Rewrite.__name__} TRANSFORM QUERY ===")
+        messages = state["messages"]
+        question = messages[0].content
+        msg = [
+            HumanMessage(
+                content=f""" \n 
+                        Look at the input and try to reason about the underlying semantic intent / meaning. \n 
+                        Here is the initial question:
+                        \n ------- \n
+                        {question} 
+                        \n ------- \n
+                        Formulate an improved question: """,
+            )
+        ]
+        # Grader
+        response = await self._llm.ainvoke(msg)
+        return {"messages": [response]}
+
+    async def Generate(self, state: MessagesState):
+        """
+        Generate answer
+
+        Args:
+            state (messages): The current state
+
+        Returns:
+            dict: The updated state with re-phrased question
+        """
         logging.info(f"\n=== {self.Generate.__name__} ===")
+        messages = state["messages"]
+        question = messages[0].content
+        last_message = messages[-1]
+
+        docs = last_message.content
+
+        # Prompt
+        prompt = hub.pull("rlm/rag-prompt")
+
+        # Post-processing
+        def format_docs(docs):
+            return "\n\n".join(doc.page_content for doc in docs)
+
+        # Chain
+        rag_chain = prompt | self._llm | StrOutputParser()
+
+        # Run
+        response = await rag_chain.ainvoke({"context": docs, "question": question})
+        return {"messages": [response]}
+    
+    # Step 3: Generate a response using the retrieved content.
+    async def Generate1(self, state: MessagesState, config: RunnableConfig):
+        """Generate answer."""
+        logging.info(f"\n=== {self.Generate1.__name__} ===")
         #logging.debug(f"\nstate['messages']: {state['messages']}")
         # Get generated ToolMessages
         recent_tool_messages = []
@@ -100,19 +221,32 @@ class CheckpointedRAG():
     async def CreateGraph(self, config: RunnableConfig) -> StateGraph:
         # Compile application and test
         logging.info(f"\n=== {self.CreateGraph.__name__} ===")
-        await vector_store.LoadDocuments("https://lilianweng.github.io/posts/2023-06-23-agent/")
+        await vector_store.LoadDocuments(self._urls)
         graph_builder = StateGraph(MessagesState)
-        graph_builder.add_node("query_or_respond", self.query_or_respond)
-        graph_builder.add_node("tools", ToolNode([retrieve])) # Execute the retrieval.
-        graph_builder.add_node("generate", self.Generate)
-        graph_builder.set_entry_point("query_or_respond")
+        graph_builder.add_node("Agent", self.Agent)
+        graph_builder.add_node("Retrieve", ToolNode([vector_store.retriever_tool])) # Execute the retrieval.
+        graph_builder.add_node("Rewrite", self.Rewrite)
+        graph_builder.add_node("Generate", self.Generate)
+        graph_builder.add_edge(START, "Agent")
+        #graph_builder.set_entry_point("query_or_respond")
         graph_builder.add_conditional_edges(
-            "query_or_respond",
+            "Agent",
+            # Assess agent decision
             tools_condition,
-            {END: END, "tools": "tools"},
+            {
+                # Translate the condition outputs to nodes in our graph
+                "tools": "Retrieve",
+                END: END
+            },
         )
-        graph_builder.add_edge("tools", "generate")
-        graph_builder.add_edge("generate", END)
+        # Edges taken after the `action` node is called.
+        graph_builder.add_conditional_edges(
+            "Retrieve",
+            # Assess agent decision
+            self.GradeDocuments,
+        )
+        graph_builder.add_edge("Generate", END)
+        graph_builder.add_edge("Rewrite", "Agent")
         return graph_builder.compile(store=InMemoryStore(), checkpointer=MemorySaver(), name="Checkedpoint StateGraph RAG")
 
 async def make_graph(config: RunnableConfig) -> CompiledGraph:
@@ -138,10 +272,12 @@ async def Chat(graph, config, messages: List[str]):
         ):
             step["messages"][-1].pretty_print()
 
-async def CheckpointedGraph():
+async def main():
+    logging.basicConfig(format='%(asctime)s %(levelname)-8s %(message)s', level=logging.DEBUG, datefmt='%Y-%m-%d %H:%M:%S')
+    vertexai.init(project=os.environ.get("GOOGLE_CLOUD_PROJECT"), location=os.environ.get("GOOGLE_CLOUD_LOCATION"))
     config = RunnableConfig(run_name="Checkedpoint StateGraph RAG", thread_id=datetime.now())
     checkpoint_graph = await make_graph(config) # config input parameter is required by langgraph.json to define the graph
-    #show_graph(checkpoint_graph, "Checkedpoint StateGraph RAG") # This blocks
+    show_graph(checkpoint_graph, "Checkedpoint StateGraph RAG") # This blocks
     """
     graph = checkpoint_graph.get_graph().draw_mermaid_png()
     # Save the PNG data to a file
@@ -152,9 +288,6 @@ async def CheckpointedGraph():
     """
     await TestDirectResponseWithoutRetrieval(checkpoint_graph, config, "Hello, who are you?")
     await Chat(checkpoint_graph, config, ["What is Task Decomposition?", "Can you look up some common ways of doing it?"])
-
-async def main():
-    await CheckpointedGraph()
 
 if __name__ == "__main__":
     asyncio.run(main())

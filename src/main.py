@@ -47,7 +47,7 @@ async def create_app() -> Quart:
     csrf = CSRFProtect(app)
     bcrypt.init_app(app)
     config = RunnableConfig(run_name="RAG ReAct Agent", thread_id=datetime.now())
-    from src.rag_agent.RAGAgent import make_graph, agent
+    from src.rag_agent.RAGAgent import make_graph#, agent
     agent = await make_graph(config)
     async with AsyncConnectionPool(
         conninfo=app.config["POSTGRESQL_DATABASE_URI"],
@@ -82,6 +82,7 @@ async def create_app() -> Quart:
         # Assign the checkpointer to the assistant
         if agent:
             agent.checkpointer = checkpointer
+            app.agent = agent
             logging.info("Agent is assigned a checkpointer")
         else:
             logging.warning(f"Agent not ready")

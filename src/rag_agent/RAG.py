@@ -1,6 +1,6 @@
 import os, bs4, vertexai, asyncio, logging
 from PIL import Image
-from image import show_graph
+from src.utils.image import show_graph
 from State import State
 from dotenv import load_dotenv
 from langchain.chat_models import init_chat_model

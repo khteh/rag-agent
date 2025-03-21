@@ -1,6 +1,7 @@
 import bs4, logging
 from dotenv import load_dotenv
 from typing_extensions import List, TypedDict, Optional, Any
+from langchain.tools.retriever import create_retriever_tool
 from langchain_google_vertexai import VertexAIEmbeddings
 from langchain_core.vectorstores import InMemoryVectorStore
 from langchain_core.documents import Document
@@ -29,6 +30,7 @@ class VectorStore(metaclass=VectorStoreSingleton):
     _model: str = None
     _embeddings: VertexAIEmbeddings = None
     _vector_store: InMemoryVectorStore = None
+    retriever_tool: None
     _docs = set()
     def __new__(cls, *args, **kwargs):
         return super().__new__(cls)
@@ -37,26 +39,32 @@ class VectorStore(metaclass=VectorStoreSingleton):
         #vertexai.init(project=os.environ.get("GOOGLE_CLOUD_PROJECT"), location=os.environ.get("GOOGLE_CLOUD_LOCATION"))
         self._embeddings = VertexAIEmbeddings(model=self._model) # "text-embedding-005"
         self._vector_store = InMemoryVectorStore(self._embeddings)
+        self.retriever_tool = create_retriever_tool(
+            self._vector_store.as_retriever(),
+            "Retrieve Blog Posts",
+            "Search and return information about Lilian Weng blog posts on LLM agents, prompt engineering, and adversarial attacks on LLMs.",
+        )   
         #print(f"VectorStore::__init__ {self._model}")
 
-    async def LoadDocuments(self, url: str):
+    async def LoadDocuments(self, urls: List[str]):
         # Load and chunk contents of the blog
-        if url not in self._docs:
-            logging.info(f"\n=== {self.LoadDocuments.__name__} ===")
-            loader = WebBaseLoader(
-                web_paths=(url,),
-                bs_kwargs=dict(
-                    parse_only=bs4.SoupStrainer(
-                        class_=("post-content", "post-title", "post-header")
-                    )
-                ),
-            )
-            docs = loader.load()
-            assert len(docs) == 1
-            logging.debug(f"Total characters: {len(docs[0].page_content)}")
-            subdocs = self._SplitDocuments(docs)
-            await self._IndexChunks(subdocs)
-            self._docs.add(url)
+        for url in urls:
+            if url not in self._docs:
+                logging.info(f"\n=== {self.LoadDocuments.__name__} loading {url}... ===")
+                loader = WebBaseLoader(
+                    web_paths=(url,),
+                    bs_kwargs=dict(
+                        parse_only=bs4.SoupStrainer(
+                            class_=("post-content", "post-title", "post-header")
+                        )
+                    ),
+                )
+                docs = loader.load()
+                assert len(docs) == 1
+                logging.debug(f"Total characters: {len(docs[0].page_content)}")
+                subdocs = self._SplitDocuments(docs)
+                await self._IndexChunks(subdocs)
+                self._docs.add(url)
 
     def _SplitDocuments(self, docs):
         logging.info(f"\n=== {self._SplitDocuments.__name__} ===")

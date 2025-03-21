@@ -1,9 +1,6 @@
 import os, bs4, vertexai, asyncio, logging
 from dotenv import load_dotenv
-from .State import CustomAgentState
-from .image import show_graph
 from datetime import datetime
-from PIL import Image
 from typing import Annotated
 from google.api_core.exceptions import ResourceExhausted
 from langchain import hub
@@ -32,20 +29,26 @@ from langchain_core.prompts import ChatPromptTemplate
 from langgraph.managed import IsLastStep
 from langgraph.store.base import BaseStore
 from langgraph.store.memory import InMemoryStore
-# https://python.langchain.com/docs/tutorials/qa_chat_history/
-# https://python.langchain.com/api_reference/langchain/chat_models/langchain.chat_models.base.init_chat_model.html
 """
-llm = init_chat_model("gpt-4o-mini", model_provider="openai")
-embeddings = OpenAIEmbeddings(model="text-embedding-3-large")
+https://python.langchain.com/docs/tutorials/qa_chat_history/
+https://python.langchain.com/api_reference/langchain/chat_models/langchain.chat_models.base.init_chat_model.html
+https://cloud.google.com/vertex-ai/generative-ai/docs/embeddings/get-text-embeddings
+https://langchain-ai.github.io/langgraph/how-tos/streaming/#values
 """
-
-# https://cloud.google.com/vertex-ai/generative-ai/docs/embeddings/get-text-embeddings
+load_dotenv()
 from .Tools import TOOLS
 from .VectorStore import vector_store
-agent = None
+from .State import CustomAgentState
+from ..utils.image import show_graph
+#agent = None
 class RAGAgent():
     _llm = None
     _config = None
+    _urls = [
+        "https://lilianweng.github.io/posts/2023-06-23-agent/",
+        "https://lilianweng.github.io/posts/2023-03-15-prompt-engineering/",
+        "https://lilianweng.github.io/posts/2023-10-25-adv-attack-llm/",
+    ]    
     _prompt = ChatPromptTemplate.from_messages([
                 ("system", "You are a helpful AI assistant named Bob."),
                 ("placeholder", "{messages}"),
@@ -58,7 +61,7 @@ class RAGAgent():
         """
         #vertexai.init(project=os.environ.get("GOOGLE_CLOUD_PROJECT"), location=os.environ.get("GOOGLE_CLOUD_LOCATION"))
         self._config = config
-        self._llm = init_chat_model("gemini-2.0-flash", model_provider="google_vertexai")
+        self._llm = init_chat_model("gemini-2.0-flash", model_provider="google_vertexai", streaming=True)
         self._llm = self._llm.bind_tools(TOOLS)
 
     async def prepare_model_inputs(self, state: CustomAgentState, config: RunnableConfig, store: BaseStore):
@@ -73,7 +76,7 @@ class RAGAgent():
     async def CreateGraph(self, config: RunnableConfig) -> CompiledGraph:
         logging.debug(f"\n=== {self.CreateGraph.__name__} ===")
         try:
-            await vector_store.LoadDocuments("https://lilianweng.github.io/posts/2023-06-23-agent/")
+            await vector_store.LoadDocuments(self._urls)
             # https://langchain-ai.github.io/langgraph/reference/prebuilt/#langgraph.prebuilt.chat_agent_executor.create_react_agent
             return create_react_agent(self._llm, TOOLS, store=InMemoryStore(), checkpointer=MemorySaver(), state_schema=CustomAgentState, name="RAG ReAct Agent", prompt=self._prompt)
         except ResourceExhausted as e:
@@ -82,16 +85,18 @@ class RAGAgent():
 async def make_graph(config: RunnableConfig) -> CompiledGraph:
     return await RAGAgent(config).CreateGraph(config)
 
-async def ChatAgent(agent, config, messages):
+async def ChatAgent(agent, config, messages: List[str]):
     logging.info(f"\n=== {ChatAgent.__name__} ===")
     async for event in agent.astream(
         {"messages": [{"role": "user", "content": messages}]},
-        stream_mode="values",
-        config=config,
+        stream_mode="values", # Use this to stream all values in the state after each step.
+        config=config, # This is needed by Checkpointer
     ):
         event["messages"][-1].pretty_print()
 
-async def ReActAgent():
+async def main():
+    logging.basicConfig(format='%(asctime)s %(levelname)-8s %(message)s', level=logging.DEBUG, datefmt='%Y-%m-%d %H:%M:%S')
+    vertexai.init(project=os.environ.get("GOOGLE_CLOUD_PROJECT"), location=os.environ.get("GOOGLE_CLOUD_LOCATION"))
     config = RunnableConfig(run_name="RAG ReAct Agent", thread_id=datetime.now())
     agent = await make_graph(config)
     #show_graph(agent, "RAG ReAct Agent") # This blocks
@@ -103,12 +108,8 @@ async def ReActAgent():
     img = Image.open("/tmp/agent_graph.png")
     img.show()
     """
-    input_message = ("What is the standard method for Task Decomposition?", "Once you get the answer, look up common extensions of that method.")
+    input_message = ["What is the standard method for Task Decomposition?", "Once you get the answer, look up common extensions of that method."]
     await ChatAgent(agent, config, input_message)
 
-async def main():
-    await ReActAgent()
-
 if __name__ == "__main__":
-    load_dotenv()
     asyncio.run(main())
