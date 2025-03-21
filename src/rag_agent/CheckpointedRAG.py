@@ -18,19 +18,19 @@ from langgraph.graph.graph import (
 from langgraph.prebuilt import ToolNode, tools_condition
 from langgraph.checkpoint.memory import MemorySaver
 from typing_extensions import List, TypedDict
-from langchain_core.prompts import ChatPromptTemplate
 from langgraph.store.memory import InMemoryStore
 from langchain_core.prompts import PromptTemplate
 from pydantic import BaseModel, Field
 """
 https://langchain-ai.github.io/langgraph/tutorials/rag/langgraph_agentic_rag/
+https://cloud.google.com/vertex-ai/generative-ai/docs/embeddings/get-text-embeddings
 https://python.langchain.com/docs/tutorials/qa_chat_history/
 https://python.langchain.com/api_reference/langchain/chat_models/langchain.chat_models.base.init_chat_model.html
 https://github.com/langchain-ai/langgraph/blob/main/libs/langgraph/langgraph/graph/message.py
 https://langchain-ai.github.io/langgraph/how-tos/streaming/#values
 """
 load_dotenv()
-# https://cloud.google.com/vertex-ai/generative-ai/docs/embeddings/get-text-embeddings
+from .State import State
 from ..utils.image import show_graph
 #from .State import State
 from .VectorStore import vector_store
@@ -60,7 +60,7 @@ class CheckpointedRAG():
         self._llm = init_chat_model("gemini-2.0-flash", model_provider="google_vertexai", streaming=True)
         self._llm = self._llm.bind_tools([vector_store.retriever_tool])
 
-    async def Agent(self, state: MessagesState, config: RunnableConfig):
+    async def Agent(self, state: State, config: RunnableConfig):
         """
         # Step 1: Generate an AIMessage that may include a tool-call to be sent.
         Generate tool call for retrieval or respond
@@ -80,7 +80,7 @@ class CheckpointedRAG():
         # MessageState appends messages to state instead of overwriting
         return {"messages": [response]}
 
-    async def GradeDocuments(self, state: MessagesState) -> Literal["Generate", "Rewrite"]:
+    async def GradeDocuments(self, state: State) -> Literal["Generate", "Rewrite"]:
         """
         Determines whether the retrieved documents are relevant to the question.
 
@@ -119,7 +119,7 @@ class CheckpointedRAG():
             logging.debug(f"---DECISION: DOCS NOT RELEVANT (score: {score})---")
             return "Rewrite"
         
-    async def Rewrite(self, state: MessagesState, config: RunnableConfig):
+    async def Rewrite(self, state: State, config: RunnableConfig):
         """
         Transform the query to produce a better question.
 
@@ -147,7 +147,7 @@ class CheckpointedRAG():
         response = await self._llm.ainvoke(msg)
         return {"messages": [response]}
 
-    async def Generate(self, state: MessagesState):
+    async def Generate(self, state: State):
         """
         Generate answer
 
@@ -171,7 +171,7 @@ class CheckpointedRAG():
         def format_docs(docs):
             return "\n\n".join(doc.page_content for doc in docs)
 
-        # Chain
+        # Chain: https://python.langchain.com/docs/concepts/lcel/
         rag_chain = prompt | self._llm | StrOutputParser()
 
         # Run
@@ -179,7 +179,7 @@ class CheckpointedRAG():
         return {"messages": [response]}
     
     # Step 3: Generate a response using the retrieved content.
-    async def Generate1(self, state: MessagesState, config: RunnableConfig):
+    async def Generate1(self, state: State, config: RunnableConfig):
         """Generate answer."""
         logging.info(f"\n=== {self.Generate1.__name__} ===")
         #logging.debug(f"\nstate['messages']: {state['messages']}")
@@ -222,7 +222,7 @@ class CheckpointedRAG():
         # Compile application and test
         logging.info(f"\n=== {self.CreateGraph.__name__} ===")
         await vector_store.LoadDocuments(self._urls)
-        graph_builder = StateGraph(MessagesState)
+        graph_builder = StateGraph(State)
         graph_builder.add_node("Agent", self.Agent)
         graph_builder.add_node("Retrieve", ToolNode([vector_store.retriever_tool])) # Execute the retrieval.
         graph_builder.add_node("Rewrite", self.Rewrite)

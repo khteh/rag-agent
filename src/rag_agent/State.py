@@ -18,6 +18,9 @@ class State(TypedDict):
     question: str
     context: List[Document]
     answer: str
+    # The add_messages function defines how an update should be processed
+    # Default is to replace. add_messages says "append"
+    messages: Annotated[Sequence[BaseMessage], add_messages]    
     is_last_step: IsLastStep
 
 @dataclass
