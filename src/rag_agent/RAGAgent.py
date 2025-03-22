@@ -61,7 +61,11 @@ class RAGAgent():
         """
         #vertexai.init(project=os.environ.get("GOOGLE_CLOUD_PROJECT"), location=os.environ.get("GOOGLE_CLOUD_LOCATION"))
         self._config = config
-        self._llm = init_chat_model("gemini-2.0-flash", model_provider="google_vertexai", streaming=True)
+        """
+        .bind_tools() gives the agent LLM descriptions of each tool from their docstring and input arguments. 
+        If the agent LLM determines that its input requires a tool call, it’ll return a JSON tool message with the name of the tool it wants to use, along with the input arguments.        
+        """
+        self._llm = init_chat_model("gemini-2.0-flash", model_provider="google_vertexai", streaming=True).bind_tools(TOOLS)
         # https://python.langchain.com/docs/integrations/chat/google_vertex_ai_palm/
         """
         self._llm = ChatVertexAI(
@@ -73,12 +77,6 @@ class RAGAgent():
                         streaming=True
                     )
         """
-        """
-        .bind_tools() gives the agent LLM descriptions of each tool from their docstring and input arguments. 
-        If the agent LLM determines that its input requires a tool call, it’ll return a JSON tool message with the name of the tool it wants to use, along with the input arguments.        
-        """
-        self._llm = self._llm.bind_tools(TOOLS)
-
     async def prepare_model_inputs(self, state: CustomAgentState, config: RunnableConfig, store: BaseStore):
         # Retrieve user memories and add them to the system message
         # This function is called **every time** the model is prompted. It converts the state to a prompt
