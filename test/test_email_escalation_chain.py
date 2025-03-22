@@ -3,6 +3,7 @@ from data.sample_emails import EMAILS
 from rag_agent.State import EmailRAGState
 
 @pytest.mark.asyncio
+@pytest.mark.skip(reason="https://github.com/langchain-ai/langchain/discussions/30412")
 async def test_needs_escalation_true(rag):
     state = {
          "notice_message": EMAILS[0],
@@ -18,6 +19,7 @@ async def test_needs_escalation_true(rag):
     assert result["requires_escalation"]
 
 @pytest.mark.asyncio
+@pytest.mark.skip(reason="https://github.com/langchain-ai/langchain/discussions/30412")
 async def test_needs_escalation_false(rag):
     state = {
          "notice_message": EMAILS[0],

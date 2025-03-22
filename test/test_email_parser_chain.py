@@ -3,6 +3,7 @@ from rag_agent.State import EmailRAGState
 from data.sample_emails import EMAILS
 
 @pytest.mark.asyncio
+@pytest.mark.skip(reason="https://github.com/langchain-ai/langchain/discussions/30412")
 async def test_email_parser_chain(rag):
     state = {
          "notice_message": EMAILS[0],
