@@ -153,8 +153,8 @@ class EmailRAG():
         Use the EmailModel LCEL to extract fields from email
         """
         logging.info(f"\n=== {self.ParseEmail.__name__} ===")
-        #{"messages": [{"role": "user", "content": message}]}
         state["notice_email_extract"] = await self._email_parser_chain.ainvoke({"message": state["notice_message"]}, self._config) if state["notice_message"] else None
+        #state["notice_email_extract"] = await self._email_parser_chain.ainvoke({"message": [{"role": "user", "contents": state["notice_message"]}]}, self._config) if state["notice_message"] else None
         return state
 
     async def NeedsEscalation(self, state: EmailRAGState) -> EmailRAGState:
