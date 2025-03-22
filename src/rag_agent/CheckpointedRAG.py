@@ -69,6 +69,10 @@ class CheckpointedRAG():
                         streaming=True
                     )
         """
+        """
+        .bind_tools() gives the agent LLM descriptions of each tool from their docstring and input arguments. 
+        If the agent LLM determines that its input requires a tool call, it’ll return a JSON tool message with the name of the tool it wants to use, along with the input arguments.        
+        """
         self._llm = self._llm.bind_tools([vector_store.retriever_tool])
 
     async def Agent(self, state: State, config: RunnableConfig):
@@ -100,6 +104,8 @@ class CheckpointedRAG():
 
         Returns:
             str: A decision for whether the documents are relevant or not
+
+        Note: Edge functions return strings that tell you which node or nodes to navigate to.
         """
         logging.info(f"\n=== {self.GradeDocuments.__name__} CHECK RELEVANCE ===")
         # Data model
@@ -108,6 +114,7 @@ class CheckpointedRAG():
             binary_score: str = Field(description="Relevance score 'yes' or 'no'")
 
         # LLM with tool and validation
+        # https://python.langchain.com/docs/how_to/structured_output/
         llm_with_tool = self._llm.with_structured_output(grade)
 
         # Chain
@@ -245,7 +252,10 @@ class CheckpointedRAG():
             # Assess agent decision
             tools_condition,
             {
-                # Translate the condition outputs to nodes in our graph
+                """
+                Translate the condition outputs to nodes in our graph
+                which node to go to based on the output of the conditional edge function - tools_condition.
+                """
                 "tools": "Retrieve",
                 END: END
             },
@@ -284,6 +294,8 @@ async def Chat(graph, config, messages: List[str]):
             step["messages"][-1].pretty_print()
 
 async def main():
+    # httpx library is a dependency of LangGraph and is used under the hood to communicate with the AI models.
+    logging.getLogger("httpx").setLevel(logging.WARNING)
     logging.basicConfig(format='%(asctime)s %(levelname)-8s %(message)s', level=logging.DEBUG, datefmt='%Y-%m-%d %H:%M:%S')
     vertexai.init(project=os.environ.get("GOOGLE_CLOUD_PROJECT"), location=os.environ.get("GOOGLE_CLOUD_LOCATION"))
     config = RunnableConfig(run_name="Checkedpoint StateGraph RAG", thread_id=datetime.now())

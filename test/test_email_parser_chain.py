@@ -1,14 +1,20 @@
 import pytest, json
-from datetime import datetime
-from langchain_core.runnables import RunnableConfig
-from langchain_core.messages import HumanMessage, AIMessage, ToolMessage, SystemMessage, ToolCall
-from schema import EmailModel
-from rag_agent import EmailRAG
+from rag_agent.State import EmailRAGState
 from data.sample_emails import EMAILS
 
 @pytest.mark.asyncio
 async def test_email_parser_chain(rag):
-    email = await rag.ParseEmail(EMAILS[0])
-    assert email
-    assert email.entity_name == 'Occupational Safety and Health Administration (OSHA)'
+    state = {
+         "notice_message": EMAILS[0],
+         "notice_email_extract": None,
+         "escalation_text_criteria": """There's a risk of fire or
+         water damage at the site""",
+         "escalation_dollar_criteria": 100_000,
+         "requires_escalation": False,
+         "escalation_emails": ["brog@abc.com", "bigceo@company.com"],
+    }
+    result: EmailRAGState = await rag.ParseEmail(state)
+    assert result
+    assert result["notice_email_extract"]
+    assert result["notice_email_extract"].entity_name == 'Occupational Safety and Health Administration (OSHA)'
     

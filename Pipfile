@@ -22,7 +22,6 @@ hypercorn = {extras = ["h3"], version = "*"}
 quart-trio = "*"
 quart = "*"
 quart-wtforms = "*"
-pydantic = "*"
 flask-bcrypt = "*"
 quart-flask-patch = "*"
 Quart-CORS = "*"
@@ -32,6 +31,7 @@ langchain-core = "*"
 vertexai = "*"
 psycopg-pool = "*"
 aioquic = "*"
+pydantic = {extras = ["email"], version = "*"}
 
 [dev-packages]
 pytest-flask = "*"

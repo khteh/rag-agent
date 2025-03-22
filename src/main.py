@@ -23,6 +23,8 @@ load_dotenv()
 #print(f"GEMINI_API_KEY: {os.environ.get("GEMINI_API_KEY")}")
 config = Config()
 config.from_toml("/etc/hypercorn.toml")
+# httpx library is a dependency of LangGraph and is used under the hood to communicate with the AI models.
+logging.getLogger("httpx").setLevel(logging.WARNING)
 logging.basicConfig(format='%(asctime)s %(levelname)-8s %(message)s', level=logging.INFO, datefmt='%Y-%m-%d %H:%M:%S')	
 connection_kwargs = {
     "autocommit": True,

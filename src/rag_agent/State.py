@@ -11,8 +11,12 @@ from langgraph.graph.message import add_messages
 from langgraph.managed import IsLastStep
 from langgraph.prebuilt.chat_agent_executor import AgentState
 from typing_extensions import Annotated
+from src.schema.EmailModel import EmailModel
+from pydantic import EmailStr
 
-# Define state for application
+"""
+Define state for application - The information each node in StateGraph updates and passes to the next node.
+"""
 @dataclass
 class State(TypedDict):
     question: str
@@ -27,3 +31,14 @@ class State(TypedDict):
 class CustomAgentState(AgentState):
     context: List[Document]
     is_last_step: IsLastStep
+
+@dataclass
+class EmailRAGState(TypedDict):
+    notice_message: str
+    notice_email_extract: EmailModel | None
+    escalation_text_criteria: str
+    escalation_dollar_criteria: float
+    requires_escalation: bool
+    escalation_emails: list[EmailStr] | None
+    follow_ups: dict[str, bool] | None
+    current_follow_up: str | None    

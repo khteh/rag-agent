@@ -73,6 +73,10 @@ class RAGAgent():
                         streaming=True
                     )
         """
+        """
+        .bind_tools() gives the agent LLM descriptions of each tool from their docstring and input arguments. 
+        If the agent LLM determines that its input requires a tool call, it’ll return a JSON tool message with the name of the tool it wants to use, along with the input arguments.        
+        """
         self._llm = self._llm.bind_tools(TOOLS)
 
     async def prepare_model_inputs(self, state: CustomAgentState, config: RunnableConfig, store: BaseStore):
@@ -106,6 +110,8 @@ async def ChatAgent(agent, config, messages: List[str]):
         event["messages"][-1].pretty_print()
 
 async def main():
+    # httpx library is a dependency of LangGraph and is used under the hood to communicate with the AI models.
+    logging.getLogger("httpx").setLevel(logging.WARNING)
     logging.basicConfig(format='%(asctime)s %(levelname)-8s %(message)s', level=logging.DEBUG, datefmt='%Y-%m-%d %H:%M:%S')
     vertexai.init(project=os.environ.get("GOOGLE_CLOUD_PROJECT"), location=os.environ.get("GOOGLE_CLOUD_LOCATION"))
     config = RunnableConfig(run_name="RAG ReAct Agent", thread_id=datetime.now())
