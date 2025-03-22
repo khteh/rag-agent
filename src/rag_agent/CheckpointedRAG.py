@@ -20,6 +20,7 @@ from langgraph.checkpoint.memory import MemorySaver
 from typing_extensions import List, TypedDict
 from langgraph.store.memory import InMemoryStore
 from langchain_core.prompts import PromptTemplate
+from google.api_core.exceptions import ResourceExhausted
 from pydantic import BaseModel, Field
 """
 https://langchain-ai.github.io/langgraph/tutorials/rag/langgraph_agentic_rag/
@@ -236,39 +237,42 @@ class CheckpointedRAG():
         #logging.debug(f"\nGenerate() response: {response}")
         return {"messages": [response]}
 
-    async def CreateGraph(self, config: RunnableConfig) -> StateGraph:
+    async def CreateGraph(self, config: RunnableConfig) -> CompiledGraph:
         # Compile application and test
         logging.info(f"\n=== {self.CreateGraph.__name__} ===")
-        await vector_store.LoadDocuments(self._urls)
-        graph_builder = StateGraph(State)
-        graph_builder.add_node("Agent", self.Agent)
-        graph_builder.add_node("Retrieve", ToolNode([vector_store.retriever_tool])) # Execute the retrieval.
-        graph_builder.add_node("Rewrite", self.Rewrite)
-        graph_builder.add_node("Generate", self.Generate)
-        graph_builder.add_edge(START, "Agent")
-        #graph_builder.set_entry_point("query_or_respond")
-        graph_builder.add_conditional_edges(
-            "Agent",
-            # Assess agent decision
-            tools_condition,
-            {
-                """
-                Translate the condition outputs to nodes in our graph
-                which node to go to based on the output of the conditional edge function - tools_condition.
-                """
-                "tools": "Retrieve",
-                END: END
-            },
-        )
-        # Edges taken after the `action` node is called.
-        graph_builder.add_conditional_edges(
-            "Retrieve",
-            # Assess agent decision
-            self.GradeDocuments,
-        )
-        graph_builder.add_edge("Generate", END)
-        graph_builder.add_edge("Rewrite", "Agent")
-        return graph_builder.compile(store=InMemoryStore(), checkpointer=MemorySaver(), name="Checkedpoint StateGraph RAG")
+        try:
+            await vector_store.LoadDocuments(self._urls)
+            graph_builder = StateGraph(State)
+            graph_builder.add_node("Agent", self.Agent)
+            graph_builder.add_node("Retrieve", ToolNode([vector_store.retriever_tool])) # Execute the retrieval.
+            graph_builder.add_node("Rewrite", self.Rewrite)
+            graph_builder.add_node("Generate", self.Generate)
+            graph_builder.add_edge(START, "Agent")
+            #graph_builder.set_entry_point("query_or_respond")
+            graph_builder.add_conditional_edges(
+                "Agent",
+                # Assess agent decision
+                tools_condition,
+                {
+                    """
+                    Translate the condition outputs to nodes in our graph
+                    which node to go to based on the output of the conditional edge function - tools_condition.
+                    """
+                    "tools": "Retrieve",
+                    END: END
+                },
+            )
+            # Edges taken after the `action` node is called.
+            graph_builder.add_conditional_edges(
+                "Retrieve",
+                # Assess agent decision
+                self.GradeDocuments,
+            )
+            graph_builder.add_edge("Generate", END)
+            graph_builder.add_edge("Rewrite", "Agent")
+            return graph_builder.compile(store=InMemoryStore(), checkpointer=MemorySaver(), name="Checkedpoint StateGraph RAG")
+        except ResourceExhausted as e:
+            logging.exception(f"google.api_core.exceptions.ResourceExhausted")
 
 async def make_graph(config: RunnableConfig) -> CompiledGraph:
     return await CheckpointedRAG(config).CreateGraph(config)

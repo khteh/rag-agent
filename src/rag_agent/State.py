@@ -11,6 +11,13 @@ from langgraph.graph.message import add_messages
 from langgraph.managed import IsLastStep
 from langgraph.prebuilt.chat_agent_executor import AgentState
 from typing_extensions import Annotated
+from langgraph.graph.graph import (
+    END,
+    START,
+    CompiledGraph,
+    Graph,
+    Send,
+)
 from src.schema.EmailModel import EmailModel
 from pydantic import EmailStr
 
@@ -41,4 +48,9 @@ class EmailRAGState(TypedDict):
     requires_escalation: bool
     escalation_emails: list[EmailStr] | None
     follow_ups: dict[str, bool] | None
-    current_follow_up: str | None    
+    current_follow_up: str | None
+
+@dataclass
+class EmailAgentState(AgentState):
+    context: EmailRAGState
+    graph: CompiledGraph

@@ -73,7 +73,7 @@ def ground_search(
     return "\n\n".join(content.text for content in response.candidates[0].content.parts)
 
 @tool(response_format="content_and_artifact")
-async def retrieve(query: str, *, config: RunnableConfig):
+async def retrieve(query: str, *, config: Annotated[RunnableConfig, InjectedToolArg]):
     """Retrieve information related to a query."""
     retrieved_docs = await vector_store.asimilarity_search(query, k=2)
     serialized = "\n\n".join(
@@ -83,7 +83,7 @@ async def retrieve(query: str, *, config: RunnableConfig):
     return serialized, retrieved_docs
 
 @tool
-async def save_memory(memory: str, *, config: RunnableConfig, store: Annotated[BaseStore, InjectedStore()]) -> str:
+async def save_memory(memory: str, *, config: Annotated[RunnableConfig, InjectedToolArg], store: Annotated[BaseStore, InjectedStore()]) -> str:
     '''Save the given memory for the current user.'''
     # This is a **tool** the model can use to save memories to storage
     user_id = config.get("configurable", {}).get("user_id")

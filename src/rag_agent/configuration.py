@@ -3,12 +3,18 @@ from __future__ import annotations
 from dataclasses import dataclass, field, fields
 from typing import Annotated, Optional
 from langchain_core.runnables import RunnableConfig, ensure_config
+from langgraph.graph.graph import (
+    END,
+    START,
+    CompiledGraph,
+    Graph,
+    Send,
+)
 from .prompts import SYSTEM_PROMPT
-
+from .State import EmailRAGState
 @dataclass(kw_only=True)
 class Configuration:
     """The configuration for the agent."""
-
     system_prompt: str = field(
         default=SYSTEM_PROMPT,
         metadata={
@@ -42,3 +48,9 @@ class Configuration:
         _fields = {f.name for f in fields(cls) if f.init}
          # Using a double asterisk before the argument will allow you to pass a variable number of keyword parameters in the function
         return cls(**{k: v for k, v in configurable.items() if k in _fields})
+
+@dataclass(kw_only=True)
+class EmailConfiguration(Configuration):
+    """The configuration for the email agent."""
+    graph: CompiledGraph = None
+    emailState: EmailRAGState = None

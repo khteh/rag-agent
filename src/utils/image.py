@@ -20,4 +20,7 @@ def show_graph(graph, title: str):
     img = ImageTk.PhotoImage(img)
     panel = Label(root, image=img)
     panel.pack(side="bottom", fill="both", expand="yes")
+    # Save the PNG data to a file
+    with open(f"/tmp/{title}.png", "wb") as f:
+        f.write(img_bytes)
     root.mainloop()# This blocks

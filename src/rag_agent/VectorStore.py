@@ -39,12 +39,12 @@ class VectorStore(metaclass=VectorStoreSingleton):
         #vertexai.init(project=os.environ.get("GOOGLE_CLOUD_PROJECT"), location=os.environ.get("GOOGLE_CLOUD_LOCATION"))
         self._embeddings = VertexAIEmbeddings(model=self._model) # "text-embedding-005"
         self._vector_store = InMemoryVectorStore(self._embeddings)
+        # https://api.python.langchain.com/en/latest/tools/langchain.tools.retriever.create_retriever_tool.html
         self.retriever_tool = create_retriever_tool(
             self._vector_store.as_retriever(),
-            "Retrieve Blog Posts",
-            "Search and return information about Lilian Weng blog posts on LLM agents, prompt engineering, and adversarial attacks on LLMs.",
+            "Retrieve information related to a query",
+            "Search and return information about the query from the documents available in the store",
         )   
-        #print(f"VectorStore::__init__ {self._model}")
 
     async def LoadDocuments(self, urls: List[str]):
         # Load and chunk contents of the blog
