@@ -1,10 +1,12 @@
 import pytest, sys, asyncio, logging, vertexai, os, sys
 from datetime import datetime
+from dotenv import load_dotenv
 from os.path import dirname, join, abspath
 from langchain_core.runnables import RunnableConfig
 from rag_agent.EmailRAG import EmailRAG
 sys.path.insert(0, abspath(join(dirname(__file__), '../src')))
 pytest_plugins = ('pytest_asyncio',)
+load_dotenv()
 
 @pytest.fixture(scope="function")
 def rag():
