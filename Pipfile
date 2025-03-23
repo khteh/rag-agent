@@ -32,6 +32,8 @@ vertexai = "*"
 psycopg-pool = "*"
 aioquic = "*"
 pydantic = {extras = ["email"], version = "*"}
+neo4j = "*"
+retry = "*"
 
 [dev-packages]
 pytest-flask = "*"
