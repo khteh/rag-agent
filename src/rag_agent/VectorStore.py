@@ -67,6 +67,9 @@ class VectorStore(metaclass=VectorStoreSingleton):
                 self._docs.add(url)
 
     def _SplitDocuments(self, docs):
+        """
+        Embedding models have a fixed-size context window, and as the size of the text grows, an embedding’s ability to accurately represent the text decreases.
+        """
         logging.info(f"\n=== {self._SplitDocuments.__name__} ===")
         text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
         subdocs = text_splitter.split_documents(docs)

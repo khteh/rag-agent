@@ -84,7 +84,7 @@ async def retrieve(query: str, *, config: Annotated[RunnableConfig, InjectedTool
 
 @tool
 async def save_memory(memory: str, *, config: Annotated[RunnableConfig, InjectedToolArg], store: Annotated[BaseStore, InjectedStore()]) -> str:
-    '''Save the given memory for the current user.'''
+    """Save the given memory for the current user."""
     # This is a **tool** the model can use to save memories to storage
     user_id = config.get("configurable", {}).get("user_id")
     namespace = ("memories", user_id)
