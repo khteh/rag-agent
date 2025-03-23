@@ -40,7 +40,7 @@ from src.utils.image import show_graph
 from src.schema.EmailModel import EmailModel
 from src.schema.EscalationModel import EscalationCheckModel
 from .VectorStore import vector_store
-from src.data.sample_emails import EMAILS
+from data.sample_emails import EMAILS
 from .configuration import EmailConfiguration
 @tool
 async def email_processing_tool(
