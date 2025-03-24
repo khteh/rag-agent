@@ -262,3 +262,15 @@ Common extensions of Chain of Thought prompting include:
 ```
 $ docker run --rm ymuski/curl-http3 curl --http3 --verbose https://<nodeport service>:<nodeport>/healthz/ready
 ```
+
+## Neo4J
+
+### To import CSV into the database:
+
+- Need to copy the files / folder into the pod `/var/lib/neo4j/import/`
+
+### To dump a database:
+
+```
+$ sudo neo4j-admin database dump <database> --to-path=<folder>
+```
