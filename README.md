@@ -267,10 +267,42 @@ $ docker run --rm ymuski/curl-http3 curl --http3 --verbose https://<nodeport ser
 
 ### To import CSV into the database:
 
-- Need to copy the files / folder into the pod `/var/lib/neo4j/import/`
+- Need to copy the files / folder into the pod `/var/lib/neo4j/import`
 
-### To dump a database:
+### Sample Cypher Queries:
+
+- Visit with id:56:
 
 ```
-$ sudo neo4j-admin database dump <database> --to-path=<folder>
+MATCH (v:Visit) WHERE v.id = 56 RETURN v;
+```
+
+- Which patient was involved in Visit id:56
+
+```
+MATCH (p:Patient)-[h:HAS]->(v:Visit) where v.id=56 return v,h,p
+```
+
+- Which physician treated the patient i Visit id:56
+
+```
+MATCH (p:Patient)-[h:HAS]->(v:Visit)<-[t:TREATS]-(ph:Physician) where v.id=56 return v,h,p,t,ph
+```
+
+- All relationships going in and out of Visit id:56
+
+```
+MATCH (v:Visit)-[r]-(n) where v.id=56 return v,r,n
+```
+
+### Sample Cypher Accumulation:
+
+- Total visits and bill paid by payer Aetna in Texas:
+
+```
+MATCH (p:Payer)<-[c:COVERED_BY]-(v:Visit)-[:AT]->(h:Hospital)
+WHERE p.name = "Aetna"
+AND h.state_name = "TX"
+RETURN COUNT(*) as num_visits,
+SUM(c.billing_amount) as total_billing_amount;
 ```

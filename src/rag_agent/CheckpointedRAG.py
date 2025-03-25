@@ -46,6 +46,11 @@ class CheckpointedRAG():
             Give a binary score 'yes' or 'no' score to indicate whether the document is relevant to the question.""",
             input_variables=["context", "question"],
         )
+    """
+    Prompt
+    https://smith.langchain.com/hub
+    """
+    _rag_prompt = hub.pull("rlm/rag-prompt")
     _urls = [
         "https://lilianweng.github.io/posts/2023-06-23-agent/",
         "https://lilianweng.github.io/posts/2023-03-15-prompt-engineering/",
@@ -183,15 +188,12 @@ class CheckpointedRAG():
 
         docs = last_message.content
 
-        # Prompt
-        prompt = hub.pull("rlm/rag-prompt")
-
         # Post-processing
         def format_docs(docs):
             return "\n\n".join(doc.page_content for doc in docs)
 
         # Chain: https://python.langchain.com/docs/concepts/lcel/
-        rag_chain = prompt | self._llm | StrOutputParser()
+        rag_chain = self._rag_prompt | self._llm | StrOutputParser()
 
         # Run
         response = await rag_chain.ainvoke({"context": docs, "question": question})

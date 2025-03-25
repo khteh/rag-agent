@@ -66,7 +66,10 @@ async def retrieve(state: State):
     return {"context": retrieved_docs}
 
 async def generate(state: State, config: RunnableConfig):
-    # Define prompt for question-answering
+    """
+    Define prompt for question-answering
+    https://smith.langchain.com/hub
+    """
     prompt = hub.pull("rlm/rag-prompt")
     docs_content = "\n\n".join(doc.page_content for doc in state["context"])
     messages = await prompt.ainvoke({"question": state["question"], "context": docs_content}, config)
