@@ -11,12 +11,13 @@ from langchain.prompts import (
     HumanMessagePromptTemplate,
     ChatPromptTemplate,
 )
+from ..config import config
 load_dotenv()
 neo4j_vector_index = Neo4jVector.from_existing_graph(
     embedding = VertexAIEmbeddings(),
-    url = os.getenv("NEO4J_URI"),
-    username = os.getenv("NEO4J_USERNAME"),
-    password = os.getenv("NEO4J_PASSWORD"),
+    url = config.NEO4J_URI,
+    username = config.NEO4J_USERNAME,
+    password = config.NEO4J_PASSWORD,
     index_name = "reviews",
     node_label = "Review",
     text_node_properties=[

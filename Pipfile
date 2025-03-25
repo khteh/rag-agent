@@ -34,6 +34,7 @@ aioquic = "*"
 pydantic = {extras = ["email"], version = "*"}
 neo4j = "*"
 retry = "*"
+langchain-neo4j = "*"
 
 [dev-packages]
 pytest-flask = "*"

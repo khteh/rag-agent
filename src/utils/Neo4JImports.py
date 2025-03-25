@@ -13,7 +13,7 @@ REVIEWS_CSV_PATH = "/Healthcare/reviews.csv"
 """
 bolt://svc-neo4j-nodeport:7687
 """
-NEO4J_URI = "neo4j://10.152.183.170:7687"
+NEO4J_URI = "bolt://10.152.183.170:7687"
 NEO4J_USERNAME = "neo4j"
 NEO4J_PASSWORD = "P@$$w0rd"
 

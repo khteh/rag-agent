@@ -2,14 +2,16 @@ import os
 from dotenv import load_dotenv
 from typing import Any
 import numpy as np
-from langchain_community.graphs import Neo4jGraph
+from langchain_neo4j import Neo4jGraph
+from ..config import config
 load_dotenv()
+
 def _get_current_hospitals() -> list[str]:
     """Fetch a list of current hospital names from a Neo4j database."""
     graph = Neo4jGraph(
-        url = os.getenv("NEO4J_URI"),
-        username = os.getenv("NEO4J_USERNAME"),
-        password = os.getenv("NEO4J_PASSWORD"),
+        url=config.NEO4J_URI,
+        username=config.NEO4J_USERNAME,
+        password=config.NEO4J_PASSWORD,
     )
     current_hospitals = graph.query(
         """
