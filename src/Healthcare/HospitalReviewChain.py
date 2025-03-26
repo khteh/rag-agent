@@ -1,20 +1,23 @@
 import os
 from dotenv import load_dotenv
 from langchain.chat_models import init_chat_model
-from langchain.vectorstores.neo4j_vector import Neo4jVector
+from langchain_community.vectorstores import Neo4jVector
 from langchain_openai import OpenAIEmbeddings
 from langchain_google_vertexai import VertexAIEmbeddings
 from langchain.chains import RetrievalQA
-from langchain.prompts import (
-    PromptTemplate,
-    SystemMessagePromptTemplate,
-    HumanMessagePromptTemplate,
-    ChatPromptTemplate,
-)
-from ..config import config
+
+
+from langchain_core.prompts import ChatPromptTemplate
+
+from langchain_core.prompts import HumanMessagePromptTemplate
+
+from langchain_core.prompts import PromptTemplate
+
+from langchain_core.prompts import SystemMessagePromptTemplate
+from src.config import config
 load_dotenv()
 neo4j_vector_index = Neo4jVector.from_existing_graph(
-    embedding = VertexAIEmbeddings(),
+    embedding = VertexAIEmbeddings(model="text-embedding-005"),
     url = config.NEO4J_URI,
     username = config.NEO4J_USERNAME,
     password = config.NEO4J_PASSWORD,

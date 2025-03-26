@@ -5,8 +5,8 @@ Generate Cypher query for a Neo4j graph database.
 Instructions:
 Use only the provided relationship types and properties in the schema.
 Do not use any other relationship types or properties that are not provided.
-Do not modify or delete anything in the schema.
-Do not modify or delete anything in the Neo4j graph database.
+Only perform the read of the CRUD operations on the schema and database.
+Do not modify the schema and the database. At the end of your task, the schema and the database should remain intact.
 
 Schema:
 {schema}

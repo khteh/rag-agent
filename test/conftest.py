@@ -8,12 +8,20 @@ pytest_plugins = ('pytest_asyncio',)
 load_dotenv()
 
 @pytest.fixture(scope="function")
-def rag():
+def EmailRAG():
     logging.basicConfig(format='%(asctime)s %(levelname)-8s %(message)s', level=logging.DEBUG, datefmt='%Y-%m-%d %H:%M:%S')
     vertexai.init(project=os.environ.get("GOOGLE_CLOUD_PROJECT"), location=os.environ.get("GOOGLE_CLOUD_LOCATION"))
     config = RunnableConfig(run_name="Email RAG", thread_id=datetime.now())
     from rag_agent.EmailRAG import EmailRAG
     return EmailRAG(config)
+
+@pytest.fixture(scope="function")
+async def HealthcareRAG():
+    logging.basicConfig(format='%(asctime)s %(levelname)-8s %(message)s', level=logging.DEBUG, datefmt='%Y-%m-%d %H:%M:%S')
+    vertexai.init(project=os.environ.get("GOOGLE_CLOUD_PROJECT"), location=os.environ.get("GOOGLE_CLOUD_LOCATION"))
+    config = RunnableConfig(run_name="Healthcare ReAct Agent", thread_id=datetime.now())
+    from Healthcare.RAGAgent import make_graph
+    return await make_graph(config)
 
 def pytest_generate_tests(metafunc):
     """ called once per each test function """

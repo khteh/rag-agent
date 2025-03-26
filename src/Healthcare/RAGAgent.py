@@ -10,7 +10,7 @@ from langchain.agents import (
     AgentExecutor,
 )
 from langchain import hub
-from .HospitalCyhperChain import reviews_vector_chain, hospital_cypher_chain
+from .HospitalCypherChain import reviews_vector_chain, hospital_cypher_chain
 from .HospitalWaitingTime import (
     get_current_wait_times,
     get_most_available_hospital,

@@ -4,7 +4,7 @@ from data.sample_emails import EMAILS
 
 @pytest.mark.asyncio
 @pytest.mark.skip(reason="https://github.com/langchain-ai/langchain/discussions/30412")
-async def test_email_parser_chain(rag):
+async def test_email_parser_chain(EmailRAG):
     state = {
          "notice_message": EMAILS[0],
          "notice_email_extract": None,
@@ -14,7 +14,7 @@ async def test_email_parser_chain(rag):
          "requires_escalation": False,
          "escalation_emails": ["brog@abc.com", "bigceo@company.com"],
     }
-    result: EmailRAGState = await rag.ParseEmail(state)
+    result: EmailRAGState = await EmailRAG.ParseEmail(state)
     assert result
     assert result["notice_email_extract"]
     assert result["notice_email_extract"].entity_name == 'Occupational Safety and Health Administration (OSHA)'

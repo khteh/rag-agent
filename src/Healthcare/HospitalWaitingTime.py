@@ -3,7 +3,7 @@ from dotenv import load_dotenv
 from typing import Any
 import numpy as np
 from langchain_neo4j import Neo4jGraph
-from ..config import config
+from src.config import config
 load_dotenv()
 
 def _get_current_hospitals() -> list[str]:

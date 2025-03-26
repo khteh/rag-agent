@@ -40,6 +40,7 @@ langchain-neo4j = "*"
 pytest-flask = "*"
 pytest = "*"
 pytest-asyncio = "*"
+langchain-cli = "*"
 
 [requires]
 python_version = "3.12"
