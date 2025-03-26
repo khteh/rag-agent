@@ -2,13 +2,12 @@ import quart_flask_patch
 import logging, os, re, json, asyncio, psycopg, json, logging, vertexai
 from urllib import parse
 from dotenv import load_dotenv
-from datetime import datetime
+from datetime import date, datetime, timedelta, timezone
 from hypercorn.config import Config
 from hypercorn.asyncio import serve
 from psycopg import Error
 from psycopg_pool import AsyncConnectionPool, ConnectionPool
-from datetime import datetime
-from quart import Quart, request
+from quart import Quart, Response
 from flask_healthz import Healthz, HealthError
 from flask_bcrypt import Bcrypt
 from quart_wtf.csrf import CSRFProtect
@@ -30,6 +29,13 @@ connection_kwargs = {
     "autocommit": True,
     "prepare_threshold": 0,
 }
+def _add_secure_headers(response: Response) -> Response:
+    response.headers["Strict-Transport-Security"] = (
+        "max-age=63072000; includeSubDomains; preload"
+    )
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    return response
+
 async def create_app() -> Quart:
     """
     Create App
@@ -38,8 +44,10 @@ async def create_app() -> Quart:
     vertexai.init(project=os.environ.get("GOOGLE_CLOUD_PROJECT"), location=os.environ.get("GOOGLE_CLOUD_LOCATION"))
     app = Quart(__name__, static_url_path='')
     app.config.from_file("/etc/ragagent_config.json", json.load)
+    app.config["SEND_FILE_MAX_AGE_DEFAULT"] = timedelta(days=90)
     app.config["SQLALCHEMY_DATABASE_URI"] = f"postgresql+psycopg://{os.environ.get('DB_USERNAME')}:{parse.quote(os.environ.get('DB_PASSWORD'))}@{app.config['DB_HOST']}/LangchainCheckpoint"
     app.config["POSTGRESQL_DATABASE_URI"] = f"postgresql://{os.environ.get('DB_USERNAME')}:{parse.quote(os.environ.get('DB_PASSWORD'))}@{app.config['DB_HOST']}/LangchainCheckpoint"
+    app.after_request(_add_secure_headers)
     app = cors(app, allow_credentials=True, allow_origin="https://localhost:4433")
     from src.controllers.HomeController import home_api as home_blueprint
     app.register_blueprint(home_blueprint, url_prefix="/")
@@ -53,45 +61,51 @@ async def create_app() -> Quart:
     from src.Healthcare.RAGAgent import make_graph as healthcare_make_graph#, agent
     agent = await make_graph(config)
     healthcare_agent = await healthcare_make_graph(healthcare_config)
-    async with AsyncConnectionPool(
-        conninfo=app.config["POSTGRESQL_DATABASE_URI"],
-        max_size=app.config["DB_MAX_CONNECTIONS"],
-        kwargs=connection_kwargs,
-    ) as pool:
-        # Create the AsyncPostgresSaver
-        checkpointer = AsyncPostgresSaver(pool)
-        # Set up the checkpointer (uncomment this line the first time you run the app)
-        #await checkpointer.setup()
-        # Check if the checkpoints table exists
-        async with pool.connection() as conn:
-            async with conn.cursor() as cur:
-                try:
-                    await cur.execute("""
-                        SELECT EXISTS (
-                            SELECT FROM information_schema.tables 
-                            WHERE  table_schema = 'public'
-                            AND    table_name   = 'checkpoints'
-                        );
-                    """)
-                    table_exists = (await cur.fetchone())[0]
-                    if not table_exists:
-                        logging.info("Checkpoints table does not exist. Running setup...")
-                        await checkpointer.setup()
-                    else:
-                        logging.info("Checkpoints table already exists. Skipping setup.")
-                except psycopg.Error as e:
-                    logging.exception(f"Error checking for checkpoints table: {e}")
-                    # Optionally, you might want to raise this error
-                    # raise
-        # Assign the checkpointer to the assistant
-        if agent:
-            agent.checkpointer = checkpointer
-            healthcare_agent.checkpointer = checkpointer
-            app.agent = agent
-            app.healthcare_agent = healthcare_agent
-            logging.info("Agent is assigned a checkpointer")
-        else:
-            logging.warning(f"Agent not ready")
+    if app.debug:
+        return HTTPToHTTPSRedirectMiddleware(app, "khteh.com")  # type: ignore - Defined in hypercorn.toml server_names
+    else:
+        app.config["TEMPLATES_AUTO_RELOAD"] = True
+    @app.before_serving
+    async def startup() -> None:
+        async with AsyncConnectionPool(
+            conninfo=app.config["POSTGRESQL_DATABASE_URI"],
+            max_size=app.config["DB_MAX_CONNECTIONS"],
+            kwargs=connection_kwargs,
+        ) as pool:
+            # Create the AsyncPostgresSaver
+            checkpointer = AsyncPostgresSaver(pool)
+            # Set up the checkpointer (uncomment this line the first time you run the app)
+            #await checkpointer.setup()
+            # Check if the checkpoints table exists
+            async with pool.connection() as conn:
+                async with conn.cursor() as cur:
+                    try:
+                        await cur.execute("""
+                            SELECT EXISTS (
+                                SELECT FROM information_schema.tables 
+                                WHERE  table_schema = 'public'
+                                AND    table_name   = 'checkpoints'
+                            );
+                        """)
+                        table_exists = (await cur.fetchone())[0]
+                        if not table_exists:
+                            logging.info("Checkpoints table does not exist. Running setup...")
+                            await checkpointer.setup()
+                        else:
+                            logging.info("Checkpoints table already exists. Skipping setup.")
+                    except psycopg.Error as e:
+                        logging.exception(f"Error checking for checkpoints table: {e}")
+                        # Optionally, you might want to raise this error
+                        # raise
+            # Assign the checkpointer to the assistant
+            if agent:
+                agent.checkpointer = checkpointer
+                healthcare_agent.checkpointer = checkpointer
+                app.agent = agent
+                app.healthcare_agent = healthcare_agent
+                logging.info("Agent is assigned a checkpointer")
+            else:
+                logging.warning(f"Agent not ready")
     return app
 
 # https://quart.palletsprojects.com/en/latest/how_to_guides/startup_shutdown.html
