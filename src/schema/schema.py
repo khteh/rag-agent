@@ -12,15 +12,9 @@ from pydantic import BaseModel, Field
 
 class UserInput(BaseModel):
     """Basic user input for the agent."""
-
     message: str = Field(
         description="User input to the agent.",
         examples=["What is the weather in Tokyo?"],
-    )
-    model: str = Field(
-        description="LLM Model to use for the agent.",
-        default="gpt-4o-mini",
-        examples=["gpt-4o-mini", "llama-3.1-70b"],
     )
     thread_id: str | None = Field(
         description="Thread ID to persist and continue a multi-turn conversation.",
@@ -38,7 +32,6 @@ class StreamInput(UserInput):
 
 class AgentResponse(BaseModel):
     """Response from the agent when called via /invoke."""
-
     message: Dict[str, Any] = Field(
         description="Final response from the agent, as a serialized LangChain message.",
         examples=[

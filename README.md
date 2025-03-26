@@ -268,6 +268,7 @@ $ docker run --rm ymuski/curl-http3 curl --http3 --verbose https://<nodeport ser
 ### To import CSV into the database:
 
 - Need to copy the files / folder into the pod `/var/lib/neo4j/import`
+- `LoadNeo4J.sh` will load `data/Healthcare` into `neo4j-0` pod
 
 ### Sample Cypher Queries:
 
