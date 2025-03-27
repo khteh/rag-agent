@@ -1,12 +1,12 @@
 accesslog = "/var/log/hypercorn/access.log"
 errorlog = "/var/log/hypercorn/errors.log"
-loglevel = "DEBUG" 
-alt_svc_headers = ["h3=\":4433\"; ma=86400"]
-#bind = "0.0.0.0:8443"
+loglevel = "DEBUG"
+alt_svc_headers = ["h3=\":4433\"; ma=2592000"]
+bind = "0.0.0.0:4433"
 quic_bind = ["0.0.0.0:4433", "[::]:4433"]
-#insecure_bind = "0.0.0.0:8080"
+insecure_bind = "0.0.0.0:8080"
 certfile = "/tmp/server.crt"
 keyfile = "/tmp/server.key"
-server_names = ["hypercorn"]
-worker_class = "trio"
+server_names = ["khteh.com"]
+worker_class = "asyncio"
 #workers = 100

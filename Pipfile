@@ -15,15 +15,13 @@ beautifulsoup4 = "*"
 langchain-google-genai = "*"
 google-genai = "*"
 pillow = "*"
-flask-healthz = "*"
 psycopg = {extras = ["binary"] }
 psycopg2-binary = "*"
 hypercorn = {extras = ["h3"], version = "*"}
-quart-trio = "*"
 quart = "*"
+quart-bcrypt = "*"
+quart-trio = "*"
 quart-wtforms = "*"
-flask-bcrypt = "*"
-quart-flask-patch = "*"
 Quart-CORS = "*"
 langgraph-checkpoint-postgres = "*"
 uuid7 = "*"
@@ -35,13 +33,13 @@ pydantic = {extras = ["email"], version = "*"}
 neo4j = "*"
 retry = "*"
 langchain-neo4j = "*"
+jsonpickle = "*"
 
 [dev-packages]
 pytest-flask = "*"
 pytest = "*"
 pytest-asyncio = "*"
 langchain-cli = "*"
-tox = "*"
 
 [requires]
 python_version = "3.12"

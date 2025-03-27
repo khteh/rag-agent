@@ -15,8 +15,6 @@ class ConfigSingleton(type): # Inherit from "type" in order to gain access to me
 class Config(metaclass=ConfigSingleton):
     DEBUG = False
     TESTING = False
-    with open('/etc/ragagent_config.json', 'r') as f:
-        config = json.load(f)
     SECRET_KEY:str = None
     SQLALCHEMY_DATABASE_URI:str = None
     POSTGRESQL_DATABASE_URI:str = None
