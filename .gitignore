@@ -1,6 +1,7 @@
 *.swp
 *.crt
 *.key
+**/mlruns
 **/.env
 **/__pycache__/
 **/.langgraph_api/

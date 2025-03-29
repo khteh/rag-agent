@@ -34,6 +34,8 @@ neo4j = "*"
 retry = "*"
 langchain-neo4j = "*"
 jsonpickle = "*"
+mlflow = {extras = ["genai"], version = "*"}
+databricks-sdk = "*"
 
 [dev-packages]
 pytest-flask = "*"

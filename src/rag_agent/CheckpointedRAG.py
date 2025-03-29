@@ -34,7 +34,7 @@ load_dotenv()
 from .State import State
 from ..utils.image import show_graph
 #from .State import State
-from .VectorStore import vector_store
+from .VectorStore import VectorStore
 class CheckpointedRAG():
     _llm = None
     _config = None
@@ -55,7 +55,12 @@ class CheckpointedRAG():
         "https://lilianweng.github.io/posts/2023-06-23-agent/",
         "https://lilianweng.github.io/posts/2023-03-15-prompt-engineering/",
         "https://lilianweng.github.io/posts/2023-10-25-adv-attack-llm/",
+        "https://mlflow.org/docs/latest/index.html",
+        "https://mlflow.org/docs/latest/tracking/autolog.html",
+        "https://mlflow.org/docs/latest/getting-started/tracking-server-overview/index.html",
+        "https://mlflow.org/docs/latest/python_api/mlflow.deployments.html",        
     ]
+    _vectorStore = None
     # Class constructor
     def __init__(self, config: RunnableConfig={}):
         """
@@ -79,7 +84,8 @@ class CheckpointedRAG():
         .bind_tools() gives the agent LLM descriptions of each tool from their docstring and input arguments. 
         If the agent LLM determines that its input requires a tool call, it’ll return a JSON tool message with the name of the tool it wants to use, along with the input arguments.        
         """
-        self._llm = self._llm.bind_tools([vector_store.retriever_tool])
+        self._vectorStore = VectorStore(model="text-embedding-005", chunk_size=1000, chunk_overlap=100)
+        self._llm = self._llm.bind_tools([self._vector_store.retriever_tool])
 
     async def Agent(self, state: State, config: RunnableConfig):
         """
@@ -243,10 +249,10 @@ class CheckpointedRAG():
         # Compile application and test
         logging.info(f"\n=== {self.CreateGraph.__name__} ===")
         try:
-            await vector_store.LoadDocuments(self._urls)
+            await self._vector_store.LoadDocuments(self._urls)
             graph_builder = StateGraph(State)
             graph_builder.add_node("Agent", self.Agent)
-            graph_builder.add_node("Retrieve", ToolNode([vector_store.retriever_tool])) # Execute the retrieval.
+            graph_builder.add_node("Retrieve", ToolNode([self._vector_store.retriever_tool])) # Execute the retrieval.
             graph_builder.add_node("Rewrite", self.Rewrite)
             graph_builder.add_node("Generate", self.Generate)
             graph_builder.add_edge(START, "Agent")

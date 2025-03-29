@@ -17,7 +17,6 @@ from google.genai import types
 from google.genai.types import Tool, GenerateContentConfig, GoogleSearch
 from typing_extensions import Annotated
 from .configuration import Configuration
-from .VectorStore import vector_store
 load_dotenv()
 async def search(
     query: str, *, config: Annotated[RunnableConfig, InjectedToolArg]
@@ -75,12 +74,13 @@ def ground_search(
 @tool(response_format="content_and_artifact")
 async def retrieve(query: str, *, config: Annotated[RunnableConfig, InjectedToolArg]):
     """Retrieve information related to a query."""
-    retrieved_docs = await vector_store.asimilarity_search(query, k=2)
+    vectorStore = Configuration.from_runnable_config(config).vector_store
+    retrieved_docs = await vectorStore.asimilarity_search(query, k=2)
     serialized = "\n\n".join(
         (f"Source: {doc.metadata}\n" f"Content: {doc.page_content}")
         for doc in retrieved_docs
     )
-    return serialized, retrieved_docs
+    return serialized, retrieved_docs#
 
 @tool
 async def save_memory(memory: str, *, config: Annotated[RunnableConfig, InjectedToolArg], store: Annotated[BaseStore, InjectedStore()]) -> str:
@@ -91,4 +91,3 @@ async def save_memory(memory: str, *, config: Annotated[RunnableConfig, Injected
     store.put(namespace, f"memory_{len(await store.asearch(namespace))}", {"data": memory})
     return f"Saved memory: {memory}"
 
-TOOLS: List[Callable[..., Any]] = [vector_store.retriever_tool, ground_search, save_memory]

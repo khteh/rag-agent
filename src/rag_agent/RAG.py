@@ -26,7 +26,7 @@ llm = init_chat_model("gpt-4o-mini", model_provider="openai")
 embeddings = OpenAIEmbeddings(model="text-embedding-3-large")"
 """
 from VectorStore import VectorStore
-vector_store = VectorStore()
+vector_store = VectorStore(model="text-embedding-005", chunk_size=1000, chunk_overlap=100)
 
 # https://cloud.google.com/vertex-ai/generative-ai/docs/embeddings/get-text-embeddings
 #vector_store = InMemoryVectorStore(embeddings)

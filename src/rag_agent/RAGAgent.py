@@ -2,6 +2,7 @@ import os, bs4, vertexai, asyncio, logging
 from dotenv import load_dotenv
 from datetime import datetime
 from typing import Annotated
+from typing import Any, Callable, List, Optional, cast
 from google.api_core.exceptions import ResourceExhausted
 from langchain import hub
 from langchain.chat_models import init_chat_model
@@ -36,10 +37,10 @@ https://cloud.google.com/vertex-ai/generative-ai/docs/embeddings/get-text-embedd
 https://langchain-ai.github.io/langgraph/how-tos/streaming/#values
 """
 load_dotenv()
-from .Tools import TOOLS
-from .VectorStore import vector_store
+from .VectorStore import VectorStore
 from .State import CustomAgentState
 from ..utils.image import show_graph
+from .Tools import ground_search, save_memory
 #agent = None
 class RAGAgent():
     _llm = None
@@ -48,12 +49,18 @@ class RAGAgent():
         "https://lilianweng.github.io/posts/2023-06-23-agent/",
         "https://lilianweng.github.io/posts/2023-03-15-prompt-engineering/",
         "https://lilianweng.github.io/posts/2023-10-25-adv-attack-llm/",
+        "https://mlflow.org/docs/latest/index.html",
+        "https://mlflow.org/docs/latest/tracking/autolog.html",
+        "https://mlflow.org/docs/latest/getting-started/tracking-server-overview/index.html",
+        "https://mlflow.org/docs/latest/python_api/mlflow.deployments.html",        
     ]    
     _prompt = ChatPromptTemplate.from_messages([
                 ("system", "You are a helpful AI assistant named Bob."),
                 ("placeholder", "{messages}"),
                 ("user", "Remember, always provide accurate answer!"),
         ])
+    _vectorStore = None
+    _tools: List[Callable[..., Any]] = None #[vector_store.retriever_tool, ground_search, save_memory]
     # Class constructor
     def __init__(self, config: RunnableConfig={}):
         """
@@ -63,9 +70,12 @@ class RAGAgent():
         self._config = config
         """
         .bind_tools() gives the agent LLM descriptions of each tool from their docstring and input arguments. 
-        If the agent LLM determines that its input requires a tool call, it’ll return a JSON tool message with the name of the tool it wants to use, along with the input arguments.        
+        If the agent LLM determines that its input requires a tool call, it’ll return a JSON tool message with the name of the tool it wants to use, along with the input arguments.
         """
-        self._llm = init_chat_model("gemini-2.0-flash", model_provider="google_vertexai", streaming=True).bind_tools(TOOLS)
+        self._vectorStore = VectorStore(model="text-embedding-005", chunk_size=1000, chunk_overlap=100)
+        self._tools = [self._vectorStore.retriever_tool, ground_search, save_memory]
+        self._llm = init_chat_model("gemini-2.0-flash", model_provider="google_vertexai", streaming=True).bind_tools(self._tools)
+        config["vector_store"] = self._vectorStore
         # https://python.langchain.com/docs/integrations/chat/google_vertex_ai_palm/
         """
         self._llm = ChatVertexAI(
@@ -89,11 +99,11 @@ class RAGAgent():
     async def CreateGraph(self, config: RunnableConfig) -> CompiledGraph:
         logging.debug(f"\n=== {self.CreateGraph.__name__} ===")
         try:
-            await vector_store.LoadDocuments(self._urls)
+            await self._vector_store.LoadDocuments(self._urls)
             # https://langchain-ai.github.io/langgraph/reference/prebuilt/#langgraph.prebuilt.chat_agent_executor.create_react_agent
-            return create_react_agent(self._llm, TOOLS, store=InMemoryStore(), checkpointer=MemorySaver(), state_schema=CustomAgentState, name="RAG ReAct Agent", prompt=self._prompt)
+            return create_react_agent(self._llm, self._tools, store=InMemoryStore(), checkpointer=MemorySaver(), state_schema=CustomAgentState, name="RAG ReAct Agent", prompt=self._prompt)
         except ResourceExhausted as e:
-            logging.exception(f"google.api_core.exceptions.ResourceExhausted")
+            logging.exception(f"google.api_core.exceptions.ResourceExhausted {e}")
 
 async def make_graph(config: RunnableConfig) -> CompiledGraph:
     return await RAGAgent(config).CreateGraph(config)

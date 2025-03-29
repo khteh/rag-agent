@@ -39,7 +39,7 @@ from .State import EmailRAGState, EmailAgentState
 from src.utils.image import show_graph
 from src.schema.EmailModel import EmailModel
 from src.schema.EscalationModel import EscalationCheckModel
-from .VectorStore import vector_store
+from .VectorStore import VectorStore
 from data.sample_emails import EMAILS
 from .configuration import EmailConfiguration
 @tool
@@ -116,7 +116,7 @@ class EmailRAG():
     # https://realpython.com/build-llm-rag-chatbot-with-langchain/#chains-and-langchain-expression-language-lcel
     _email_parser_chain = None
     _escalation_chain = None
-    graph: CompiledGraph = None
+    _graph: CompiledGraph = None
     # Class constructor
     def __init__(self, config: RunnableConfig={}):
         """
@@ -176,7 +176,8 @@ class EmailRAG():
             graph_builder.add_edge(START, "ParseEmail")
             graph_builder.add_edge("ParseEmail", "NeedsEscalation")
             graph_builder.add_edge("NeedsEscalation", END)
-            self.graph = graph_builder.compile(store=InMemoryStore(), checkpointer=MemorySaver(), name="Email RAG")
+            self._graph = graph_builder.compile(store=InMemoryStore(), checkpointer=MemorySaver(), name="Email RAG")
+            config["graph"] = self._graph
             # https://langchain-ai.github.io/langgraph/reference/prebuilt/#langgraph.prebuilt.chat_agent_executor.create_react_agent
             return create_react_agent(self._llm, [email_processing_tool], store=InMemoryStore(), checkpointer=MemorySaver(), config_schema=EmailConfiguration, state_schema=EmailAgentState, name="Email ReAct Agent", prompt=self._prompt)
         except ResourceExhausted as e:
@@ -200,7 +201,6 @@ async def Chat():
         "escalation_dollar_criteria": 100_000,
         "escalation_emails": ["brog@abc.com", "bigceo@company.com"],
     }
-    config["graph"] = emailRAG.graph
     config["emailState"] = email_state
     async for step in agent.astream(
         {"messages": [{"role": "user", "content": message_with_criteria}]},

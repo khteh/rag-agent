@@ -29,15 +29,19 @@ class VectorStore(metaclass=VectorStoreSingleton):
     """
     _model: str = None
     _embeddings: VertexAIEmbeddings = None
+    _chunk_size = None
+    _chunk_overlap = None
     _vector_store: InMemoryVectorStore = None
     retriever_tool: None
     _docs = set()
     def __new__(cls, *args, **kwargs):
         return super().__new__(cls)
-    def __init__(self, model="text-embedding-005"):
+    def __init__(self, model, chunk_size, chunk_overlap):
         self._model = model
+        self._chunk_size = chunk_size
+        self._chunk_overlap = chunk_overlap
         #vertexai.init(project=os.environ.get("GOOGLE_CLOUD_PROJECT"), location=os.environ.get("GOOGLE_CLOUD_LOCATION"))
-        self._embeddings = VertexAIEmbeddings(model=self._model) # "text-embedding-005"
+        self._embeddings = VertexAIEmbeddings(model=self._model)
         self._vector_store = InMemoryVectorStore(self._embeddings)
         # https://api.python.langchain.com/en/latest/tools/langchain.tools.retriever.create_retriever_tool.html
         self.retriever_tool = create_retriever_tool(
@@ -71,7 +75,7 @@ class VectorStore(metaclass=VectorStoreSingleton):
         Embedding models have a fixed-size context window, and as the size of the text grows, an embedding’s ability to accurately represent the text decreases.
         """
         logging.info(f"\n=== {self._SplitDocuments.__name__} ===")
-        text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
+        text_splitter = RecursiveCharacterTextSplitter(self._chunk_size, self._chunk_overlap)
         subdocs = text_splitter.split_documents(docs)
         logging.debug(f"Split blog post into {len(subdocs)} sub-documents.")
         return subdocs
@@ -88,4 +92,4 @@ class VectorStore(metaclass=VectorStoreSingleton):
         logging.info(f"\n=== {self.asimilarity_search.__name__} ===")
         return await self._vector_store.asimilarity_search(query=query, k=k, **kwargs)
 
-vector_store = VectorStore()    
+#vector_store = VectorStore(model="text-embedding-005", chunk_size=1000, chunk_overlap=100)

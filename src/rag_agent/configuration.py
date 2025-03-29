@@ -12,6 +12,7 @@ from langgraph.graph.graph import (
 )
 from .prompts import SYSTEM_PROMPT
 from .State import EmailRAGState
+from .VectorStore import VectorStore
 @dataclass(kw_only=True)
 class Configuration:
     """The configuration for the agent."""
@@ -37,7 +38,12 @@ class Configuration:
             "description": "The maximum number of search results to return for each search query."
         },
     )
-
+    vector_store: VectorStore = field(
+        default=None,
+        metadata={
+            "description": "Vector store of RAG instance"
+        }
+    )
     @classmethod
     def from_runnable_config(
         cls, config: Optional[RunnableConfig] = None
