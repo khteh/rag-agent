@@ -33,8 +33,9 @@ class Config(metaclass=ConfigSingleton):
         self.POSTGRESQL_DATABASE_URI = f"postgresql://{os.environ.get('DB_USERNAME')}:{parse.quote(os.environ.get('DB_PASSWORD'))}@{config['DB_HOST']}/LangchainCheckpoint"
         self.JWT_SECRET_KEY = config["JWT_SECRET_KEY"]
         self.OIDC_CLIENT_SECRETS = config["OIDC_CLIENT_SECRETS"]
-        self.NEO4J_USERNAME = os.environ.get('NEO4J_USERNAME')
-        self.NEO4J_PASSWORD = os.environ.get('NEO4J_PASSWORD')
+        credential = os.environ.get('NEO4J_AUTH').split('/')
+        self.NEO4J_USERNAME = credential[0]
+        self.NEO4J_PASSWORD = credential[1]
         self.NEO4J_URI = config['NEO4J_URI']
 
 config = Config()

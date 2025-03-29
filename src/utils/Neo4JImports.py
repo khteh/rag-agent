@@ -27,7 +27,6 @@ LOGGER = logging.getLogger(__name__)
 
 NODES = ["Hospital", "Payer", "Physician", "Patient", "Visit", "Review"]
 
-
 def _set_uniqueness_constraints(tx, node):
     """
     Creates and runs queries enforcing each node to have a unique ID
