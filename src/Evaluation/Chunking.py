@@ -1,4 +1,5 @@
 import ast, os, mlflow, mlflow.deployments, pandas
+from pandas import DataFrame, Series
 from langchain.chains import RetrievalQA
 #from langchain.embeddings.sentence_transformer import SentenceTransformerEmbeddings
 from langchain_community.llms import Databricks
@@ -15,7 +16,7 @@ _urls = [
     "https://mlflow.org/docs/latest/python_api/mlflow.deployments.html",        
 ]
 
-_eval_data = pandas.DataFrame(
+_eval_data = DataFrame(
   {
       "question": [
           "What is MLflow?",
@@ -48,7 +49,7 @@ def evaluate_chunk_size(chunk_size):
         docs = vector_store.retriever.get_relevant_documents(question)
         return [doc.metadata["source"] for doc in docs]
 
-    def retriever_model_function(question_df: pd.DataFrame) -> pd.Series:
+    def retriever_model_function(question_df: DataFrame) -> Series:
         return question_df["question"].apply(retrieve_doc_ids)
 
     with mlflow.start_run():
