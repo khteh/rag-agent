@@ -33,6 +33,7 @@ https://python.langchain.com/docs/tutorials/qa_chat_history/
 https://python.langchain.com/api_reference/langchain/chat_models/langchain.chat_models.base.init_chat_model.html
 https://github.com/langchain-ai/langgraph/blob/main/libs/langgraph/langgraph/graph/message.py
 https://langchain-ai.github.io/langgraph/how-tos/streaming/#values
+https://python.langchain.com/docs/how_to/configure/
 """
 load_dotenv()
 from .State import EmailRAGState, EmailAgentState
@@ -59,8 +60,11 @@ async def email_processing_tool(
     After calling this tool, you don't need to call any others.
     """
     logging.info(f"\n=== {email_processing_tool.__init__.__name__} ===")
-    graph = EmailConfiguration.from_runnable_config(config).graph
-    emailState = EmailConfiguration.from_runnable_config(config).emailState
+    """Extract the user's state from the conversation and update the memory."""
+    #EmailConfiguration.from_runnable_config(config).graph
+    #EmailConfiguration.from_runnable_config(config).email_state
+    graph = config.get("configurable", {}).get("graph")
+    emailState = config.get("configurable", {}).get("email_state")
     emailState["notice_message"] = email
     emailState["escalation_text_criteria"] = escalation_criteria
     #print(f"emailState: {emailState}")
@@ -68,6 +72,7 @@ async def email_processing_tool(
     return results["notice_email_extract"]
 
 class EmailRAG():
+    _name :str = "Email RAG Agent"
     _llm = None
     _config = None
     _email_parser_prompt = ChatPromptTemplate.from_messages(
@@ -117,6 +122,7 @@ class EmailRAG():
     _email_parser_chain = None
     _escalation_chain = None
     _graph: CompiledGraph = None
+    _agent: CompiledGraph = None
     # Class constructor
     def __init__(self, config: RunnableConfig={}):
         """
@@ -125,7 +131,7 @@ class EmailRAG():
         logging.info(f"\n=== {self.__init__.__name__} ===")
         self._config = config
         # https://python.langchain.com/api_reference/langchain/chat_models/langchain.chat_models.base.init_chat_model.html
-        self._llm = init_chat_model("gemini-2.0-flash", model_provider="google_genai", streaming=True)
+        self._llm = init_chat_model("gemini-2.0-flash", model_provider="google_genai", configurable_fields=("user_id", "graph", "email_state"), streaming=True)
         # https://python.langchain.com/docs/integrations/chat/google_vertex_ai_palm/
         # https://python.langchain.com/docs/how_to/structured_output/
         """
@@ -148,25 +154,25 @@ class EmailRAG():
             | self._llm.with_structured_output(EscalationCheckModel)
         )
 
-    async def ParseEmail(self, state: EmailRAGState) -> EmailRAGState:
+    async def ParseEmail(self, config: RunnableConfig, *, state: EmailRAGState) -> EmailRAGState:
         """
         Use the EmailModel LCEL to extract fields from email
         """
         logging.info(f"\n=== {self.ParseEmail.__name__} ===")
-        state["notice_email_extract"] = await self._email_parser_chain.ainvoke({"message": state["notice_message"]}, self._config) if state["notice_message"] else None
+        state["notice_email_extract"] = await self._email_parser_chain.ainvoke({"message": state["notice_message"]}, config) if state["notice_message"] else None
         #state["notice_email_extract"] = await self._email_parser_chain.ainvoke({"message": [{"role": "user", "contents": state["notice_message"]}]}, self._config) if state["notice_message"] else None
         return state
 
-    async def NeedsEscalation(self, state: EmailRAGState) -> EmailRAGState:
+    async def NeedsEscalation(self, config: RunnableConfig, *, state: EmailRAGState) -> EmailRAGState:
         """
         Determine if an email needs escalation
         """
         logging.info(f"\n=== {self.NeedsEscalation.__name__} ===")
-        result: EscalationCheckModel = await self._escalation_chain.ainvoke({"message": state["notice_message"], "escalation_criteria": state["escalation_text_criteria"]}, self._config) if state and state["notice_message"] else None
+        result: EscalationCheckModel = await self._escalation_chain.ainvoke({"message": state["notice_message"], "escalation_criteria": state["escalation_text_criteria"]}, config) if state and state["notice_message"] else None
         state["requires_escalation"] = (result.needs_escalation or state["notice_email_extract"].max_potential_fine >= state["escalation_dollar_criteria"])
         return state
 
-    async def CreateGraph(self, config: RunnableConfig) -> CompiledGraph:
+    async def CreateGraph(self) -> CompiledGraph:
         # Compile application and test
         logging.info(f"\n=== {self.CreateGraph.__name__} ===")
         try:
@@ -176,38 +182,38 @@ class EmailRAG():
             graph_builder.add_edge(START, "ParseEmail")
             graph_builder.add_edge("ParseEmail", "NeedsEscalation")
             graph_builder.add_edge("NeedsEscalation", END)
-            self._graph = graph_builder.compile(store=InMemoryStore(), checkpointer=MemorySaver(), name="Email RAG")
-            config["graph"] = self._graph
+            self._graph = graph_builder.compile(store=InMemoryStore(), checkpointer=MemorySaver(), name=self._name)
             # https://langchain-ai.github.io/langgraph/reference/prebuilt/#langgraph.prebuilt.chat_agent_executor.create_react_agent
-            return create_react_agent(self._llm, [email_processing_tool], store=InMemoryStore(), checkpointer=MemorySaver(), config_schema=EmailConfiguration, state_schema=EmailAgentState, name="Email ReAct Agent", prompt=self._prompt)
+            self._agent = create_react_agent(self._llm, [email_processing_tool], store=InMemoryStore(), checkpointer=MemorySaver(), config_schema=EmailConfiguration, state_schema=EmailAgentState, name=self._name, prompt=self._prompt)
         except ResourceExhausted as e:
             logging.exception(f"google.api_core.exceptions.ResourceExhausted")
+        return self._agent
+    
+    def ShowGraph(self):
+        show_graph(self._agent, self._name) # This blocks
+
+    async def Chat(self, config: RunnableConfig):
+        logging.info(f"\n=== {self.Chat.__name__} ===")
+        escalation_criteria = """"There's an immediate risk of electrical, water, or fire damage"""
+        message_with_criteria = f"""The escalation criteria is: {escalation_criteria}
+                                    Here's the email:
+                                    {EMAILS[3]}
+                                    """
+        email_state = {
+            "escalation_dollar_criteria": 100_000,
+            "escalation_emails": ["brog@abc.com", "bigceo@company.com"],
+        }
+        async for step in self._agent.astream(
+            {"messages": [{"role": "user", "content": message_with_criteria}]},
+            {"configurable": {"graph": self._graph, "email_state": email_state}},
+            stream_mode="values",
+            config = config
+        ):
+            step["messages"][-1].pretty_print()
 
 async def make_graph(config: RunnableConfig) -> CompiledGraph:
-    return await EmailRAG(config).CreateGraph(config)
+    return await EmailRAG(config).CreateGraph()
 
-async def Chat():
-    logging.info(f"\n=== {Chat.__name__} ===")
-    config = RunnableConfig(run_name="Email RAG", thread_id=datetime.now())
-    emailRAG = EmailRAG(config)
-    agent = await emailRAG.CreateGraph(config)
-    show_graph(agent, "Email RAG") # This blocks
-    escalation_criteria = """"There's an immediate risk of electrical, water, or fire damage"""
-    message_with_criteria = f"""The escalation criteria is: {escalation_criteria}
-                                Here's the email:
-                                {EMAILS[3]}
-                                """
-    email_state = {
-        "escalation_dollar_criteria": 100_000,
-        "escalation_emails": ["brog@abc.com", "bigceo@company.com"],
-    }
-    config["emailState"] = email_state
-    async for step in agent.astream(
-        {"messages": [{"role": "user", "content": message_with_criteria}]},
-        stream_mode="values",
-        config = config
-    ):
-        step["messages"][-1].pretty_print()
 
 async def main():
     # httpx library is a dependency of LangGraph and is used under the hood to communicate with the AI models.
@@ -222,7 +228,11 @@ async def main():
     img = Image.open("/tmp/checkpoint_graph.png")
     img.show()
     """
-    await Chat()
+    config = RunnableConfig(run_name="Email RAG Test", thread_id=datetime.now())
+    rag = EmailRAG(config)
+    await rag.CreateGraph()
+    rag.ShowGraph()
+    await rag.Chat(config)
 
 if __name__ == "__main__":
     asyncio.run(main())

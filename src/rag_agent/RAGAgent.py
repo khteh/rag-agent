@@ -6,15 +6,8 @@ from typing import Any, Callable, List, Optional, cast
 from google.api_core.exceptions import ResourceExhausted
 from langchain import hub
 from langchain.chat_models import init_chat_model
-from langchain_openai import OpenAIEmbeddings
-from langchain_google_vertexai import VertexAIEmbeddings
-from langchain_core.vectorstores import InMemoryVectorStore
-from langchain_community.document_loaders import WebBaseLoader
-from langchain_core.documents import Document
-from langchain_core.tools import tool
 from langchain_core.runnables import RunnableConfig
 from langchain_core.messages import SystemMessage
-from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langgraph.graph import StateGraph, MessagesState
 from langgraph.graph.graph import (
     END,
@@ -35,14 +28,17 @@ https://python.langchain.com/docs/tutorials/qa_chat_history/
 https://python.langchain.com/api_reference/langchain/chat_models/langchain.chat_models.base.init_chat_model.html
 https://cloud.google.com/vertex-ai/generative-ai/docs/embeddings/get-text-embeddings
 https://langchain-ai.github.io/langgraph/how-tos/streaming/#values
+https://python.langchain.com/docs/how_to/configure/
 """
 load_dotenv()
 from .VectorStore import VectorStore
 from .State import CustomAgentState
 from ..utils.image import show_graph
 from .Tools import ground_search, save_memory
+from .configuration import Configuration
 #agent = None
 class RAGAgent():
+    _name:str = "RAG ReAct Agent"
     _llm = None
     _config = None
     _urls = [
@@ -61,6 +57,7 @@ class RAGAgent():
         ])
     _vectorStore = None
     _tools: List[Callable[..., Any]] = None #[vector_store.retriever_tool, ground_search, save_memory]
+    _agent: CompiledGraph = None
     # Class constructor
     def __init__(self, config: RunnableConfig={}):
         """
@@ -74,8 +71,7 @@ class RAGAgent():
         """
         self._vectorStore = VectorStore(model="text-embedding-005", chunk_size=1000, chunk_overlap=100)
         self._tools = [self._vectorStore.retriever_tool, ground_search, save_memory]
-        self._llm = init_chat_model("gemini-2.0-flash", model_provider="google_genai", streaming=True).bind_tools(self._tools)
-        config["vector_store"] = self._vectorStore
+        self._llm = init_chat_model("gemini-2.0-flash", model_provider="google_genai", configurable_fields=("user_id", "vector_store"), streaming=True).bind_tools(self._tools)
         # https://python.langchain.com/docs/integrations/chat/google_vertex_ai_palm/
         """
         self._llm = ChatVertexAI(
@@ -96,26 +92,31 @@ class RAGAgent():
         system_msg = f"User memories: {', '.join(memories)}"
         return [{"role": "system", "content": system_msg}] + state["messages"]
 
-    async def CreateGraph(self, config: RunnableConfig) -> CompiledGraph:
+    async def CreateGraph(self) -> CompiledGraph:
         logging.debug(f"\n=== {self.CreateGraph.__name__} ===")
         try:
             await self._vector_store.LoadDocuments(self._urls)
             # https://langchain-ai.github.io/langgraph/reference/prebuilt/#langgraph.prebuilt.chat_agent_executor.create_react_agent
-            return create_react_agent(self._llm, self._tools, store=InMemoryStore(), checkpointer=MemorySaver(), state_schema=CustomAgentState, name="RAG ReAct Agent", prompt=self._prompt)
+            self._agent = create_react_agent(self._llm, self._tools, store=InMemoryStore(), checkpointer=MemorySaver(), config_schema=Configuration, state_schema=CustomAgentState, name=self._name, prompt=self._prompt)
         except ResourceExhausted as e:
             logging.exception(f"google.api_core.exceptions.ResourceExhausted {e}")
+        return self._agent
+
+    def ShowGraph(self):
+        show_graph(self._agent, self._name) # This blocks
+
+    async def ChatAgent(self, config: RunnableConfig, messages: List[str]):
+        logging.info(f"\n=== {self.ChatAgent.__name__} ===")
+        async for event in self._agent.astream(
+            {"messages": [{"role": "user", "content": messages}]},
+            {"configurable": {"vector_store": self._vectorStore}},
+            stream_mode="values", # Use this to stream all values in the state after each step.
+            config=config, # This is needed by Checkpointer
+        ):
+            event["messages"][-1].pretty_print()
 
 async def make_graph(config: RunnableConfig) -> CompiledGraph:
-    return await RAGAgent(config).CreateGraph(config)
-
-async def ChatAgent(agent, config, messages: List[str]):
-    logging.info(f"\n=== {ChatAgent.__name__} ===")
-    async for event in agent.astream(
-        {"messages": [{"role": "user", "content": messages}]},
-        stream_mode="values", # Use this to stream all values in the state after each step.
-        config=config, # This is needed by Checkpointer
-    ):
-        event["messages"][-1].pretty_print()
+    return await RAGAgent(config).CreateGraph()
 
 async def main():
     # httpx library is a dependency of LangGraph and is used under the hood to communicate with the AI models.
@@ -123,7 +124,8 @@ async def main():
     logging.basicConfig(format='%(asctime)s %(levelname)-8s %(message)s', level=logging.DEBUG, datefmt='%Y-%m-%d %H:%M:%S')
     vertexai.init(project=os.environ.get("GOOGLE_CLOUD_PROJECT"), location=os.environ.get("GOOGLE_CLOUD_LOCATION"))
     config = RunnableConfig(run_name="RAG ReAct Agent", thread_id=datetime.now())
-    agent = await make_graph(config)
+    rag = RAGAgent(config)
+    await rag.CreateGraph()
     #show_graph(agent, "RAG ReAct Agent") # This blocks
     """
     graph = agent.get_graph().draw_mermaid_png()
@@ -134,7 +136,7 @@ async def main():
     img.show()
     """
     input_message = ["What is the standard method for Task Decomposition?", "Once you get the answer, look up common extensions of that method."]
-    await ChatAgent(agent, config, input_message)
+    await rag.ChatAgent(config, input_message)
 
 if __name__ == "__main__":
     asyncio.run(main())

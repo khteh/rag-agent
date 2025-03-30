@@ -26,6 +26,7 @@ class VectorStore(metaclass=VectorStoreSingleton):
     """
     Class constructor
     https://python.langchain.com/api_reference/_modules/langchain_core/vectorstores/in_memory.html#InMemoryVectorStore
+    https://cloud.google.com/vertex-ai/generative-ai/docs/embeddings/get-text-embeddings
     """
     _model: str = None
     _embeddings: VertexAIEmbeddings = None

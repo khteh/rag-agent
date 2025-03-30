@@ -16,6 +16,7 @@ from .VectorStore import VectorStore
 @dataclass(kw_only=True)
 class Configuration:
     """The configuration for the agent."""
+    user_id: str = "default"
     system_prompt: str = field(
         default=SYSTEM_PROMPT,
         metadata={
@@ -23,7 +24,6 @@ class Configuration:
             "This prompt sets the context and behavior for the agent."
         },
     )
-
     model: Annotated[str, {"__template_metadata__": {"kind": "llm"}}] = field(
         default="google_genai/gemini-2.0-flash",
         metadata={
@@ -31,18 +31,11 @@ class Configuration:
             "Should be in the form: provider/model-name."
         },
     )
-
     max_search_results: int = field(
         default=10,
         metadata={
             "description": "The maximum number of search results to return for each search query."
         },
-    )
-    vector_store: VectorStore = field(
-        default=None,
-        metadata={
-            "description": "Vector store of RAG instance"
-        }
     )
     @classmethod
     def from_runnable_config(
@@ -59,4 +52,4 @@ class Configuration:
 class EmailConfiguration(Configuration):
     """The configuration for the email agent."""
     graph: CompiledGraph = None
-    emailState: EmailRAGState = None
+    email_state: EmailRAGState = None

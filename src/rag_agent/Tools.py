@@ -28,8 +28,10 @@ async def search(
     for answering questions about current events.
     Needs Tavily API key
     """
-    configuration = Configuration.from_runnable_config(config)
-    wrapped = TavilySearchResults(max_results=configuration.max_search_results)
+    #configuration = Configuration.from_runnable_config(config)
+    #wrapped = TavilySearchResults(max_results=configuration.max_search_results)
+    max_search_results = config.get("configurable", {}).get("max_search_results")
+    wrapped = TavilySearchResults(max_results=max_search_results)
     result = await wrapped.ainvoke({"query": query})
     return cast(list[dict[str, Any]], result)
 
@@ -49,7 +51,7 @@ def ground_search(
     to provide comprehensive, accurate, and trusted results. It's particularly useful
     for answering questions about current events.
     """
-    client = genai.Client(api_key=os.environ.get("VERTEX_API_KEY"))
+    client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
     model_id = "gemini-2.0-flash"
     google_search_tool = Tool(
         google_search = GoogleSearch()
@@ -74,7 +76,7 @@ def ground_search(
 @tool(response_format="content_and_artifact")
 async def retrieve(query: str, *, config: Annotated[RunnableConfig, InjectedToolArg]):
     """Retrieve information related to a query."""
-    vectorStore = Configuration.from_runnable_config(config).vector_store
+    vectorStore = config.get("configurable", {}).get("vector_store")
     retrieved_docs = await vectorStore.asimilarity_search(query, k=2)
     serialized = "\n\n".join(
         (f"Source: {doc.metadata}\n" f"Content: {doc.page_content}")
