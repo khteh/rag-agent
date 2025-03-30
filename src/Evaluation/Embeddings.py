@@ -46,7 +46,7 @@ def evaluate_embedding():
         return [doc.metadata["source"] for doc in docs]
     def retriever_model_function(question_df: pandas.DataFrame) -> pandas.Series:
         return question_df["question"].apply(retrieve_doc_ids)
-    mlflow.set_experiment(experiment_name = evaluate_embedding.__name__)
+    mlflow.set_experiment(evaluate_embedding.__name__)
     mlflow.langchain.autolog()
   
     with mlflow.start_run():
@@ -59,7 +59,7 @@ def evaluate_embedding():
         )
 
 def evaluate_k_nearest_neighbours(data):
-    mlflow.set_experiment(experiment_name = evaluate_k_nearest_neighbours.__name__)
+    mlflow.set_experiment(evaluate_k_nearest_neighbours.__name__)
     mlflow.langchain.autolog()
     with mlflow.start_run() as run:
         return mlflow.evaluate(

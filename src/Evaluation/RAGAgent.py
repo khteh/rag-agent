@@ -46,7 +46,7 @@ def evaluate_rag():
     relevance_metric = relevance(
       model="endpoints:/databricks-llama-2-70b-chat"
     )  # You can also use any model you have hosted on Databricks, models from the Marketplace or models in the Foundation model API
-    mlflow.set_experiment(experiment_name = evaluate_rag.__name__)
+    mlflow.set_experiment(evaluate_rag.__name__)
     mlflow.langchain.autolog()
   
     with mlflow.start_run():
@@ -68,6 +68,7 @@ def evaluate_rag():
     print(results.tables["eval_results_table"])
    
 if __name__ == "__main__":
+    #mlflow.set_tracking_uri("http://localhost:8080") $ pr mlflow server --host localhost --port 8080
     vertexai.init(project=os.environ.get("GOOGLE_CLOUD_PROJECT"), location=os.environ.get("GOOGLE_CLOUD_LOCATION"))
     evaluate_rag()
 

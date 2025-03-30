@@ -43,7 +43,7 @@ def evaluate_chunk_size(chunk_size):
     vector_store.load(_urls)
     #embedding_function = SentenceTransformerEmbeddings(model_name="all-MiniLM-L6-v2")
     #retriever = Chroma.from_documents(docs, embedding_function).as_retriever()
-    mlflow.set_experiment(experiment_name = evaluate_chunk_size.__name__)
+    mlflow.set_experiment(evaluate_chunk_size.__name__)
     mlflow.langchain.autolog()
     def retrieve_doc_ids(question: str) -> list[str]:
         docs = vector_store.retriever.get_relevant_documents(question)
