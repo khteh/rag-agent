@@ -71,7 +71,7 @@ class RAGAgent():
         """
         self._vectorStore = VectorStore(model="text-embedding-005", chunk_size=1000, chunk_overlap=100)
         self._tools = [self._vectorStore.retriever_tool, ground_search, save_memory]
-        self._llm = init_chat_model("gemini-2.0-flash", model_provider="google_genai", configurable_fields=("user_id", "vector_store"), streaming=True).bind_tools(self._tools)
+        self._llm = init_chat_model("gemini-2.0-flash", model_provider="google_genai", streaming=True).bind_tools(self._tools)
         # https://python.langchain.com/docs/integrations/chat/google_vertex_ai_palm/
         """
         self._llm = ChatVertexAI(
@@ -109,9 +109,9 @@ class RAGAgent():
         logging.info(f"\n=== {self.ChatAgent.__name__} ===")
         async for event in self._agent.astream(
             {"messages": [{"role": "user", "content": messages}]},
-            {"configurable": {"vector_store": self._vectorStore}},
             stream_mode="values", # Use this to stream all values in the state after each step.
             config=config, # This is needed by Checkpointer
+            store = self._vectorStore
         ):
             event["messages"][-1].pretty_print()
 

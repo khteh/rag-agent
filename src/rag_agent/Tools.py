@@ -74,10 +74,9 @@ def ground_search(
     return "\n\n".join(content.text for content in response.candidates[0].content.parts)
 
 @tool(response_format="content_and_artifact")
-async def retrieve(query: str, *, config: Annotated[RunnableConfig, InjectedToolArg]):
+async def retrieve(query: str, *, config: Annotated[RunnableConfig, InjectedToolArg], store: Annotated[BaseStore, InjectedStore()]):
     """Retrieve information related to a query."""
-    vectorStore = config.get("configurable", {}).get("vector_store")
-    retrieved_docs = await vectorStore.asimilarity_search(query, k=2)
+    retrieved_docs = await store.asimilarity_search(query, k=2)
     serialized = "\n\n".join(
         (f"Source: {doc.metadata}\n" f"Content: {doc.page_content}")
         for doc in retrieved_docs

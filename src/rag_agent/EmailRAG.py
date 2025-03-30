@@ -61,10 +61,8 @@ async def email_processing_tool(
     """
     logging.info(f"\n=== {email_processing_tool.__init__.__name__} ===")
     """Extract the user's state from the conversation and update the memory."""
-    #EmailConfiguration.from_runnable_config(config).graph
-    #EmailConfiguration.from_runnable_config(config).email_state
-    graph = config.get("configurable", {}).get("graph")
-    emailState = config.get("configurable", {}).get("email_state")
+    graph = EmailConfiguration.from_runnable_config(config).graph
+    emailState = EmailConfiguration.from_runnable_config(config).email_state
     emailState["notice_message"] = email
     emailState["escalation_text_criteria"] = escalation_criteria
     #print(f"emailState: {emailState}")
@@ -213,7 +211,6 @@ class EmailRAG():
 
 async def make_graph(config: RunnableConfig) -> CompiledGraph:
     return await EmailRAG(config).CreateGraph()
-
 
 async def main():
     # httpx library is a dependency of LangGraph and is used under the hood to communicate with the AI models.
