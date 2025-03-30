@@ -32,7 +32,7 @@ _eval_data = pandas.DataFrame(
   }
 )
 def model(input_df):
-    model = init_chat_model("gemini-2.0-flash", model_provider="google_vertexai", streaming=True)
+    model = init_chat_model("gemini-2.0-flash", model_provider="google_genai", streaming=True)
     vectorStore = VectorStore(model="text-embedding-005", chunk_size=1000, chunk_overlap=100)
     qa = RetrievalQA.from_chain_type(
           llm = model,

@@ -74,7 +74,7 @@ class RAGAgent():
         """
         self._vectorStore = VectorStore(model="text-embedding-005", chunk_size=1000, chunk_overlap=100)
         self._tools = [self._vectorStore.retriever_tool, ground_search, save_memory]
-        self._llm = init_chat_model("gemini-2.0-flash", model_provider="google_vertexai", streaming=True).bind_tools(self._tools)
+        self._llm = init_chat_model("gemini-2.0-flash", model_provider="google_genai", streaming=True).bind_tools(self._tools)
         config["vector_store"] = self._vectorStore
         # https://python.langchain.com/docs/integrations/chat/google_vertex_ai_palm/
         """

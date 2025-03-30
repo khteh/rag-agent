@@ -54,7 +54,7 @@ review_prompt = ChatPromptTemplate(
 )
 
 reviews_vector_chain = RetrievalQA.from_chain_type(
-    llm = init_chat_model("gemini-2.0-flash", model_provider="google_vertexai", streaming=True, temperature=0),
+    llm = init_chat_model("gemini-2.0-flash", model_provider="google_genai", streaming=True, temperature=0),
     chain_type = "stuff", # pass all k reviews to the prompt.
     retriever = neo4j_vector_index.as_retriever(k=3),
 )

@@ -19,7 +19,7 @@ load_dotenv()
 
 # https://python.langchain.com/api_reference/langchain/chat_models/langchain.chat_models.base.init_chat_model.html
 vertexai.init(project=os.environ.get("GOOGLE_CLOUD_PROJECT"), location=os.environ.get("GOOGLE_CLOUD_LOCATION"))
-llm = init_chat_model("gemini-2.0-flash", model_provider="google_vertexai")
+llm = init_chat_model("gemini-2.0-flash", model_provider="google_genai")
 #embeddings = VertexAIEmbeddings(model="text-embedding-005")
 """
 llm = init_chat_model("gpt-4o-mini", model_provider="openai")
