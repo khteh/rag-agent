@@ -32,22 +32,25 @@ _eval_data = pandas.DataFrame(
   }
 )
 def model(input_df):
-  model = init_chat_model("gemini-2.0-flash", model_provider="google_vertexai", streaming=True)
-  vectorStore = VectorStore(model="text-embedding-005", chunk_size=1000, chunk_overlap=100)
-  qa = RetrievalQA.from_chain_type(
-      llm = model,
-      chain_type="stuff",
-      retriever=vectorStore.as_retriever(fetch_k=3),
-      return_source_documents=True,
-  )
-  return input_df["questions"].map(qa).tolist()
+    model = init_chat_model("gemini-2.0-flash", model_provider="google_vertexai", streaming=True)
+    vectorStore = VectorStore(model="text-embedding-005", chunk_size=1000, chunk_overlap=100)
+    qa = RetrievalQA.from_chain_type(
+          llm = model,
+          chain_type="stuff",
+          retriever=vectorStore.as_retriever(fetch_k=3),
+          return_source_documents=True,
+    )
+    return input_df["questions"].map(qa).tolist()
 
 def evaluate_rag():
-  relevance_metric = relevance(
+    relevance_metric = relevance(
       model="endpoints:/databricks-llama-2-70b-chat"
     )  # You can also use any model you have hosted on Databricks, models from the Marketplace or models in the Foundation model API
-  with mlflow.start_run():
-    results = mlflow.evaluate(
+    mlflow.set_experiment(experiment_name = evaluate_rag.__name__)
+    mlflow.langchain.autolog()
+  
+    with mlflow.start_run():
+      results = mlflow.evaluate(
           model,
           _eval_data,
           model_type="question-answering",
@@ -65,6 +68,6 @@ def evaluate_rag():
     print(results.tables["eval_results_table"])
    
 if __name__ == "__main__":
-  vertexai.init(project=os.environ.get("GOOGLE_CLOUD_PROJECT"), location=os.environ.get("GOOGLE_CLOUD_LOCATION"))
-  evaluate_rag()
+    vertexai.init(project=os.environ.get("GOOGLE_CLOUD_PROJECT"), location=os.environ.get("GOOGLE_CLOUD_LOCATION"))
+    evaluate_rag()
 

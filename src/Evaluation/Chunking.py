@@ -38,26 +38,27 @@ _eval_data = pandas.DataFrame(
   }
 )
 def evaluate_chunk_size(chunk_size):
-  vector_store = VectorStore(model="text-embedding-005", chunk_size=chunk_size, chunk_overlap=100)
-  vector_store.load(_urls)
-  #embedding_function = SentenceTransformerEmbeddings(model_name="all-MiniLM-L6-v2")
-  #retriever = Chroma.from_documents(docs, embedding_function).as_retriever()
+    vector_store = VectorStore(model="text-embedding-005", chunk_size=chunk_size, chunk_overlap=100)
+    vector_store.load(_urls)
+    #embedding_function = SentenceTransformerEmbeddings(model_name="all-MiniLM-L6-v2")
+    #retriever = Chroma.from_documents(docs, embedding_function).as_retriever()
+    mlflow.set_experiment(experiment_name = evaluate_chunk_size.__name__)
+    mlflow.langchain.autolog()
+    def retrieve_doc_ids(question: str) -> list[str]:
+        docs = vector_store.retriever.get_relevant_documents(question)
+        return [doc.metadata["source"] for doc in docs]
 
-  def retrieve_doc_ids(question: str) -> list[str]:
-      docs = vector_store.retriever.get_relevant_documents(question)
-      return [doc.metadata["source"] for doc in docs]
+    def retriever_model_function(question_df: pd.DataFrame) -> pd.Series:
+        return question_df["question"].apply(retrieve_doc_ids)
 
-  def retriever_model_function(question_df: pd.DataFrame) -> pd.Series:
-      return question_df["question"].apply(retrieve_doc_ids)
-
-  with mlflow.start_run():
-      return mlflow.evaluate(
+    with mlflow.start_run():
+        return mlflow.evaluate(
           model=retriever_model_function,
           data=_eval_data,
           model_type="retriever",
           targets="source",
           evaluators="default",
-      )
+        )
 
 if __name__ == "__main__":
     result = evaluate_chunk_size(1000)

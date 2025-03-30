@@ -39,23 +39,28 @@ _eval_data = pandas.DataFrame(
 )
 
 def evaluate_embedding():
-  vector_store = VectorStore(model="text-embedding-005", chunk_size=1000, chunk_overlap=100)
-  vector_store.load(_urls)
-  def retrieve_doc_ids(question: str) -> list[str]:
-      docs = vector_store.retriever.get_relevant_documents(question)
-      return [doc.metadata["source"] for doc in docs]
-  def retriever_model_function(question_df: pandas.DataFrame) -> pandas.Series:
-      return question_df["question"].apply(retrieve_doc_ids)
-  with mlflow.start_run():
-      return mlflow.evaluate(
+    vector_store = VectorStore(model="text-embedding-005", chunk_size=1000, chunk_overlap=100)
+    vector_store.load(_urls)
+    def retrieve_doc_ids(question: str) -> list[str]:
+        docs = vector_store.retriever.get_relevant_documents(question)
+        return [doc.metadata["source"] for doc in docs]
+    def retriever_model_function(question_df: pandas.DataFrame) -> pandas.Series:
+        return question_df["question"].apply(retrieve_doc_ids)
+    mlflow.set_experiment(experiment_name = evaluate_embedding.__name__)
+    mlflow.langchain.autolog()
+  
+    with mlflow.start_run():
+        return mlflow.evaluate(
           model=retriever_model_function,
           data=_eval_data,
           model_type="retriever",
           targets="source",
           evaluators="default",
-      )
+        )
 
 def evaluate_k_nearest_neighbours(data):
+    mlflow.set_experiment(experiment_name = evaluate_k_nearest_neighbours.__name__)
+    mlflow.langchain.autolog()
     with mlflow.start_run() as run:
         return mlflow.evaluate(
             data=data,
