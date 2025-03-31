@@ -43,10 +43,10 @@ class Configuration:
     ) -> Configuration:
         """Create a Configuration instance from a RunnableConfig object."""
         config = ensure_config(config)
-        configurable = config.get("configurable", {})
+        _configurable = config.get("configurable", {})
         _fields = {f.name for f in fields(cls) if f.init}
          # Using a double asterisk before the argument will allow you to pass a variable number of keyword parameters in the function
-        return cls(**{k: v for k, v in configurable.items() if k in _fields})
+        return cls(**{k: v for k, v in _configurable.items() if k in _fields})
 
 @dataclass(kw_only=True)
 class EmailConfiguration(Configuration):

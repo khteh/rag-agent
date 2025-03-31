@@ -6,7 +6,7 @@ from typing import Any, Callable, List, Optional, cast
 from google.api_core.exceptions import ResourceExhausted
 from langchain import hub
 from langchain.chat_models import init_chat_model
-from langchain_core.runnables import RunnableConfig
+from langchain_core.runnables import RunnableConfig, ensure_config
 from langchain_core.messages import SystemMessage
 from langgraph.graph import StateGraph, MessagesState
 from langgraph.graph.graph import (
@@ -86,6 +86,7 @@ class RAGAgent():
     async def prepare_model_inputs(self, state: CustomAgentState, config: RunnableConfig, store: BaseStore):
         # Retrieve user memories and add them to the system message
         # This function is called **every time** the model is prompted. It converts the state to a prompt
+        config = ensure_config(config)
         user_id = config.get("configurable", {}).get("user_id")
         namespace = ("memories", user_id)
         memories = [m.value["data"] for m in await store.asearch(namespace)]

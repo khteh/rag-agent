@@ -7,7 +7,7 @@ import os
 from dotenv import load_dotenv
 from typing import Any, Callable, List, Optional, cast
 from langchain_community.tools.tavily_search import TavilySearchResults
-from langchain_core.runnables import RunnableConfig
+from langchain_core.runnables import RunnableConfig, ensure_config
 from langchain_core.tools import InjectedToolArg, tool
 from langgraph.store.base import BaseStore
 from langgraph.prebuilt import InjectedStore
@@ -30,6 +30,7 @@ async def search(
     """
     #configuration = Configuration.from_runnable_config(config)
     #wrapped = TavilySearchResults(max_results=configuration.max_search_results)
+    config = ensure_config(config)
     max_search_results = config.get("configurable", {}).get("max_search_results")
     wrapped = TavilySearchResults(max_results=max_search_results)
     result = await wrapped.ainvoke({"query": query})
@@ -87,6 +88,7 @@ async def retrieve(query: str, *, config: Annotated[RunnableConfig, InjectedTool
 async def save_memory(memory: str, *, config: Annotated[RunnableConfig, InjectedToolArg], store: Annotated[BaseStore, InjectedStore()]) -> str:
     """Save the given memory for the current user."""
     # This is a **tool** the model can use to save memories to storage
+    config = ensure_config(config)
     user_id = config.get("configurable", {}).get("user_id")
     namespace = ("memories", user_id)
     store.put(namespace, f"memory_{len(await store.asearch(namespace))}", {"data": memory})

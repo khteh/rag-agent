@@ -1,6 +1,6 @@
 from langchain_core.tools import InjectedToolArg, tool, Tool
 from typing_extensions import Annotated
-from langchain_core.runnables import RunnableConfig
+from langchain_core.runnables import RunnableConfig, ensure_config
 from langchain_core.tools import InjectedToolArg, tool
 from langgraph.store.base import BaseStore
 from langgraph.prebuilt import InjectedStore
@@ -10,6 +10,7 @@ from .HospitalReviewChain import reviews_vector_chain, hospital_cypher_chain
 async def save_memory(memory: str, *, config: Annotated[RunnableConfig, InjectedToolArg], store: Annotated[BaseStore, InjectedStore()]) -> str:
     """Save the given memory for the current user."""
     # This is a **tool** the model can use to save memories to storage
+    config = ensure_config(config)
     user_id = config.get("configurable", {}).get("user_id")
     namespace = ("memories", user_id)
     store.put(namespace, f"memory_{len(await store.asearch(namespace))}", {"data": memory})
