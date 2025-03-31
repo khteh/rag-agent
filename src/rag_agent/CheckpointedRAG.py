@@ -103,11 +103,11 @@ class CheckpointedRAG():
         """
         logging.info(f"\n=== {self.Agent.__name__} ===")
         logging.debug(f"state: {state}")
-        response = await self._llm.ainvoke(state["messages"], config)
+        response = await self._llm.with_config(config).ainvoke(state["messages"])#, config)
         # MessageState appends messages to state instead of overwriting
         return {"messages": [response]}
 
-    async def GradeDocuments(self, state: State) -> Literal["Generate", "Rewrite"]:
+    async def GradeDocuments(self, state: State, config: RunnableConfig) -> Literal["Generate", "Rewrite"]:
         """
         Determines whether the retrieved documents are relevant to the question.
 
@@ -138,7 +138,7 @@ class CheckpointedRAG():
         question = messages[0].content
         docs = last_message.content
 
-        scored_result = await chain.ainvoke({"question": question, "context": docs})
+        scored_result = await chain.with_config(config).ainvoke({"question": question, "context": docs})
         score = scored_result.binary_score
 
         if score == "yes":
@@ -174,10 +174,10 @@ class CheckpointedRAG():
             )
         ]
         # Grader
-        response = await self._llm.ainvoke(msg)
+        response = await self._llm.with_config(config).ainvoke(msg)
         return {"messages": [response]}
 
-    async def Generate(self, state: State):
+    async def Generate(self, state: State, config: RunnableConfig):
         """
         Generate answer
 
@@ -202,7 +202,7 @@ class CheckpointedRAG():
         rag_chain = self._rag_prompt | self._llm | StrOutputParser()
 
         # Run
-        response = await rag_chain.ainvoke({"context": docs, "question": question})
+        response = await rag_chain.with_config(config).ainvoke({"context": docs, "question": question})
         return {"messages": [response]}
     
     # Step 3: Generate a response using the retrieved content.
@@ -241,7 +241,7 @@ class CheckpointedRAG():
         #logging.debug(f"\nconversation_messages: {conversation_messages}")
         #logging.debug(f"\nprompt: {prompt}")
         # Run
-        response = await self._llm.ainvoke(prompt, config)
+        response = await self._llm.with_config(config).ainvoke(prompt, config)
         #logging.debug(f"\nGenerate() response: {response}")
         return {"messages": [response]}
 
