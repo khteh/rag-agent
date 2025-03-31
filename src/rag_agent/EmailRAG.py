@@ -129,7 +129,7 @@ class EmailRAG():
         logging.info(f"\n=== {self.__init__.__name__} ===")
         self._config = config
         # https://python.langchain.com/api_reference/langchain/chat_models/langchain.chat_models.base.init_chat_model.html
-        self._llm = init_chat_model("gemini-2.0-flash", model_provider="google_genai", configurable_fields=("user_id", "graph", "email_state"), streaming=True)
+        self._llm = init_chat_model("gemini-2.0-flash", model_provider="google_genai", configurable_fields=("user_id", "graph", "email_state",), streaming=True)
         # https://python.langchain.com/docs/integrations/chat/google_vertex_ai_palm/
         # https://python.langchain.com/docs/how_to/structured_output/
         """
