@@ -63,11 +63,11 @@ async def email_processing_tool(
     """Extract the user's state from the conversation and update the memory."""
     graph = EmailConfiguration.from_runnable_config(config).graph
     emailState = EmailConfiguration.from_runnable_config(config).email_state
-    emailState["notice_message"] = email
+    emailState["message"] = email
     emailState["escalation_text_criteria"] = escalation_criteria
     #print(f"emailState: {emailState}")
-    results = await graph.ainvoke(emailState)
-    return results["notice_email_extract"]
+    results = await graph.with_config(config).ainvoke(emailState)
+    return results["extract"]
 
 class EmailRAG():
     _name :str = "Email RAG Agent"
@@ -157,8 +157,7 @@ class EmailRAG():
         Use the EmailModel LCEL to extract fields from email
         """
         logging.info(f"\n=== {self.ParseEmail.__name__} ===")
-        state["notice_email_extract"] = await self._email_parser_chain.ainvoke({"message": state["notice_message"]}, config) if state["notice_message"] else None
-        #state["notice_email_extract"] = await self._email_parser_chain.ainvoke({"message": [{"role": "user", "contents": state["notice_message"]}]}, self._config) if state["notice_message"] else None
+        state["extract"] = await self._email_parser_chain.with_config(config).ainvoke({"message": state["message"]}) if state["message"] else None
         return state
 
     async def NeedsEscalation(self, config: RunnableConfig, *, state: EmailRAGState) -> EmailRAGState:
@@ -166,8 +165,8 @@ class EmailRAG():
         Determine if an email needs escalation
         """
         logging.info(f"\n=== {self.NeedsEscalation.__name__} ===")
-        result: EscalationCheckModel = await self._escalation_chain.ainvoke({"message": state["notice_message"], "escalation_criteria": state["escalation_text_criteria"]}, config) if state and state["notice_message"] else None
-        state["requires_escalation"] = (result.needs_escalation or state["notice_email_extract"].max_potential_fine >= state["escalation_dollar_criteria"])
+        result: EscalationCheckModel = await self._escalation_chain.with_config(config).ainvoke({"message": state["message"], "escalation_criteria": state["escalation_text_criteria"]}) if state and state["message"] else None
+        state["escalate"] = (result.needs_escalation or state["extract"].max_potential_fine >= state["escalation_dollar_criteria"])
         return state
 
     async def CreateGraph(self) -> CompiledGraph:
@@ -201,11 +200,11 @@ class EmailRAG():
             "escalation_dollar_criteria": 100_000,
             "escalation_emails": ["brog@abc.com", "bigceo@company.com"],
         }
-        async for step in self._agent.astream(
+        async for step in self._agent.with_config({"graph": self._graph, "email_state": email_state}).astream(
             {"messages": [{"role": "user", "content": message_with_criteria}]},
-            {"configurable": {"graph": self._graph, "email_state": email_state}},
+            #{"configurable": {"graph": self._graph, "email_state": email_state}},
             stream_mode="values",
-            config = config
+            #config = config
         ):
             step["messages"][-1].pretty_print()
 

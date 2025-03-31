@@ -41,11 +41,11 @@ class CustomAgentState(AgentState):
 
 @dataclass
 class EmailRAGState(TypedDict):
-    notice_message: str
-    notice_email_extract: EmailModel | None
+    message: str
+    extract: EmailModel | None
     escalation_text_criteria: str
     escalation_dollar_criteria: float
-    requires_escalation: bool
+    escalate: bool
     escalation_emails: list[EmailStr] | None
     follow_ups: dict[str, bool] | None
     current_follow_up: str | None

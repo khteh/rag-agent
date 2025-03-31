@@ -2,7 +2,7 @@ from datetime import datetime, date
 from pydantic import BaseModel, Field, computed_field
 
 class EmailModel(BaseModel):
-    date_of_notice_str: str | None = Field(
+    date_str: str | None = Field(
         default=None,
         exclude=True,
         repr=False,
@@ -68,7 +68,7 @@ class EmailModel(BaseModel):
     @computed_field
     @property
     def date_of_notice(self) -> date | None:
-        return self._convert_string_to_date(self.date_of_notice_str)
+        return self._convert_string_to_date(self.date_str)
 
     @computed_field
     @property
