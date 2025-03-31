@@ -152,7 +152,7 @@ class EmailRAG():
             | self._llm.with_structured_output(EscalationCheckModel)
         )
 
-    async def ParseEmail(self, config: RunnableConfig, *, state: EmailRAGState) -> EmailRAGState:
+    async def ParseEmail(self, config: RunnableConfig, state: EmailRAGState) -> EmailRAGState:
         """
         Use the EmailModel LCEL to extract fields from email
         """
@@ -160,7 +160,7 @@ class EmailRAG():
         state["extract"] = await self._email_parser_chain.with_config(config).ainvoke({"message": state["message"]}) if state["message"] else None
         return state
 
-    async def NeedsEscalation(self, config: RunnableConfig, *, state: EmailRAGState) -> EmailRAGState:
+    async def NeedsEscalation(self, config: RunnableConfig, state: EmailRAGState) -> EmailRAGState:
         """
         Determine if an email needs escalation
         """
