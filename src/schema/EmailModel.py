@@ -63,9 +63,9 @@ class EmailModel(BaseModel):
     @computed_field
     @property
     def date_of_email(self) -> date | None:
-        return self._convert_string_to_date(self.date_str)
+        return self._convert_string_to_date(self.date_str) if self.date_str else None
 
     @computed_field
     @property
     def compliance_deadline(self) -> date | None:
-        return self._convert_string_to_date(self.compliance_deadline_str)
+        return self._convert_string_to_date(self.compliance_deadline_str) if self.compliance_deadline_str else None
