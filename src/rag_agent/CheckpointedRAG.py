@@ -61,6 +61,7 @@ class CheckpointedRAG():
         "https://mlflow.org/docs/latest/python_api/mlflow.deployments.html",        
     ]
     _vectorStore = None
+    _graph: CompiledGraph =  None
     # Class constructor
     def __init__(self, config: RunnableConfig={}):
         """
@@ -68,7 +69,13 @@ class CheckpointedRAG():
         """
         self._config = config
         # https://python.langchain.com/api_reference/langchain/chat_models/langchain.chat_models.base.init_chat_model.html
-        self._llm = init_chat_model("llama3.3", model_provider="ollama", streaming=True)
+        self._vectorStore = VectorStore(model="llama3.2", chunk_size=1000, chunk_overlap=100)
+        """
+        .bind_tools() gives the agent LLM descriptions of each tool from their docstring and input arguments. 
+        If the agent LLM determines that its input requires a tool call, it’ll return a JSON tool message with the name of the tool it wants to use, along with the input arguments.
+        For VertexAI, use VertexAIEmbeddings, model="text-embedding-005"; "gemini-2.0-flash" model_provider="google_genai"
+        """
+        self._llm = init_chat_model("llama3.2", model_provider="ollama", streaming=True).bind_tools([self._vectorStore.retriever_tool])
         # https://python.langchain.com/docs/integrations/chat/google_vertex_ai_palm/
         """
         self._llm = ChatVertexAI(
@@ -80,13 +87,6 @@ class CheckpointedRAG():
                         streaming=True
                     )
         """
-        """
-        .bind_tools() gives the agent LLM descriptions of each tool from their docstring and input arguments. 
-        If the agent LLM determines that its input requires a tool call, it’ll return a JSON tool message with the name of the tool it wants to use, along with the input arguments.
-        For VertexAI, use VertexAIEmbeddings, model="text-embedding-005"; "gemini-2.0-flash" model_provider="google_genai"
-        """
-        self._vectorStore = VectorStore(model="llama3.3", chunk_size=1000, chunk_overlap=100)
-        self._llm = self._llm.bind_tools([self._vector_store.retriever_tool])
 
     async def Agent(self, state: State, config: RunnableConfig):
         """
@@ -250,10 +250,10 @@ class CheckpointedRAG():
         # Compile application and test
         logging.info(f"\n=== {self.CreateGraph.__name__} ===")
         try:
-            await self._vector_store.LoadDocuments(self._urls)
+            await self._vectorStore.LoadDocuments(self._urls)
             graph_builder = StateGraph(State)
             graph_builder.add_node("Agent", self.Agent)
-            graph_builder.add_node("Retrieve", ToolNode([self._vector_store.retriever_tool])) # Execute the retrieval.
+            graph_builder.add_node("Retrieve", ToolNode([self._vectorStore.retriever_tool])) # Execute the retrieval.
             graph_builder.add_node("Rewrite", self.Rewrite)
             graph_builder.add_node("Generate", self.Generate)
             graph_builder.add_edge(START, "Agent")
@@ -279,41 +279,43 @@ class CheckpointedRAG():
             )
             graph_builder.add_edge("Generate", END)
             graph_builder.add_edge("Rewrite", "Agent")
-            return graph_builder.compile(store=InMemoryStore(), checkpointer=MemorySaver(), name="Checkedpoint StateGraph RAG")
+            self._graph = graph_builder.compile(store=InMemoryStore(), checkpointer=MemorySaver(), name="Checkedpoint StateGraph RAG")
+            show_graph(self._graph, "Checkedpoint StateGraph RAG") # This blocks
         except ResourceExhausted as e:
             logging.exception(f"google.api_core.exceptions.ResourceExhausted")
+        return self._graph
 
-async def make_graph(config: RunnableConfig) -> CompiledGraph:
-    return await CheckpointedRAG(config).CreateGraph(config)
-
-async def TestDirectResponseWithoutRetrieval(graph, config, message):
-    logging.info(f"\n=== {TestDirectResponseWithoutRetrieval.__name__} ===")
-    async for step in graph.astream(
-        {"messages": [{"role": "user", "content": message}]},
-        stream_mode="values",
-        config = config
-    ):
-        step["messages"][-1].pretty_print()
-
-async def Chat(graph, config, messages: List[str]):
-    logging.info(f"\n=== {Chat.__name__} ===")
-    for message in messages:
-        #input_message = "What is Task Decomposition?"
-        async for step in graph.astream(
+    async def TestDirectResponseWithoutRetrieval(self, config, message):
+        logging.info(f"\n=== {self.TestDirectResponseWithoutRetrieval.__name__} ===")
+        async for step in self._graph.astream(
             {"messages": [{"role": "user", "content": message}]},
             stream_mode="values",
             config = config
         ):
             step["messages"][-1].pretty_print()
 
+    async def Chat(self, config, messages: List[str]):
+        logging.info(f"\n=== {self.Chat.__name__} ===")
+        for message in messages:
+            #input_message = "What is Task Decomposition?"
+            async for step in self._graph.astream(
+                {"messages": [{"role": "user", "content": message}]},
+                stream_mode="values",
+                config = config
+            ):
+                step["messages"][-1].pretty_print()
+
+async def make_graph(config: RunnableConfig) -> CompiledGraph:
+    return await CheckpointedRAG(config).CreateGraph(config)
+
 async def main():
     # httpx library is a dependency of LangGraph and is used under the hood to communicate with the AI models.
     logging.getLogger("httpx").setLevel(logging.WARNING)
     logging.basicConfig(format='%(asctime)s %(levelname)-8s %(message)s', level=logging.DEBUG, datefmt='%Y-%m-%d %H:%M:%S')
-    vertexai.init(project=os.environ.get("GOOGLE_CLOUD_PROJECT"), location=os.environ.get("GOOGLE_CLOUD_LOCATION"))
+    #vertexai.init(project=os.environ.get("GOOGLE_CLOUD_PROJECT"), location=os.environ.get("GOOGLE_CLOUD_LOCATION"))
     config = RunnableConfig(run_name="Checkedpoint StateGraph RAG", thread_id=datetime.now())
-    checkpoint_graph = await make_graph(config) # config input parameter is required by langgraph.json to define the graph
-    show_graph(checkpoint_graph, "Checkedpoint StateGraph RAG") # This blocks
+    graph = CheckpointedRAG(config)
+    await graph.CreateGraph(config) # config input parameter is required by langgraph.json to define the graph
     """
     graph = checkpoint_graph.get_graph().draw_mermaid_png()
     # Save the PNG data to a file
@@ -322,8 +324,8 @@ async def main():
     img = Image.open("/tmp/checkpoint_graph.png")
     img.show()
     """
-    await TestDirectResponseWithoutRetrieval(checkpoint_graph, config, "Hello, who are you?")
-    await Chat(checkpoint_graph, config, ["What is Task Decomposition?", "Can you look up some common ways of doing it?"])
+    await graph.TestDirectResponseWithoutRetrieval(config, "Hello, who are you?")
+    await graph.Chat(config, ["What is Task Decomposition?", "Can you look up some common ways of doing it?"])
 
 if __name__ == "__main__":
     asyncio.run(main())

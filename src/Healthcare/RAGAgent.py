@@ -56,7 +56,7 @@ class RAGAgent():
         """
         Class RAGAgent Constructor
         """
-        #vertexai.init(project=os.environ.get("GOOGLE_CLOUD_PROJECT"), location=os.environ.get("GOOGLE_CLOUD_LOCATION"))
+        ##vertexai.init(project=os.environ.get("GOOGLE_CLOUD_PROJECT"), location=os.environ.get("GOOGLE_CLOUD_LOCATION"))
         self._config = config
         """
         .bind_tools() gives the agent LLM descriptions of each tool from their docstring and input arguments. 
@@ -98,7 +98,7 @@ async def main():
     # httpx library is a dependency of LangGraph and is used under the hood to communicate with the AI models.
     logging.getLogger("httpx").setLevel(logging.WARNING)
     logging.basicConfig(format='%(asctime)s %(levelname)-8s %(message)s', level=logging.DEBUG, datefmt='%Y-%m-%d %H:%M:%S')
-    vertexai.init(project=os.environ.get("GOOGLE_CLOUD_PROJECT"), location=os.environ.get("GOOGLE_CLOUD_LOCATION"))
+    #vertexai.init(project=os.environ.get("GOOGLE_CLOUD_PROJECT"), location=os.environ.get("GOOGLE_CLOUD_LOCATION"))
     config = RunnableConfig(run_name="Healthcare ReAct Agent", thread_id=datetime.now())
     agent = await make_graph(config)
     #show_graph(agent, "RAG ReAct Agent") # This blocks

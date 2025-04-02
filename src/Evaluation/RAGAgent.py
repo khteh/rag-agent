@@ -33,8 +33,8 @@ _eval_data = pandas.DataFrame(
 )
 def model(input_df):
     # For VertexAI, use VertexAIEmbeddings, model="text-embedding-005"; "gemini-2.0-flash" model_provider="google_genai"
-    model = init_chat_model("llama3.3", model_provider="ollama", streaming=True)
-    vectorStore = VectorStore(model="llama3.3", chunk_size=1000, chunk_overlap=100)
+    model = init_chat_model("llama3.2", model_provider="ollama", streaming=True)
+    vectorStore = VectorStore(model="llama3.2", chunk_size=1000, chunk_overlap=100)
     qa = RetrievalQA.from_chain_type(
           llm = model,
           chain_type="stuff",
@@ -70,6 +70,6 @@ def evaluate_rag():
    
 if __name__ == "__main__":
     #mlflow.set_tracking_uri("http://localhost:8080") $ pr mlflow server --host localhost --port 8080
-    vertexai.init(project=os.environ.get("GOOGLE_CLOUD_PROJECT"), location=os.environ.get("GOOGLE_CLOUD_LOCATION"))
+    #vertexai.init(project=os.environ.get("GOOGLE_CLOUD_PROJECT"), location=os.environ.get("GOOGLE_CLOUD_LOCATION"))
     evaluate_rag()
 

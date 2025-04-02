@@ -25,7 +25,7 @@ from langgraph.graph.graph import (
 load_dotenv()
 
 # https://python.langchain.com/api_reference/langchain/chat_models/langchain.chat_models.base.init_chat_model.html
-vertexai.init(project=os.environ.get("GOOGLE_CLOUD_PROJECT"), location=os.environ.get("GOOGLE_CLOUD_LOCATION"))
+#vertexai.init(project=os.environ.get("GOOGLE_CLOUD_PROJECT"), location=os.environ.get("GOOGLE_CLOUD_LOCATION"))
 llm = init_chat_model("gemini-2.0-flash", model_provider="google_genai")
 #embeddings = VertexAIEmbeddings(model="text-embedding-005")
 """
@@ -33,7 +33,7 @@ llm = init_chat_model("gpt-4o-mini", model_provider="openai")
 embeddings = OpenAIEmbeddings(model="text-embedding-3-large")"
 """
 from .VectorStore import VectorStore
-vector_store = VectorStore(model="llama3.3", chunk_size=1000, chunk_overlap=100)
+vector_store = VectorStore(model="llama3.2", chunk_size=1000, chunk_overlap=100)
 
 # https://cloud.google.com/vertex-ai/generative-ai/docs/embeddings/get-text-embeddings
 #vector_store = InMemoryVectorStore(embeddings)

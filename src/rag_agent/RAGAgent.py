@@ -63,16 +63,16 @@ class RAGAgent():
         """
         Class RAGAgent Constructor
         """
-        #vertexai.init(project=os.environ.get("GOOGLE_CLOUD_PROJECT"), location=os.environ.get("GOOGLE_CLOUD_LOCATION"))
+        ##vertexai.init(project=os.environ.get("GOOGLE_CLOUD_PROJECT"), location=os.environ.get("GOOGLE_CLOUD_LOCATION"))
         self._config = config
         """
         .bind_tools() gives the agent LLM descriptions of each tool from their docstring and input arguments. 
         If the agent LLM determines that its input requires a tool call, it’ll return a JSON tool message with the name of the tool it wants to use, along with the input arguments.
         For VertexAI, use VertexAIEmbeddings, model="text-embedding-005"; "gemini-2.0-flash" model_provider="google_genai"
         """
-        self._vectorStore = VectorStore(model="llama3.3", chunk_size=1000, chunk_overlap=200)
+        self._vectorStore = VectorStore(model="llama3.2", chunk_size=1000, chunk_overlap=200)
         self._tools = [self._vectorStore.retriever_tool, ground_search, save_memory]
-        self._llm = init_chat_model("llama3.3", model_provider="ollama", streaming=True).bind_tools(self._tools)
+        self._llm = init_chat_model("llama3.2", model_provider="ollama", streaming=True).bind_tools(self._tools)
         # https://python.langchain.com/docs/integrations/chat/google_vertex_ai_palm/
         """
         self._llm = ChatVertexAI(
@@ -124,7 +124,7 @@ async def main():
     # httpx library is a dependency of LangGraph and is used under the hood to communicate with the AI models.
     logging.getLogger("httpx").setLevel(logging.WARNING)
     logging.basicConfig(format='%(asctime)s %(levelname)-8s %(message)s', level=logging.DEBUG, datefmt='%Y-%m-%d %H:%M:%S')
-    vertexai.init(project=os.environ.get("GOOGLE_CLOUD_PROJECT"), location=os.environ.get("GOOGLE_CLOUD_LOCATION"))
+    #vertexai.init(project=os.environ.get("GOOGLE_CLOUD_PROJECT"), location=os.environ.get("GOOGLE_CLOUD_LOCATION"))
     config = RunnableConfig(run_name="RAG ReAct Agent", thread_id=datetime.now())
     rag = RAGAgent(config)
     await rag.CreateGraph()

@@ -41,7 +41,7 @@ class CustomAgentState(AgentState):
 
 @dataclass
 class EmailRAGState(TypedDict):
-    message: str
+    email: str
     extract: EmailModel | None
     escalation_text_criteria: str
     escalation_dollar_criteria: float

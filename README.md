@@ -33,8 +33,17 @@ $ sudo apt install -y python3.13-tk
 
 ### Ollama
 
+- https://github.com/ollama/ollama
+- Download and install the app:
+
 ```
 $ curl -fsSL https://ollama.com/install.sh | sh
+```
+
+- Run the app with a model:
+
+```
+$ ollama run llama3.3
 ```
 
 ## Google VertexAI
@@ -170,8 +179,6 @@ Task decomposition can be done (1) by LLM with simple prompting like "Steps for 
 
 ```
 $ p -m src.rag_agent.RAGAgent
-USER_AGENT environment variable not set, consider setting it to identify your requests.
-
 === CreateGraph ===
 
 === LoadDocuments ===
@@ -259,6 +266,154 @@ Common extensions of Chain of Thought prompting include:
 *   **Graph of Thoughts (GoT):** Builds a graph framework.
 *   **Self-Consistency:** Samples multiple chains of thought and selects the most consistent answer.
 *   **Active Prompting with Chain-of-Thought:** Actively selects informative examples to include in the prompt.
+```
+
+### Email RAG StateGraph with Checkpoint
+
+![Email RAG StateGraph with Checkpoint](./Email RAG StateGraph.png?raw=true "Email RAG StateGraph with Checkpoint")
+![Email RAG Agent with Checkpoint](./Email RAG Agent.png?raw=true "Email RAG Agent with Checkpoint")
+
+```
+$ pp src.rag_agent.EmailRAG
+2025-04-02 18:22:31 INFO
+=== __init__ ===
+2025-04-02 18:22:31 INFO
+=== CreateGraph ===
+2025-04-02 18:22:31 DEBUG    Starting new HTTPS connection (1): mermaid.ink:443
+2025-04-02 18:22:32 DEBUG    https://mermaid.ink:443 "GET /img/LS0tCmNvbmZpZzoKICBmbG93Y2hhcnQ6CiAgICBjdXJ2ZTogbGluZWFyCi0tLQpncmFwaCBURDsKCV9fc3RhcnRfXyhbPHA+X19zdGFydF9fPC9wPl0pOjo6Zmlyc3QKCVBhcnNlRW1haWwoUGFyc2VFbWFpbCkKCU5lZWRzRXNjYWxhdGlvbihOZWVkc0VzY2FsYXRpb24pCglfX2VuZF9fKFs8cD5fX2VuZF9fPC9wPl0pOjo6bGFzdAoJTmVlZHNFc2NhbGF0aW9uIC0tPiBfX2VuZF9fOwoJUGFyc2VFbWFpbCAtLT4gTmVlZHNFc2NhbGF0aW9uOwoJX19zdGFydF9fIC0tPiBQYXJzZUVtYWlsOwoJY2xhc3NEZWYgZGVmYXVsdCBmaWxsOiNmMmYwZmYsbGluZS1oZWlnaHQ6MS4yCgljbGFzc0RlZiBmaXJzdCBmaWxsLW9wYWNpdHk6MAoJY2xhc3NEZWYgbGFzdCBmaWxsOiNiZmI2ZmMK?type=png&bgColor=!white HTTP/1.1" 200 9617
+2025-04-02 18:22:32 DEBUG    STREAM b'IHDR' 16 13
+2025-04-02 18:22:32 DEBUG    STREAM b'sRGB' 41 1
+2025-04-02 18:22:32 DEBUG    STREAM b'IDAT' 54 8192
+2025-04-02 18:22:35 DEBUG    Starting new HTTPS connection (1): mermaid.ink:443
+2025-04-02 18:22:35 DEBUG    https://mermaid.ink:443 "GET /img/LS0tCmNvbmZpZzoKICBmbG93Y2hhcnQ6CiAgICBjdXJ2ZTogbGluZWFyCi0tLQpncmFwaCBURDsKCV9fc3RhcnRfXyhbPHA+X19zdGFydF9fPC9wPl0pOjo6Zmlyc3QKCUVtYWlsQWdlbnQoRW1haWxBZ2VudCkKCUVtYWlsVG9vbHMoRW1haWxUb29scykKCV9fZW5kX18oWzxwPl9fZW5kX188L3A+XSk6OjpsYXN0CglFbWFpbFRvb2xzIC0tPiBFbWFpbEFnZW50OwoJX19zdGFydF9fIC0tPiBFbWFpbEFnZW50OwoJRW1haWxBZ2VudCAtLi0+IEVtYWlsVG9vbHM7CglFbWFpbEFnZW50IC0uLT4gX19lbmRfXzsKCWNsYXNzRGVmIGRlZmF1bHQgZmlsbDojZjJmMGZmLGxpbmUtaGVpZ2h0OjEuMgoJY2xhc3NEZWYgZmlyc3QgZmlsbC1vcGFjaXR5OjAKCWNsYXNzRGVmIGxhc3QgZmlsbDojYmZiNmZjCg==?type=png&bgColor=!white HTTP/1.1" 200 10010
+2025-04-02 18:22:35 DEBUG    STREAM b'IHDR' 16 13
+2025-04-02 18:22:35 DEBUG    STREAM b'sRGB' 41 1
+2025-04-02 18:22:35 DEBUG    STREAM b'IDAT' 54 8192
+2025-04-02 18:22:36 INFO
+=== Chat ===
+2025-04-02 18:22:36 DEBUG    Starting new HTTPS connection (1): api.smith.langchain.com:443
+================================ Human Message =================================
+
+The escalation criteria is: "There's an immediate risk of electrical, water, or fire damage". Here's the email: "
+    Date: January 10, 2025
+    From: City of Los Angeles Building and Safety Department
+    To: West Coast Development, project 345678123 - Sunset Luxury
+    Condominiums
+    Location: Los Angeles, CA
+    Following an inspection of your site at 456 Sunset Boulevard, we have
+    identified the following building code violations:
+    Electrical Wiring: Exposed wiring was found in the underground parking
+    garage, posing a safety hazard. Fire Safety: Insufficient fire
+    extinguishers were available across multiple floors of the structure
+    under construction.
+    Structural Integrity: The temporary support beams in the eastern wing
+    do not meet the load-bearing standards specified in local building
+    codes.
+    Required Corrective Actions:
+    Replace or properly secure exposed wiring to meet electrical safety
+    standards. Install additional fire extinguishers in compliance with
+    fire code requirements. Reinforce or replace temporary support beams
+    to ensure structural stability. Deadline for Compliance: Violations
+    must be addressed no later than February 5,
+    2025. Failure to comply may result in
+    a stop-work order and additional fines.
+    Contact: For questions or to schedule a re-inspection, please contact
+    the Building and Safety Department at
+    (555) 456-7890 or email inspections@lacity.gov.
+    "
+2025-04-02 18:22:36 DEBUG    connect_tcp.started host='127.0.0.1' port=11434 local_address=None timeout=None socket_options=None
+2025-04-02 18:22:36 DEBUG    connect_tcp.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x7ff93ca387d0>
+2025-04-02 18:22:36 DEBUG    send_request_headers.started request=<Request [b'POST']>
+2025-04-02 18:22:36 DEBUG    send_request_headers.complete
+2025-04-02 18:22:36 DEBUG    send_request_body.started request=<Request [b'POST']>
+2025-04-02 18:22:36 DEBUG    send_request_body.complete
+2025-04-02 18:22:36 DEBUG    receive_response_headers.started request=<Request [b'POST']>
+2025-04-02 18:22:37 DEBUG    https://api.smith.langchain.com:443 "GET /info HTTP/1.1" 200 672
+2025-04-02 18:22:37 DEBUG    https://api.smith.langchain.com:443 "POST /runs/multipart HTTP/1.1" 202 34
+2025-04-02 18:22:40 DEBUG    receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Content-Type', b'application/x-ndjson'), (b'Date', b'Wed, 02 Apr 2025 10:22:40 GMT'), (b'Transfer-Encoding', b'chunked')])
+2025-04-02 18:22:40 DEBUG    receive_response_body.started request=<Request [b'POST']>
+2025-04-02 18:22:40 DEBUG    receive_response_body.complete
+2025-04-02 18:22:40 DEBUG    response_closed.started
+2025-04-02 18:22:40 DEBUG    response_closed.complete
+================================== Ai Message ==================================
+Tool Calls:
+  email_processing_tool (edf51167-3128-4083-9513-d4d7850c6878)
+ Call ID: edf51167-3128-4083-9513-d4d7850c6878
+  Args:
+    email: Following an inspection of your site at 456 Sunset Boulevard, we have identified the following building code violations: Electrical Wiring: Exposed wiring was found in the underground parking garage, posing a safety hazard. Fire Safety: Insufficient fire extinguishers were available across multiple floors of the structure under construction. Structural Integrity: The temporary support beams in the eastern wing do not meet the load-bearing standards specified in local building codes.
+    escalation_criteria: There
+2025-04-02 18:22:40 INFO
+=== email_processing_tool ===
+2025-04-02 18:22:40 DEBUG    email: Following an inspection of your site at 456 Sunset Boulevard, we have identified the following building code violations: Electrical Wiring: Exposed wiring was found in the underground parking garage, posing a safety hazard. Fire Safety: Insufficient fire extinguishers were available across multiple floors of the structure under construction. Structural Integrity: The temporary support beams in the eastern wing do not meet the load-bearing standards specified in local building codes., escalation_criteria: There, emailState:: {'escalation_dollar_criteria': 100000, 'escalation_emails': ['brog@abc.com', 'bigceo@company.com'], 'email': 'Following an inspection of your site at 456 Sunset Boulevard, we have identified the following building code violations: Electrical Wiring: Exposed wiring was found in the underground parking garage, posing a safety hazard. Fire Safety: Insufficient fire extinguishers were available across multiple floors of the structure under construction. Structural Integrity: The temporary support beams in the eastern wing do not meet the load-bearing standards specified in local building codes.', 'escalation_text_criteria': 'There'}
+2025-04-02 18:22:40 INFO
+=== ParseEmail ===
+2025-04-02 18:22:40 DEBUG    state: {'email': 'Following an inspection of your site at 456 Sunset Boulevard, we have identified the following building code violations: Electrical Wiring: Exposed wiring was found in the underground parking garage, posing a safety hazard. Fire Safety: Insufficient fire extinguishers were available across multiple floors of the structure under construction. Structural Integrity: The temporary support beams in the eastern wing do not meet the load-bearing standards specified in local building codes.', 'escalation_text_criteria': 'There', 'escalation_dollar_criteria': 100000, 'escalation_emails': ['brog@abc.com', 'bigceo@company.com']}
+2025-04-02 18:22:40 DEBUG    connect_tcp.started host='127.0.0.1' port=11434 local_address=None timeout=None socket_options=None
+2025-04-02 18:22:40 DEBUG    connect_tcp.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x7ff93cab2210>
+2025-04-02 18:22:40 DEBUG    send_request_headers.started request=<Request [b'POST']>
+2025-04-02 18:22:40 DEBUG    send_request_headers.complete
+2025-04-02 18:22:40 DEBUG    send_request_body.started request=<Request [b'POST']>
+2025-04-02 18:22:40 DEBUG    send_request_body.complete
+2025-04-02 18:22:40 DEBUG    receive_response_headers.started request=<Request [b'POST']>
+2025-04-02 18:22:40 DEBUG    receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Content-Type', b'application/x-ndjson'), (b'Date', b'Wed, 02 Apr 2025 10:22:40 GMT'), (b'Transfer-Encoding', b'chunked')])
+2025-04-02 18:22:40 DEBUG    receive_response_body.started request=<Request [b'POST']>
+2025-04-02 18:22:41 DEBUG    https://api.smith.langchain.com:443 "POST /runs/multipart HTTP/1.1" 202 34
+2025-04-02 18:22:42 DEBUG    receive_response_body.complete
+2025-04-02 18:22:42 DEBUG    response_closed.started
+2025-04-02 18:22:42 DEBUG    response_closed.complete
+2025-04-02 18:22:42 DEBUG    Extract: name=None phone=None email=None project_id=1234 site_location=None violation_type='Electrical Wiring' required_changes='Replace with approved conduit and secure all exposed wiring.' max_potential_fine=250000.0 date_of_notice=None compliance_deadline=None
+2025-04-02 18:22:42 INFO
+=== NeedsEscalation ===
+2025-04-02 18:22:42 DEBUG    state: {'email': 'Following an inspection of your site at 456 Sunset Boulevard, we have identified the following building code violations: Electrical Wiring: Exposed wiring was found in the underground parking garage, posing a safety hazard. Fire Safety: Insufficient fire extinguishers were available across multiple floors of the structure under construction. Structural Integrity: The temporary support beams in the eastern wing do not meet the load-bearing standards specified in local building codes.', 'extract': EmailModel(name=None, phone=None, email=None, project_id=1234, site_location=None, violation_type='Electrical Wiring', required_changes='Replace with approved conduit and secure all exposed wiring.', max_potential_fine=250000.0, date_of_notice=None, compliance_deadline=None), 'escalation_text_criteria': 'There', 'escalation_dollar_criteria': 100000, 'escalation_emails': ['brog@abc.com', 'bigceo@company.com']}
+2025-04-02 18:22:42 DEBUG    connect_tcp.started host='127.0.0.1' port=11434 local_address=None timeout=None socket_options=None
+2025-04-02 18:22:42 DEBUG    connect_tcp.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x7ff93c440ec0>
+2025-04-02 18:22:42 DEBUG    send_request_headers.started request=<Request [b'POST']>
+2025-04-02 18:22:42 DEBUG    send_request_headers.complete
+2025-04-02 18:22:42 DEBUG    send_request_body.started request=<Request [b'POST']>
+2025-04-02 18:22:42 DEBUG    send_request_body.complete
+2025-04-02 18:22:42 DEBUG    receive_response_headers.started request=<Request [b'POST']>
+2025-04-02 18:22:42 DEBUG    receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Content-Type', b'application/x-ndjson'), (b'Date', b'Wed, 02 Apr 2025 10:22:42 GMT'), (b'Transfer-Encoding', b'chunked')])
+2025-04-02 18:22:42 DEBUG    receive_response_body.started request=<Request [b'POST']>
+2025-04-02 18:22:42 DEBUG    receive_response_body.complete
+2025-04-02 18:22:42 DEBUG    response_closed.started
+2025-04-02 18:22:42 DEBUG    response_closed.complete
+2025-04-02 18:22:42 DEBUG    result: needs_escalation=True
+2025-04-02 18:22:42 DEBUG    result: {'email': 'Following an inspection of your site at 456 Sunset Boulevard, we have identified the following building code violations: Electrical Wiring: Exposed wiring was found in the underground parking garage, posing a safety hazard. Fire Safety: Insufficient fire extinguishers were available across multiple floors of the structure under construction. Structural Integrity: The temporary support beams in the eastern wing do not meet the load-bearing standards specified in local building codes.', 'extract': EmailModel(name=None, phone=None, email=None, project_id=1234, site_location=None, violation_type='Electrical Wiring', required_changes='Replace with approved conduit and secure all exposed wiring.', max_potential_fine=250000.0, date_of_notice=None, compliance_deadline=None), 'escalation_text_criteria': 'There', 'escalation_dollar_criteria': 100000, 'escalate': True, 'escalation_emails': ['brog@abc.com', 'bigceo@company.com']}
+strptime() argument 1 must be str, not None
+unconverted data remains: T16:30:00
+================================= Tool Message =================================
+Name: email_processing_tool
+
+name=None phone=None email=None project_id=1234 site_location=None violation_type='Electrical Wiring' required_changes='Replace with approved conduit and secure all exposed wiring.' max_potential_fine=250000.0 date_of_notice=None compliance_deadline=None
+2025-04-02 18:22:42 DEBUG    connect_tcp.started host='127.0.0.1' port=11434 local_address=None timeout=None socket_options=None
+2025-04-02 18:22:42 DEBUG    connect_tcp.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x7ff93c9e6150>
+2025-04-02 18:22:42 DEBUG    send_request_headers.started request=<Request [b'POST']>
+2025-04-02 18:22:42 DEBUG    send_request_headers.complete
+2025-04-02 18:22:42 DEBUG    send_request_body.started request=<Request [b'POST']>
+2025-04-02 18:22:42 DEBUG    send_request_body.complete
+2025-04-02 18:22:42 DEBUG    receive_response_headers.started request=<Request [b'POST']>
+2025-04-02 18:22:43 DEBUG    https://api.smith.langchain.com:443 "POST /runs/multipart HTTP/1.1" 202 34
+2025-04-02 18:22:45 DEBUG    receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Content-Type', b'application/x-ndjson'), (b'Date', b'Wed, 02 Apr 2025 10:22:45 GMT'), (b'Transfer-Encoding', b'chunked')])
+2025-04-02 18:22:45 DEBUG    receive_response_body.started request=<Request [b'POST']>
+2025-04-02 18:22:45 DEBUG    receive_response_body.complete
+2025-04-02 18:22:45 DEBUG    response_closed.started
+2025-04-02 18:22:45 DEBUG    response_closed.complete
+================================== Ai Message ==================================
+
+The situation at the Sunset Luxury Condominiums project (Project ID: 345678123) poses an immediate risk of electrical, water, or fire damage due to building code violations identified during a recent inspection.
+
+To address these concerns, the following actions must be taken:
+
+* Replace or properly secure exposed wiring in the underground parking garage to meet electrical safety standards.
+* Install additional fire extinguishers across multiple floors of the structure in compliance with fire code requirements.
+* Reinforce or replace temporary support beams in the eastern wing to ensure structural stability.
+
+These corrective actions must be completed by February 5, 2025. Failure to comply may result in a stop-work order and additional fines.
+
+If you have any questions or need to schedule a re-inspection, please contact the City of Los Angeles Building and Safety Department at (555) 456-7890 or email inspections@lacity.gov.
+2025-04-02 18:22:46 DEBUG    https://api.smith.langchain.com:443 "POST /runs/multipart HTTP/1.1" 202 34
+2025-04-02 18:22:46 DEBUG    Closing Client.session
+2025-04-02 18:22:46 DEBUG    Closing Client.session
 ```
 
 ## LangSmith Application trace

@@ -39,8 +39,8 @@ async def create_app() -> Quart:
     Create App
     """
     # App initialization
-    vertexai.init(project=os.environ.get("GOOGLE_CLOUD_PROJECT"), location=os.environ.get("GOOGLE_CLOUD_LOCATION"))
-    app = Quart(__name__, static_url_path='')
+    #vertexai.init(project=os.environ.get("GOOGLE_CLOUD_PROJECT"), location=os.environ.get("GOOGLE_CLOUD_LOCATION"))
+    app = Quart(__name__, template_folder='view/templates', static_url_path='', static_folder='view/static')
     app.config.from_file("/etc/ragagent_config.json", json.load)
     app.config["SEND_FILE_MAX_AGE_DEFAULT"] = timedelta(days=90)
     app.config["SQLALCHEMY_DATABASE_URI"] = f"postgresql+psycopg://{os.environ.get('DB_USERNAME')}:{parse.quote(os.environ.get('DB_PASSWORD'))}@{app.config['DB_HOST']}/LangchainCheckpoint"

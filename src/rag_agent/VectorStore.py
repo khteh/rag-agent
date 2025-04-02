@@ -42,7 +42,7 @@ class VectorStore(metaclass=VectorStoreSingleton):
         self._model = model
         self._chunk_size = chunk_size
         self._chunk_overlap = chunk_overlap
-        #vertexai.init(project=os.environ.get("GOOGLE_CLOUD_PROJECT"), location=os.environ.get("GOOGLE_CLOUD_LOCATION"))
+        ##vertexai.init(project=os.environ.get("GOOGLE_CLOUD_PROJECT"), location=os.environ.get("GOOGLE_CLOUD_LOCATION"))
         self._embeddings = OllamaEmbeddings(model=self._model)
         self._vector_store = InMemoryVectorStore(self._embeddings)
         # https://api.python.langchain.com/en/latest/tools/langchain.tools.retriever.create_retriever_tool.html

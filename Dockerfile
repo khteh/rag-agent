@@ -1,6 +1,7 @@
 FROM khteh/ubuntu:latest
 MAINTAINER Kok How, Teh <funcoolgeek@gmail.com>
 WORKDIR /app
+RUN curl -fsSL https://ollama.com/install.sh | sh
 ADD data data
 ADD src src
 ADD Pipfile .

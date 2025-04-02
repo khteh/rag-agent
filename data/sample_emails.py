@@ -7,36 +7,31 @@ EMAILS = [
     Complex Location: Dallas, TX
 
     During a recent inspection of your construction site at 123 Main
-    Street,
-    the following safety violations were identified:
+    Street, the following safety violations were identified:
 
     Lack of fall protection: Workers on scaffolding above 10 feet
     were without required harnesses or other fall protection
-    equipment. Unsafe scaffolding setup: Several scaffolding
-    structures were noted as
+    equipment. 
+    
+    Unsafe scaffolding setup: Several scaffolding structures were noted as
     lacking secure base plates and bracing, creating potential
     collapse risks.
-    Inadequate personal protective equipment (PPE): Multiple
-    workers were
-    found without proper PPE, including hard hats and safety
-    glasses.
-    Required Corrective Actions:
+    
+    Inadequate personal protective equipment (PPE): Multiple workers were
+    found without proper PPE, including hard hats and safety glasses.
 
+    Required Corrective Actions:
     Install guardrails and fall arrest systems on all scaffolding
-    over 10 feet. Conduct an inspection of all scaffolding
-    structures and reinforce unstable sections. Ensure all
-    workers on-site are provided
-    with necessary PPE and conduct safety training on proper
+    over 10 feet. Conduct an inspection of all scaffolding structures and reinforce unstable sections. 
+    Ensure all workers on-site are provided with necessary PPE and conduct safety training on proper
     usage.
+
     Deadline for Compliance: All violations must be rectified
     by November 10, 2024. Failure to comply may result in fines
-    of up to
-    $25,000 per violation.
+    of up to $25,000 per violation.
 
     Contact: For questions or to confirm compliance, please reach
-    out to the
-    OSHA regional office at (555) 123-4567 or email
-    compliance.osha@osha.gov.
+    out to the OSHA regional office at (555) 123-4567 or email compliance.osha@osha.gov.
     """,
     # Email 1
     """

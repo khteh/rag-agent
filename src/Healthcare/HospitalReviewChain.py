@@ -6,20 +6,12 @@ from langchain_openai import OpenAIEmbeddings
 #from langchain_google_vertexai import VertexAIEmbeddings
 from langchain_ollama import OllamaEmbeddings
 from langchain.chains import RetrievalQA
-
-
-from langchain_core.prompts import ChatPromptTemplate
-
-from langchain_core.prompts import HumanMessagePromptTemplate
-
-from langchain_core.prompts import PromptTemplate
-
-from langchain_core.prompts import SystemMessagePromptTemplate
+from langchain_core.prompts import ChatPromptTemplate, HumanMessagePromptTemplate, PromptTemplate, SystemMessagePromptTemplate
 from src.config import config
 load_dotenv()
 # For VertexAI, use VertexAIEmbeddings, model="text-embedding-005"; "gemini-2.0-flash" model_provider="google_genai"
 neo4j_vector_index = Neo4jVector.from_existing_graph(
-    embedding = OllamaEmbeddings(model="llama3.3"),
+    embedding = OllamaEmbeddings(model="llama3.2"),
     url = config.NEO4J_URI,
     username = config.NEO4J_USERNAME,
     password = config.NEO4J_PASSWORD,
@@ -54,9 +46,8 @@ messages = [review_system_prompt, review_human_prompt]
 review_prompt = ChatPromptTemplate(
     input_variables=["context", "question"], messages=messages
 )
-
 reviews_vector_chain = RetrievalQA.from_chain_type(
-    llm = init_chat_model("gemini-2.0-flash", model_provider="google_genai", streaming=True, temperature=0),
+    llm = init_chat_model("llama3.2", model_provider="ollama", streaming=True, temperature=0),
     chain_type = "stuff", # pass all k reviews to the prompt.
     retriever = neo4j_vector_index.as_retriever(k=3),
 )

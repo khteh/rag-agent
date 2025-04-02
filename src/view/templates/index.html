@@ -8,6 +8,7 @@
     </div>
     <div id="message-box">
       <input type="text" placeholder="Enter your message" id="message-input" name="message" />
+      <input id='image', name="image", type='file', accept="image/*"/>
       <button type="submit" id="send-btn" onclick="sendMessage()">Send</button>
     </div>
   </div>
@@ -35,10 +36,59 @@
       socketio.emit("message", { message: msg });
       msgInput.value = "";
     }
+        function stoppedTyping() {
+                if(document.querySelector("#prompt").value.length > 0) { 
+                    document.querySelector('#send-btn').disabled = false; 
+                } else { 
+                    document.querySelector('#send-btn').disabled = true;
+                }
+        }
+        document.querySelector("#message-input").onblur = stoppedTyping();
+        // Select your input type file and store it in a variable
+        document.querySelector("#chat-room-widget").addEventListener("send-btn", async (e) => {
+          e.preventDefault();
+          const prompt = document.querySelector("#message-input").value;
+          const image = document.querySelector("#image");
+          if (prompt.trim()) {
+            var form = new FormData();
+            form.append("prompt", prompt);
+            if (image && image.files.length && image.files[0]) {
+              //console.log(`Image name: ${image.files[0].name}, size: ${image.files[0].size}, type: ${image.files[0].type}`);
+              form.append("image", image.files[0]);
+            }// else 
+              //console.log("No file selected!");
+            // Display the key/value pairs
+            /*for (var pair of form.entries()) {
+                console.log(pair[0]+ ', ' + pair[1]); 
+            }*/
+            document.querySelector('#submit').disabled = true;
+            document.querySelector("#submit").value = 'Processing...';
+            const response = await fetch('/invoke', {
+              method: 'POST',
+              //headers: { 'Content-Type': 'multipart/form-data' }, Do NOT declare Content-Type: multipart/form-data in request header
+              body: form
+            });
+            const data = await response.json();
+            const queryContainer = document.createElement('div');
+            queryContainer.innerHTML = `<div><strong>You:</strong> ${prompt}</div>`;
+            document.querySelector("#messages").appendChild(queryContainer);
+            //document.querySelector("#messages").innerHTML += `<div><strong>You:</strong> ${prompt}</div>`;
+            var converter = new showdown.Converter();
+            const responseContainer = document.createElement('div');
+            responseContainer.innerHTML = `<strong>Gemini:</strong><div>${converter.makeHtml(data.message)}</div><br>`;
+            document.querySelector("#messages").appendChild(responseContainer);
+            //document.querySelector("#messages").innerHTML += `<div><strong>Gemini:</strong></div>${converter.makeHtml(data.message)}<br>`;
+            document.querySelector("#prompt").value = '';
+            document.querySelector("#image").value = '';
+            document.querySelector("#submit").value = 'Submit';
+          } else 
+            console.error(`Invalid prompt!`);
+        });
   </script>
   {% for message in messages %}
   <script type="text/javascript">
     createChatItem("{{message.message}}", "{{message.sender}}");
   </script>
-  {% endfor %}</div>
+  {% endfor %}
+</div>
 {% endblock %}

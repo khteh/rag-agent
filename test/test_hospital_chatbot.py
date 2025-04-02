@@ -4,9 +4,9 @@ pytest_plugins = ('pytest_asyncio',)
 load_dotenv()
 
 @pytest.mark.asyncio
-@pytest.mark.skip(reason="Needs billing; https://github.com/neo4j/neo4j/issues/13622; https://github.com/langchain-ai/langchain/issues/30471")
-async def test_hospital_waiting_time(HealthcareRAG):
-    response = await HealthcareRAG.ainvoke({"input": "What is the wait time at Wallace-Hamilton?"})
+@pytest.mark.skip(reason="Needs billing; https://github.com/neo4j/neo4j/issues/13622; https://github.com/langchain-ai/langchain/issues/30471; https://github.com/langchain-ai/langchain/issues/30547")
+async def test_hospital_waiting_time(HealthcareRAGFixture):
+    response = await HealthcareRAGFixture.ainvoke({"input": "What is the wait time at Wallace-Hamilton?"})
     result = response.get('output')
     assert result
     assert "The current wait time at Wallace-Hamilton is " in result
@@ -15,9 +15,9 @@ async def test_hospital_waiting_time(HealthcareRAG):
     assert len(waitingtime[0])
 
 @pytest.mark.asyncio
-@pytest.mark.skip(reason="Needs billing; https://github.com/neo4j/neo4j/issues/13622; https://github.com/langchain-ai/langchain/issues/30471")
-async def test_hospital_shortest_wait_time(HealthcareRAG):
-    response = await HealthcareRAG.ainvoke({"input": "Which hospital has the shortest wait time?"})
+@pytest.mark.skip(reason="Needs billing; https://github.com/neo4j/neo4j/issues/13622; https://github.com/langchain-ai/langchain/issues/30471; https://github.com/langchain-ai/langchain/issues/30547")
+async def test_hospital_shortest_wait_time(HealthcareRAGFixture):
+    response = await HealthcareRAGFixture.ainvoke({"input": "Which hospital has the shortest wait time?"})
     result = response.get('output')
     assert result
     assert "The hospital with the shortest wait time is " in result
@@ -26,9 +26,9 @@ async def test_hospital_shortest_wait_time(HealthcareRAG):
     assert len(waitingtime[0])
 
 @pytest.mark.asyncio
-@pytest.mark.skip(reason="Needs billing; https://github.com/neo4j/neo4j/issues/13622; https://github.com/langchain-ai/langchain/issues/30471")
-async def test_hospital_patient_reviews(HealthcareRAG):
-    response = await HealthcareRAG.ainvoke({"input": "What have patients said about their quality of rest during their stay?"})
+@pytest.mark.skip(reason="Needs billing; https://github.com/neo4j/neo4j/issues/13622; https://github.com/langchain-ai/langchain/issues/30471; https://github.com/langchain-ai/langchain/issues/30547")
+async def test_hospital_patient_reviews(HealthcareRAGFixture):
+    response = await HealthcareRAGFixture.ainvoke({"input": "What have patients said about their quality of rest during their stay?"})
     result = response.get('output')
     assert result
     assert "Patients have mentioned" in result
@@ -38,9 +38,9 @@ async def test_hospital_patient_reviews(HealthcareRAG):
     assert "quality of rest" in result
 
 @pytest.mark.asyncio
-@pytest.mark.skip(reason="Needs billing; https://github.com/neo4j/neo4j/issues/13622; https://github.com/langchain-ai/langchain/issues/30471")
-async def test_hospital_cypher_query(HealthcareRAG):
-    response = await HealthcareRAG.ainvoke({"input": "Which physician has treated the most patients covered by Cigna?"})
+@pytest.mark.skip(reason="Needs billing; https://github.com/neo4j/neo4j/issues/13622; https://github.com/langchain-ai/langchain/issues/30471; https://github.com/langchain-ai/langchain/issues/30547")
+async def test_hospital_cypher_query(HealthcareRAGFixture):
+    response = await HealthcareRAGFixture.ainvoke({"input": "Which physician has treated the most patients covered by Cigna?"})
     result = response.get('output')
     assert result
     assert "The physician who has treated the most patients covered by Cigna is " in result
@@ -50,9 +50,9 @@ async def test_hospital_cypher_query(HealthcareRAG):
     assert len(patients[0])
 
 @pytest.mark.asyncio
-@pytest.mark.skip(reason="Needs billing; https://github.com/neo4j/neo4j/issues/13622; https://github.com/langchain-ai/langchain/issues/30471")
-async def test_hospital_specific_patient_review(HealthcareRAG):
-    response = await HealthcareRAG.ainvoke({"input": "Query the graph database to show me the reviews written by patient 7674"})
+@pytest.mark.skip(reason="Needs billing; https://github.com/neo4j/neo4j/issues/13622; https://github.com/langchain-ai/langchain/issues/30471; https://github.com/langchain-ai/langchain/issues/30547")
+async def test_hospital_specific_patient_review(HealthcareRAGFixture):
+    response = await HealthcareRAGFixture.ainvoke({"input": "Query the graph database to show me the reviews written by patient 7674"})
     result = response.get('output')
     assert result
     assert "Patient 7674 wrote the following review: " in result
