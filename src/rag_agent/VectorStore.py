@@ -2,7 +2,8 @@ import bs4, logging
 from dotenv import load_dotenv
 from typing_extensions import List, TypedDict, Optional, Any
 from langchain.tools.retriever import create_retriever_tool
-from langchain_google_vertexai import VertexAIEmbeddings
+#from langchain_google_vertexai import VertexAIEmbeddings
+from langchain_ollama import OllamaEmbeddings
 from langchain_core.vectorstores import InMemoryVectorStore
 from langchain_core.documents import Document
 from langchain_community.document_loaders import WebBaseLoader
@@ -29,7 +30,7 @@ class VectorStore(metaclass=VectorStoreSingleton):
     https://cloud.google.com/vertex-ai/generative-ai/docs/embeddings/get-text-embeddings
     """
     _model: str = None
-    _embeddings: VertexAIEmbeddings = None
+    _embeddings: OllamaEmbeddings = None
     _chunk_size = None
     _chunk_overlap = None
     _vector_store: InMemoryVectorStore = None
@@ -42,7 +43,7 @@ class VectorStore(metaclass=VectorStoreSingleton):
         self._chunk_size = chunk_size
         self._chunk_overlap = chunk_overlap
         #vertexai.init(project=os.environ.get("GOOGLE_CLOUD_PROJECT"), location=os.environ.get("GOOGLE_CLOUD_LOCATION"))
-        self._embeddings = VertexAIEmbeddings(model=self._model)
+        self._embeddings = OllamaEmbeddings(model=self._model)
         self._vector_store = InMemoryVectorStore(self._embeddings)
         # https://api.python.langchain.com/en/latest/tools/langchain.tools.retriever.create_retriever_tool.html
         self.retriever_tool = create_retriever_tool(
@@ -92,5 +93,3 @@ class VectorStore(metaclass=VectorStoreSingleton):
     ) -> list[Document]:
         logging.info(f"\n=== {self.asimilarity_search.__name__} ===")
         return await self._vector_store.asimilarity_search(query=query, k=k, **kwargs)
-
-#vector_store = VectorStore(model="text-embedding-005", chunk_size=1000, chunk_overlap=100)

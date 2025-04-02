@@ -1,7 +1,7 @@
 import os, bs4, vertexai, asyncio, logging
 from PIL import Image
 from src.utils.image import show_graph
-from State import State
+from .State import State
 from dotenv import load_dotenv
 from langchain.chat_models import init_chat_model
 from langchain_openai import OpenAIEmbeddings
@@ -14,6 +14,13 @@ from langchain_core.runnables import RunnableConfig
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langgraph.graph import START, StateGraph
 from typing_extensions import List, TypedDict
+from langgraph.graph.graph import (
+    END,
+    START,
+    CompiledGraph,
+    Graph,
+    Send,
+)
 # https://python.langchain.com/docs/tutorials/rag/
 load_dotenv()
 
@@ -25,8 +32,8 @@ llm = init_chat_model("gemini-2.0-flash", model_provider="google_genai")
 llm = init_chat_model("gpt-4o-mini", model_provider="openai")
 embeddings = OpenAIEmbeddings(model="text-embedding-3-large")"
 """
-from VectorStore import VectorStore
-vector_store = VectorStore(model="text-embedding-005", chunk_size=1000, chunk_overlap=100)
+from .VectorStore import VectorStore
+vector_store = VectorStore(model="llama3.3", chunk_size=1000, chunk_overlap=100)
 
 # https://cloud.google.com/vertex-ai/generative-ai/docs/embeddings/get-text-embeddings
 #vector_store = InMemoryVectorStore(embeddings)
@@ -76,7 +83,7 @@ async def generate(state: State, config: RunnableConfig):
     response = await llm.ainvoke(messages, config)
     return {"answer": response.content}
 
-def BuildGraph(config: RunnableConfig) -> StateGraph:
+def BuildGraph(config: RunnableConfig) -> CompiledGraph:
     # Compile application and test
     logging.info(f"\n=== {BuildGraph.__name__} ===")
     graph_builder = StateGraph(State).add_sequence([retrieve, generate])
@@ -105,18 +112,18 @@ async def StreamTokens(graph, question):
     ):
         logging.debug(message.content, end="|")
 
-async def main(graph: StateGraph):
+async def main():
+    docs = vector_store.LoadDocuments("https://lilianweng.github.io/posts/2023-06-23-agent/")
+    #subdocs = SplitDocuments(docs)
+    #await IndexChunks(subdocs)
+    config = RunnableConfig(run_name="RAG")
+    graph: CompiledGraph = BuildGraph(config)
+    show_graph(graph, "RAG")
     await Invoke(graph, "What is Task Decomposition?")
     await Stream(graph, "What is Task Decomposition?")
     await StreamTokens(graph, "What is Task Decomposition?")
 
 if __name__ == "__main__":
-    docs = LoadDocuments("https://lilianweng.github.io/posts/2023-06-23-agent/")
-    subdocs = SplitDocuments(docs)
-    IndexChunks(subdocs)
-    config = RunnableConfig(run_name="RAG")
-    graph = BuildGraph(config)
-    show_graph(graph, "RAG")
     """
     image = graph.get_graph().draw_mermaid_png()
     # Save the PNG data to a file
@@ -125,4 +132,4 @@ if __name__ == "__main__":
     img = Image.open("/tmp/graph.png")
     img.show()
     """
-    asyncio.run(main(graph))
+    asyncio.run(main())

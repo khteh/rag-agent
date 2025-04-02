@@ -32,8 +32,9 @@ _eval_data = pandas.DataFrame(
   }
 )
 def model(input_df):
-    model = init_chat_model("gemini-2.0-flash", model_provider="google_genai", streaming=True)
-    vectorStore = VectorStore(model="text-embedding-005", chunk_size=1000, chunk_overlap=100)
+    # For VertexAI, use VertexAIEmbeddings, model="text-embedding-005"; "gemini-2.0-flash" model_provider="google_genai"
+    model = init_chat_model("llama3.3", model_provider="ollama", streaming=True)
+    vectorStore = VectorStore(model="llama3.3", chunk_size=1000, chunk_overlap=100)
     qa = RetrievalQA.from_chain_type(
           llm = model,
           chain_type="stuff",

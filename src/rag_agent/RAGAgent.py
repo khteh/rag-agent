@@ -68,10 +68,11 @@ class RAGAgent():
         """
         .bind_tools() gives the agent LLM descriptions of each tool from their docstring and input arguments. 
         If the agent LLM determines that its input requires a tool call, it’ll return a JSON tool message with the name of the tool it wants to use, along with the input arguments.
+        For VertexAI, use VertexAIEmbeddings, model="text-embedding-005"; "gemini-2.0-flash" model_provider="google_genai"
         """
-        self._vectorStore = VectorStore(model="text-embedding-005", chunk_size=1000, chunk_overlap=100)
+        self._vectorStore = VectorStore(model="llama3.3", chunk_size=1000, chunk_overlap=200)
         self._tools = [self._vectorStore.retriever_tool, ground_search, save_memory]
-        self._llm = init_chat_model("gemini-2.0-flash", model_provider="google_genai", streaming=True).bind_tools(self._tools)
+        self._llm = init_chat_model("llama3.3", model_provider="ollama", streaming=True).bind_tools(self._tools)
         # https://python.langchain.com/docs/integrations/chat/google_vertex_ai_palm/
         """
         self._llm = ChatVertexAI(
@@ -96,7 +97,7 @@ class RAGAgent():
     async def CreateGraph(self) -> CompiledGraph:
         logging.debug(f"\n=== {self.CreateGraph.__name__} ===")
         try:
-            await self._vector_store.LoadDocuments(self._urls)
+            await self._vectorStore.LoadDocuments(self._urls)
             # https://langchain-ai.github.io/langgraph/reference/prebuilt/#langgraph.prebuilt.chat_agent_executor.create_react_agent
             self._agent = create_react_agent(self._llm, self._tools, store=InMemoryStore(), checkpointer=MemorySaver(), config_schema=Configuration, state_schema=CustomAgentState, name=self._name, prompt=self._prompt)
         except ResourceExhausted as e:
@@ -108,10 +109,10 @@ class RAGAgent():
 
     async def ChatAgent(self, config: RunnableConfig, messages: List[str]):
         logging.info(f"\n=== {self.ChatAgent.__name__} ===")
-        async for event in self._agent.astream(
+        async for event in self._agent.with_config({"user_id": datetime.now()}).astream(
             {"messages": [{"role": "user", "content": messages}]},
             stream_mode="values", # Use this to stream all values in the state after each step.
-            config=config, # This is needed by Checkpointer
+            #config=config, # This is needed by Checkpointer
             store = self._vectorStore
         ):
             event["messages"][-1].pretty_print()

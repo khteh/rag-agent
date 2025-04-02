@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block content %}
+<div id="page-wrapper">
+	<div class="container">
+		{% from "helpers/_formhelpers.html" import render_field %}
+		<div class="row justify-content-center">
+			<div class="col-xl-10 col-xl-12 col-xl-9">
+				<div class="card o-hidden border-0 shadow-lg my-5">
+					<div class="card-body p-0">
+						<div class="row">
+							<div class="col-lg-6">
+								<div class="p-4">
+									<div>
+										<h1 class="h4 text-gray-900 mb-4">
+											<button type="button" class="btn btn-danger btn-curcle-sm"><i
+												class="fa fa-mask"></i></button>
+												Please login to continue:
+										</h1>
+									</div>
+									<form method="POST" class="form-horizontal needs-validation" action="{{ url_for('auth.login')}}">
+										<input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+										<div class="form-group row">
+											<label for="username" class="col-md-4 col-form-label d-flex text-right justify-content-end">User Name:</label>
+											<div class="col-md-8">
+												<input type="text" class="form-control" id="username" name="username">
+											</div>
+										</div>
+										<div class="form-group row" style="margin-top: 10px">
+											<label for="password" class="col-md-4 col-form-label d-flex text-right justify-content-end">Password:</label>
+											<div class="col-md-8">
+												<input type="password" class="form-control" id="password" name="password">
+											</div>
+										</div>
+										<div class="form-group row" style="margin-top: 10px">
+											<div class="col-sm-4 col-form-label">
+												<input type="submit" class="btn btn-primary" onclick="loading();">
+											</div>
+										</div>
+									</form>
+									<hr>
+									{% if error %}
+									<div class="alert alert-danger" role="alert" style="margin-top: 10px">
+										<p class="mb-0">{{ error }}</p>
+									</div>
+									{% endif %}								
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+{% endblock %}

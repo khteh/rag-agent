@@ -128,10 +128,13 @@ class EmailRAG():
         """
         logging.info(f"\n=== {self.__init__.__name__} ===")
         self._config = config
-        # https://python.langchain.com/api_reference/langchain/chat_models/langchain.chat_models.base.init_chat_model.html
-        self._llm = init_chat_model("gemini-2.0-flash", model_provider="google_genai", configurable_fields=("user_id", "graph", "email_state"), streaming=True)
-        # https://python.langchain.com/docs/integrations/chat/google_vertex_ai_palm/
-        # https://python.langchain.com/docs/how_to/structured_output/
+        """
+        https://python.langchain.com/api_reference/langchain/chat_models/langchain.chat_models.base.init_chat_model.html
+        https://python.langchain.com/docs/integrations/chat/google_vertex_ai_palm/
+        https://python.langchain.com/docs/how_to/structured_output/
+        For VertexAI, use VertexAIEmbeddings, model="text-embedding-005"; "gemini-2.0-flash" model_provider="google_genai"
+        """
+        self._llm = init_chat_model("llama3.3", model_provider="ollama", configurable_fields=("user_id", "graph", "email_state"), streaming=True)
         """
         self._llm = ChatVertexAI(
                         model="gemini-2.0-flash",
@@ -152,7 +155,7 @@ class EmailRAG():
             | self._llm.with_structured_output(EscalationCheckModel)
         )
 
-    async def ParseEmail(self, config: RunnableConfig, state: EmailRAGState) -> EmailRAGState:
+    async def ParseEmail(self, state: EmailRAGState, config: RunnableConfig) -> EmailRAGState:
         """
         Use the EmailModel LCEL to extract fields from email
         """
@@ -160,7 +163,7 @@ class EmailRAG():
         state["extract"] = await self._email_parser_chain.with_config(config).ainvoke({"message": state["message"]}) if state["message"] else None
         return state
 
-    async def NeedsEscalation(self, config: RunnableConfig, state: EmailRAGState) -> EmailRAGState:
+    async def NeedsEscalation(self, state: EmailRAGState, config: RunnableConfig) -> EmailRAGState:
         """
         Determine if an email needs escalation
         """
@@ -200,9 +203,8 @@ class EmailRAG():
             "escalation_dollar_criteria": 100_000,
             "escalation_emails": ["brog@abc.com", "bigceo@company.com"],
         }
-        async for step in self._agent.with_config({"graph": self._graph, "email_state": email_state}).astream(
+        async for step in self._agent.with_config({"graph": self._graph, "email_state": email_state, "thread_id": datetime.now()}).astream(
             {"messages": [{"role": "user", "content": message_with_criteria}]},
-            #{"configurable": {"graph": self._graph, "email_state": email_state}},
             stream_mode="values",
             #config = config
         ):

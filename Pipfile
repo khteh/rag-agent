@@ -36,6 +36,7 @@ langchain-neo4j = "*"
 jsonpickle = "*"
 mlflow = {extras = ["genai"], version = "*"}
 databricks-sdk = "*"
+langchain-ollama = "*"
 
 [dev-packages]
 pytest-flask = "*"

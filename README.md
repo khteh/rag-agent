@@ -27,6 +27,16 @@ USER_AGENT="USER_AGENT"
 $ sudo apt install -y python3.13-tk
 ```
 
+## Local Model
+
+- https://python.langchain.com/docs/how_to/local_llms/
+
+### Ollama
+
+```
+$ curl -fsSL https://ollama.com/install.sh | sh
+```
+
 ## Google VertexAI
 
 - Install Google Cloud CLI:
