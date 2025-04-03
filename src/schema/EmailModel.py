@@ -3,11 +3,6 @@ from datetime import datetime, date
 from pydantic import BaseModel, Field, computed_field
 
 class EmailModel(BaseModel):
-    """
-    Example:
-    Date: December 25, 2024
-    From: Mickey Mouse <mickey@mouse.com>
-    """
     date_str: str | None = Field(
         default=None,
         exclude=True,
