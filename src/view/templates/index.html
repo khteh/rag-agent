@@ -60,7 +60,7 @@
             //document.querySelector("#messages").innerHTML += `<div><strong>You:</strong> ${prompt}</div>`;
             var converter = new showdown.Converter();
             const responseContainer = document.createElement('div');
-            responseContainer.innerHTML = `<strong>Gemini:</strong><div>${converter.makeHtml(data.message)}</div><br>`;
+            responseContainer.innerHTML = `<strong>Gemini:</strong><div>${converter.makeHtml(data.response)}</div><br>`;
             document.querySelector("#messages").appendChild(responseContainer);
             //document.querySelector("#messages").innerHTML += `<div><strong>Gemini:</strong></div>${converter.makeHtml(data.message)}<br>`;
             document.querySelector("#prompt").value = '';

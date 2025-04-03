@@ -21,6 +21,7 @@ from langgraph.graph.graph import CompiledGraph
 from langchain_core.runnables import RunnableConfig
 #from src.rag_agent.RAGAgent import agent
 from ..common.ResponseHelper import Respond
+from ..common.Response import custom_response
 home_api = Blueprint("home", __name__)
 @home_api.context_processor
 def inject_now():
@@ -109,7 +110,9 @@ async def invoke(user_input: UserInput) -> ChatMessage:
         output = ChatMessage.from_langchain(response["messages"][-1])
         output.run_id = str(run_id)
         #return output
-        return await Respond("index.html", title="Welcome to Python LLM-RAG", greeting=greeting)
+        #return await Respond("index.html", title="Welcome to Python LLM-RAG", greeting=greeting)
+        # res.json({ 'message': this.presenter.Message, "errors": this.presenter.Errors });
+        return custom_response(output, 200)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
