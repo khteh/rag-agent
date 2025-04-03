@@ -7,30 +7,15 @@
       <ul id="messages"></ul>
     </div>
     <div id="message-box">
-      <input type="text" placeholder="Enter your message" id="message-input" name="message" />
+      <input type="text" placeholder="Enter your message" id="prompt" name="message" placeholder='How can I help?', onkeyup="stoppedTyping()"/>
       <input id='image', name="image", type='file', accept="image/*"/>
-      <button type="submit" id="send-btn" onclick="sendMessage()">Send</button>
+      <button type="submit" id="send-btn" onclick="sendMessage()">Submit</button>
     </div>
   </div>
   <script type="text/javascript">
-    var socketio = io();
-    socketio.on("message", function (message) { createChatItem(message.message, message.sender) });
-    function createChatItem(message, sender) {
-      var messages = document.getElementById("messages");
-      if (sender === "") {
-        content = `<p class="member-activity">${message}</p>`;
-      } else {
-        var senderIsUser = "{{user}}" === sender;
-        var content = `
-          <li class="message-item ${senderIsUser ? "self-message-item" : "peer-message-item"}">
-              <p>${message}</p>
-              <small class="${senderIsUser ? "muted-text" : "muted-text-white"}">${new Date().toLocaleString()}</small>
-          </li>
-      `;}
-      messages.innerHTML += content;
-    }
+    <!-- https://thepythoncode.com/article/how-to-build-a-chat-app-in-python-using-flask-and-flasksocketio -->
     function sendMessage() {
-      var msgInput = document.getElementById("message-input");
+      var msgInput = document.getElementById("prompt");
       if (msgInput.value === "") return;
       var msg = msgInput.value;
       socketio.emit("message", { message: msg });
@@ -43,11 +28,11 @@
                     document.querySelector('#send-btn').disabled = true;
                 }
         }
-        document.querySelector("#message-input").onblur = stoppedTyping();
+        document.querySelector("#prompt").onblur = stoppedTyping();
         // Select your input type file and store it in a variable
         document.querySelector("#chat-room-widget").addEventListener("send-btn", async (e) => {
           e.preventDefault();
-          const prompt = document.querySelector("#message-input").value;
+          const prompt = document.querySelector("#prompt").value;
           const image = document.querySelector("#image");
           if (prompt.trim()) {
             var form = new FormData();

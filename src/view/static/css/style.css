@@ -183,7 +183,7 @@ hr {
   display: flex;
 }
 
-#message-input {
+#prompt {
   flex-grow: 1;
   padding: 10px;
   font-size: 1.1rem;

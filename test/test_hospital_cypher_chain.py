@@ -3,7 +3,7 @@ from dotenv import load_dotenv
 pytest_plugins = ('pytest_asyncio',)
 load_dotenv()
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio(loop_scope="function")
 @pytest.mark.skip(reason="https://github.com/langchain-ai/langchain/issues/30547")
 async def test_hospital_visit_duration():
     #vertexai.init(project=os.environ.get("GOOGLE_CLOUD_PROJECT"), location=os.environ.get("GOOGLE_CLOUD_LOCATION"))
@@ -17,7 +17,7 @@ async def test_hospital_visit_duration():
     assert duration
     assert len(duration[0])
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio(loop_scope="function")
 @pytest.mark.skip(reason="https://github.com/langchain-ai/langchain/issues/30547")
 async def test_hospital_percent_increase():
     #vertexai.init(project=os.environ.get("GOOGLE_CLOUD_PROJECT"), location=os.environ.get("GOOGLE_CLOUD_LOCATION"))

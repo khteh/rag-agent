@@ -5,7 +5,7 @@ from rag_agent.State import EmailRAGState
 from data.sample_emails import EMAILS
 pytest_plugins = ('pytest_asyncio',)
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio(loop_scope="function")
 async def test_email_should_escalate(EmailRAGFixture):
     email_state = {
         "escalation_dollar_criteria": 100_000,
@@ -16,7 +16,7 @@ async def test_email_should_escalate(EmailRAGFixture):
     print(f"result: {result}")
     assert result
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio(loop_scope="function")
 async def test_email_should_not_escalate(EmailRAGFixture):
     email_state = {
         "escalation_dollar_criteria": 100_000,

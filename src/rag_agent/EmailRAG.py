@@ -82,10 +82,11 @@ class EmailRAG():
             (
                 "system",
                 """
-                Parse the date of email, sender's name, sender's phone, sender's email, project id, site location,
-                violation type, required changes, compliance deadline, and maximum potential fine from the email. 
-                If any of the fields aren't present, don't populate them. 
-                Try to cast dates into the YYYY-mm-dd format. Don't populate fields if they're not present in the email.
+                You are an expert email parser.
+                Parse the date of email, sender's name, sender's phone, sender's email, project id, site location, violation type, required changes, 
+                compliance deadline, and maximum potential fine from the email. If any of the fields aren't present, don't populate them. 
+                Try to cast dates into the dd-mm-YYYY format. Don't populate fields if they're not present in the email.
+
                 Here's the email:
                 {email}
                 """,
@@ -106,7 +107,7 @@ class EmailRAG():
                 """,
             ),
             ("human", "{email}"),
-            #("placeholder", "{email}"),#should be a list of base messages
+            #("placeholder", "{email}"), #should be a list of base messages
         ]
     )
     _prompt = ChatPromptTemplate.from_messages([
@@ -167,7 +168,7 @@ class EmailRAG():
         """
         logging.info(f"\n=== {self.ParseEmail.__name__} ===")
         logging.debug(f"state: {state}")
-        print(f"state: {state}, email: {state['email']}")
+        #print(f"state: {state}, email: {state['email']}")
         state["extract"] = await self._email_parser_chain.with_config(config).ainvoke({"email": state["email"]})
         logging.debug(f"Extract: {state['extract']}")
         print(f"Extract: {state['extract']}")

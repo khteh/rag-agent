@@ -4,7 +4,7 @@ from langchain_core.runnables import RunnableConfig
 from rag_agent.State import EmailRAGState
 from data.sample_emails import EMAILS
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio(loop_scope="function")
 #@pytest.mark.skip(reason="https://github.com/langchain-ai/langchain/discussions/30412")
 async def test_email_parser_chain(EmailRAGFixture):
     state = {
@@ -17,6 +17,7 @@ async def test_email_parser_chain(EmailRAGFixture):
     }
     config = RunnableConfig(run_name="Email RAG Test", thread_id=datetime.now())
     result: EmailRAGState = await EmailRAGFixture.ParseEmail(state, config)
+    print(f"extract: {result['extract']}")
     assert result
     assert result["extract"]
     assert result["extract"].date_str

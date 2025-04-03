@@ -3,7 +3,7 @@ from dotenv import load_dotenv
 pytest_plugins = ('pytest_asyncio',)
 load_dotenv()
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio(loop_scope="function")
 #@pytest.mark.skip(reason="Needs billing")
 async def test_hospital_review_chain():
     #vertexai.init(project=os.environ.get("GOOGLE_CLOUD_PROJECT"), location=os.environ.get("GOOGLE_CLOUD_LOCATION"))

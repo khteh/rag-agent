@@ -1,3 +1,4 @@
+import locale
 from datetime import datetime, date
 from pydantic import BaseModel, Field, computed_field
 
@@ -11,11 +12,11 @@ class EmailModel(BaseModel):
         default=None,
         exclude=True,
         repr=False,
-        description="The date of the email reformatted to match YYYY-mm-dd. This is usually found in the \"Date:\" field in the email.",
+        description="The date of the email reformatted to match mm-dd-YYYY. This is usually found in the Date: field in the email.",
     )
     name: str | None = Field(
         default=None,
-        description="The name of the email sender. This is usually found in the \"From:\" field in the email formatted as \"name <email>\"",
+        description="The name of the email sender. This is usually found in the From: field in the email formatted as name <email>",
     )
     phone: str | None = Field(
         default=None,
@@ -23,7 +24,7 @@ class EmailModel(BaseModel):
     )
     email: str | None = Field(
         default=None,
-        description="The email addreess of the email sender (if present in the message). This is usually found in the same \"From:\" field in the email formatted as \"name <email>\"",
+        description="The email addreess of the email sender (if present in the message). This is usually found in the From: field in the email formatted as name <email>",
     )
     project_id: int | None = Field(
         default=None,
@@ -54,8 +55,14 @@ class EmailModel(BaseModel):
 
     @staticmethod
     def _convert_string_to_date(date_str: str | None) -> date | None:
+        """
+        locale.getlocale()
+        local.setlocale(local.LC_ALL, 'en_US')
+        https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes
+        Date: Wed, 02 Apr 2025 15:39:59 -0700
+        """
         try:
-            return datetime.strptime(date_str, "%Y-%m-%d").date() if date_str else None
+            return datetime.strptime(date_str, '%a, %d %b %Y %H:%M:%S %z') if date_str else None
         except Exception as e:
             print(e)
             return None
