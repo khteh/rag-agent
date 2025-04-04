@@ -270,8 +270,8 @@ Common extensions of Chain of Thought prompting include:
 
 ### Email RAG StateGraph with Checkpoint
 
-![Email RAG StateGraph with Checkpoint](./Email RAG StateGraph.png?raw=true "Email RAG StateGraph with Checkpoint")
-![Email RAG Agent with Checkpoint](./Email RAG Agent.png?raw=true "Email RAG Agent with Checkpoint")
+![Email RAG StateGraph with Checkpoint](./EmailRAGStateGraph.png?raw=true "Email RAG StateGraph with Checkpoint")
+![Email RAG Agent with Checkpoint](./EmailRAGAgent.png?raw=true "Email RAG Agent with Checkpoint")
 
 ```
 $ pp src.rag_agent.EmailRAG
