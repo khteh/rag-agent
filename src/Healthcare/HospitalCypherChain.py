@@ -21,8 +21,8 @@ qa_generation_prompt = PromptTemplate(
     input_variables=["context", "question"], template=qa_generation_template
 )
 hospital_cypher_chain = GraphCypherQAChain.from_llm(
-    cypher_llm = init_chat_model("llama3.2", model_provider="ollama", base_url=config.OLLAMA_URI, streaming=True, temperature=0),
-    qa_llm = init_chat_model("llama3.2", model_provider="ollama", base_url=config.OLLAMA_URI, streaming=True, temperature=0),
+    cypher_llm = init_chat_model("llama3.3", model_provider="ollama", base_url=config.OLLAMA_URI, streaming=True, temperature=0),
+    qa_llm = init_chat_model("llama3.3", model_provider="ollama", base_url=config.OLLAMA_URI, streaming=True, temperature=0),
     graph = graph,
     verbose = True, # Whether intermediate steps your chain performs should be printed.
     qa_prompt = qa_generation_prompt,

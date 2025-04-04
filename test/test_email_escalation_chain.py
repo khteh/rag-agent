@@ -5,12 +5,11 @@ from data.sample_emails import EMAILS
 from rag_agent.State import EmailRAGState
 
 @pytest.mark.asyncio(loop_scope="function")
-@pytest.mark.skip(reason="https://github.com/langchain-ai/langchain/issues/30428")
 async def test_needs_escalation_true(EmailRAGFixture):
     state = {
          "email": EMAILS[0],
          "extract": None,
-         "escalation_text_criteria": "\"Workers explicitly violating safety protocols\"",
+         "escalation_text_criteria": "Workers explicitly violating safety protocols",
          "escalation_dollar_criteria": 100_000,
          "escalate": False,
          "escalation_emails": ["brog@abc.com", "bigceo@company.com"],
@@ -22,7 +21,6 @@ async def test_needs_escalation_true(EmailRAGFixture):
     assert result["escalate"]
 
 @pytest.mark.asyncio(loop_scope="function")
-@pytest.mark.skip(reason="https://github.com/langchain-ai/langchain/issues/30428")
 async def test_needs_escalation_false(EmailRAGFixture):
     """
     requires_escalation is set to False because EMAILS[0] doesn’t say anything about fire or water damage, and the maximum potential fine is less than $100,000.
@@ -30,7 +28,7 @@ async def test_needs_escalation_false(EmailRAGFixture):
     state = {
          "email": EMAILS[0],
          "extract": None,
-         "escalation_text_criteria": "\"There's a risk of fire or water damage at the site\"",
+         "escalation_text_criteria": "There's a risk of fire or water damage at the site",
          "escalation_dollar_criteria": 100_000,
          "escalate": False,
          "escalation_emails": ["brog@abc.com", "bigceo@company.com"],

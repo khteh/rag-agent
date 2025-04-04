@@ -11,7 +11,7 @@ from src.config import config
 load_dotenv()
 # For VertexAI, use VertexAIEmbeddings, model="text-embedding-005"; "gemini-2.0-flash" model_provider="google_genai"
 neo4j_vector_index = Neo4jVector.from_existing_graph(
-    embedding = OllamaEmbeddings(model="llama3.2"),
+    embedding = OllamaEmbeddings(model="llama3.3"),
     url = config.NEO4J_URI,
     username = config.NEO4J_USERNAME,
     password = config.NEO4J_PASSWORD,
@@ -47,7 +47,7 @@ review_prompt = ChatPromptTemplate(
     input_variables=["context", "question"], messages=messages
 )
 reviews_vector_chain = RetrievalQA.from_chain_type(
-    llm = init_chat_model("llama3.2", model_provider="ollama", base_url=config.OLLAMA_URI, streaming=True, temperature=0),
+    llm = init_chat_model("llama3.3", model_provider="ollama", base_url=config.OLLAMA_URI, streaming=True, temperature=0),
     chain_type = "stuff", # pass all k reviews to the prompt.
     retriever = neo4j_vector_index.as_retriever(k=3),
 )

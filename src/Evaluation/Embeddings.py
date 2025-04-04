@@ -40,7 +40,7 @@ _eval_data = pandas.DataFrame(
 
 def evaluate_embedding():
     # For VertexAI, use VertexAIEmbeddings, model="text-embedding-005"; "gemini-2.0-flash" model_provider="google_genai"
-    vector_store = VectorStore(model="llama3.2", chunk_size=1000, chunk_overlap=100)
+    vector_store = VectorStore(model="llama3.3", chunk_size=1000, chunk_overlap=100)
     vector_store.load(_urls)
     def retrieve_doc_ids(question: str) -> list[str]:
         docs = vector_store.retriever.get_relevant_documents(question)

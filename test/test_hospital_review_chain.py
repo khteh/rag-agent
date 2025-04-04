@@ -15,6 +15,6 @@ async def test_hospital_review_chain():
     assert result
     assert "hospital" in result
     assert "patient" in result
-    assert "communication" in result
-    #assert "bureaucratic" in result
-    assert "efficient" in result
+    assert "lack of clear communication" in result
+    assert "inefficiencies" in result
+    assert "difficulties" in result

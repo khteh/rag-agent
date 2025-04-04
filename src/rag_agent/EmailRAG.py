@@ -84,7 +84,7 @@ class EmailRAG():
                 "system",
                 """
                 You are an expert email parser.
-                Parse the date, sender's name, sender's phone, sender's email, project id, site location, violation type, required changes, 
+                Parse the date of email, sender's name, sender's phone, sender's email, project id, site location, violation type, required changes, 
                 compliance deadline, and maximum potential fine from the email. If any of the fields aren't present, don't populate them. 
                 Try to cast dates into the dd-mm-YYYY format. Don't populate fields if they're not present in the email.
 

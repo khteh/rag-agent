@@ -71,9 +71,9 @@ class RAGAgent():
         If the agent LLM determines that its input requires a tool call, it’ll return a JSON tool message with the name of the tool it wants to use, along with the input arguments.
         For VertexAI, use VertexAIEmbeddings, model="text-embedding-005"; "gemini-2.0-flash" model_provider="google_genai"
         """
-        self._vectorStore = VectorStore(model="llama3.2", chunk_size=1000, chunk_overlap=200)
+        self._vectorStore = VectorStore(model="llama3.3", chunk_size=1000, chunk_overlap=200)
         self._tools = [self._vectorStore.retriever_tool, ground_search, save_memory]
-        self._llm = init_chat_model("llama3.2", model_provider="ollama", base_url=appconfig.OLLAMA_URI, streaming=True).bind_tools(self._tools)
+        self._llm = init_chat_model("llama3.3", model_provider="ollama", base_url=appconfig.OLLAMA_URI, streaming=True).bind_tools(self._tools)
         # https://python.langchain.com/docs/integrations/chat/google_vertex_ai_palm/
         """
         self._llm = ChatVertexAI(

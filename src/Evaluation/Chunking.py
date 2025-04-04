@@ -40,7 +40,7 @@ _eval_data = DataFrame(
 )
 def evaluate_chunk_size(chunk_size):
     # For VertexAI, use VertexAIEmbeddings, model="text-embedding-005"; "gemini-2.0-flash" model_provider="google_genai"
-    vector_store = VectorStore(model="llama3.2", chunk_size=chunk_size, chunk_overlap=100)
+    vector_store = VectorStore(model="llama3.3", chunk_size=chunk_size, chunk_overlap=100)
     vector_store.load(_urls)
     #embedding_function = SentenceTransformerEmbeddings(model_name="all-MiniLM-L6-v2")
     #retriever = Chroma.from_documents(docs, embedding_function).as_retriever()

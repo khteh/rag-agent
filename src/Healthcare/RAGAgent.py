@@ -1,4 +1,5 @@
 import os, logging, vertexai
+from src.config import config as appconfig
 from datetime import datetime
 from dotenv import load_dotenv
 from typing_extensions import List, TypedDict
@@ -60,9 +61,10 @@ class RAGAgent():
         self._config = config
         """
         .bind_tools() gives the agent LLM descriptions of each tool from their docstring and input arguments. 
-        If the agent LLM determines that its input requires a tool call, it’ll return a JSON tool message with the name of the tool it wants to use, along with the input arguments.        
+        If the agent LLM determines that its input requires a tool call, it’ll return a JSON tool message with the name of the tool it wants to use, along with the input arguments.
+        For VertexAI, use VertexAIEmbeddings, model="text-embedding-005"; "gemini-2.0-flash" model_provider="google_genai"
         """
-        self._llm = init_chat_model("gemini-2.0-flash", model_provider="google_genai", streaming=True).bind_tools(TOOLS)
+        self._llm = init_chat_model("llama3.3", model_provider="ollama", base_url=appconfig.OLLAMA_URI, streaming=True).bind_tools(self._tools)
         # https://python.langchain.com/docs/integrations/chat/google_vertex_ai_palm/
         """
         self._llm = ChatVertexAI(
