@@ -9,6 +9,7 @@ from mlflow.metrics.genai.metric_definitions import relevance
 from langchain_core.runnables import RunnableConfig
 from src.rag_agent.VectorStore import VectorStore
 from src.rag_agent.RAGAgent import RAGAgent
+from src.config import config
 _urls = [
     "https://lilianweng.github.io/posts/2023-06-23-agent/",
     "https://lilianweng.github.io/posts/2023-03-15-prompt-engineering/",
@@ -33,7 +34,7 @@ _eval_data = pandas.DataFrame(
 )
 def model(input_df):
     # For VertexAI, use VertexAIEmbeddings, model="text-embedding-005"; "gemini-2.0-flash" model_provider="google_genai"
-    model = init_chat_model("llama3.2", model_provider="ollama", streaming=True)
+    model = init_chat_model("llama3.2", model_provider="ollama", base_url=config.OLLAMA_URI, streaming=True)
     vectorStore = VectorStore(model="llama3.2", chunk_size=1000, chunk_overlap=100)
     qa = RetrievalQA.from_chain_type(
           llm = model,

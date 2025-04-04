@@ -1,4 +1,4 @@
-import logging, os, re, json, asyncio, psycopg, json, logging, vertexai
+import logging, os, re, json, asyncio, psycopg, json, vertexai
 from urllib import parse
 from dotenv import load_dotenv
 from datetime import date, datetime, timedelta, timezone
@@ -14,15 +14,13 @@ from langchain_core.callbacks import AsyncCallbackHandler
 from langchain_core.runnables import RunnableConfig
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
 from langgraph.graph.graph import CompiledGraph
-
+from src.config import config as appconfig
 # Make the WSGI interface available at the top level so wfastcgi can get it.
 load_dotenv()
 #print(f"GEMINI_API_KEY: {os.environ.get("GEMINI_API_KEY")}")
 config = Config()
 config.from_toml("/etc/hypercorn.toml")
 # httpx library is a dependency of LangGraph and is used under the hood to communicate with the AI models.
-logging.getLogger("httpx").setLevel(logging.WARNING)
-logging.basicConfig(format='%(asctime)s %(levelname)-8s %(message)s', level=logging.INFO, datefmt='%Y-%m-%d %H:%M:%S')	
 connection_kwargs = {
     "autocommit": True,
     "prepare_threshold": 0,

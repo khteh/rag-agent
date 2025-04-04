@@ -57,7 +57,8 @@ class EmailModel(BaseModel):
         Date: Wed, 02 Apr 2025 15:39:59 -0700
         """
         try:
-            return datetime.strptime(date_str, '%a, %d %b %Y %H:%M:%S %z') if date_str else None
+            #return datetime.strptime(date_str, '%a, %d %b %Y %H:%M:%S %z') if date_str else None
+            return datetime.strptime(date_str, "%d-%m-%Y").date() if date_str else None
         except Exception as e:
             print(e)
             return None

@@ -31,6 +31,7 @@ https://github.com/langchain-ai/langgraph/blob/main/libs/langgraph/langgraph/gra
 https://langchain-ai.github.io/langgraph/how-tos/streaming/#values
 """
 load_dotenv()
+from src.config import config as appconfig
 from .State import State
 from ..utils.image import show_graph
 #from .State import State
@@ -75,7 +76,7 @@ class CheckpointedRAG():
         If the agent LLM determines that its input requires a tool call, it’ll return a JSON tool message with the name of the tool it wants to use, along with the input arguments.
         For VertexAI, use VertexAIEmbeddings, model="text-embedding-005"; "gemini-2.0-flash" model_provider="google_genai"
         """
-        self._llm = init_chat_model("llama3.2", model_provider="ollama", streaming=True).bind_tools([self._vectorStore.retriever_tool])
+        self._llm = init_chat_model("llama3.2", model_provider="ollama", base_url=appconfig.OLLAMA_URI, streaming=True).bind_tools([self._vectorStore.retriever_tool])
         # https://python.langchain.com/docs/integrations/chat/google_vertex_ai_palm/
         """
         self._llm = ChatVertexAI(

@@ -31,6 +31,7 @@ https://langchain-ai.github.io/langgraph/how-tos/streaming/#values
 https://python.langchain.com/docs/how_to/configure/
 """
 load_dotenv()
+from src.config import config as appconfig
 from .VectorStore import VectorStore
 from .State import CustomAgentState
 from ..utils.image import show_graph
@@ -72,7 +73,7 @@ class RAGAgent():
         """
         self._vectorStore = VectorStore(model="llama3.2", chunk_size=1000, chunk_overlap=200)
         self._tools = [self._vectorStore.retriever_tool, ground_search, save_memory]
-        self._llm = init_chat_model("llama3.2", model_provider="ollama", streaming=True).bind_tools(self._tools)
+        self._llm = init_chat_model("llama3.2", model_provider="ollama", base_url=appconfig.OLLAMA_URI, streaming=True).bind_tools(self._tools)
         # https://python.langchain.com/docs/integrations/chat/google_vertex_ai_palm/
         """
         self._llm = ChatVertexAI(
@@ -112,8 +113,7 @@ class RAGAgent():
         async for event in self._agent.with_config({"user_id": datetime.now()}).astream(
             {"messages": [{"role": "user", "content": messages}]},
             stream_mode="values", # Use this to stream all values in the state after each step.
-            #config=config, # This is needed by Checkpointer
-            store = self._vectorStore
+            config=config, # This is needed by Checkpointer
         ):
             event["messages"][-1].pretty_print()
 

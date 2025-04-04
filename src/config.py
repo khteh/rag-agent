@@ -1,4 +1,4 @@
-import os, json
+import os, json, logging
 from dotenv import load_dotenv
 from urllib import parse
 load_dotenv()
@@ -22,6 +22,7 @@ class Config(metaclass=ConfigSingleton):
     NEO4J_USERNAME:str = None
     NEO4J_PASSWORD:str = None
     NEO4J_URI:str = None
+    OLLAMA_URI:str = None
     def __new__(cls, *args, **kwargs):
         return super().__new__(cls)
     def __init__(self, environment="Development"):
@@ -35,5 +36,12 @@ class Config(metaclass=ConfigSingleton):
         self.NEO4J_USERNAME = credential[0]
         self.NEO4J_PASSWORD = credential[1]
         self.NEO4J_URI = config['NEO4J_URI']
+        self.OLLAMA_URI = config['OLLAMA_URI']
+        """
+        https://docs.python.org/3/library/logging.html
+        The level parameter now accepts a string representation of the level such as ‘INFO’ as an alternative to the integer constants such as INFO.
+        """
+        logging.getLogger("httpx").setLevel(logging.WARNING)
+        logging.basicConfig(filename='/var/log/ragagent/log', filemode='w', format='%(asctime)s %(levelname)-8s %(message)s', level=config['LOGLEVEL'], datefmt='%Y-%m-%d %H:%M:%S')	
 
 config = Config()

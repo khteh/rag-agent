@@ -36,6 +36,7 @@ https://langchain-ai.github.io/langgraph/how-tos/streaming/#values
 https://python.langchain.com/docs/how_to/configure/
 """
 load_dotenv()
+from src.config import config as appconfig
 from .State import EmailRAGState, EmailAgentState
 from src.utils.image import show_graph
 from src.schema.EmailModel import EmailModel
@@ -83,7 +84,7 @@ class EmailRAG():
                 "system",
                 """
                 You are an expert email parser.
-                Parse the date of email, sender's name, sender's phone, sender's email, project id, site location, violation type, required changes, 
+                Parse the date, sender's name, sender's phone, sender's email, project id, site location, violation type, required changes, 
                 compliance deadline, and maximum potential fine from the email. If any of the fields aren't present, don't populate them. 
                 Try to cast dates into the dd-mm-YYYY format. Don't populate fields if they're not present in the email.
 
@@ -138,8 +139,8 @@ class EmailRAG():
         If the agent LLM determines that its input requires a tool call, it’ll return a JSON tool message with the name of the tool it wants to use, along with the input arguments.
         For VertexAI, use VertexAIEmbeddings, model="text-embedding-005"; "gemini-2.0-flash" model_provider="google_genai"
         """
-        self._llm = init_chat_model("llama3.2", model_provider="ollama", configurable_fields=("user_id", "graph", "email_state"), streaming=True, temperature=0).bind_tools([email_processing_tool])
-        self._chainLLM = init_chat_model("llama3.2", model_provider="ollama", temperature=0)
+        self._llm = init_chat_model("llama3.3", model_provider="ollama", base_url=appconfig.OLLAMA_URI, configurable_fields=("user_id", "graph", "email_state"), streaming=True, temperature=0).bind_tools([email_processing_tool])
+        self._chainLLM = init_chat_model("llama3.3", model_provider="ollama", base_url=appconfig.OLLAMA_URI, temperature=0)
         """
         self._llm = ChatVertexAI(
                         model="gemini-2.0-flash",
@@ -227,15 +228,18 @@ class EmailRAG():
         show_graph(self._graph, self._graphName) # This blocks
         show_graph(self._agent, self._agentName) # This blocks
 
-    async def Chat(self, criteria, email, email_state, config: RunnableConfig):
+    async def Chat(self, criteria, email, email_state, config: RunnableConfig) -> List[str]:
         logging.info(f"\n=== {self.Chat.__name__} ===")
         message_with_criteria = f"The escalation criteria is: {criteria}. Here's the email: \"{email}\""
+        result: List[str] = []
         async for step in self._agent.with_config({"graph": self._graph, "email_state": email_state, "thread_id": datetime.now()}).astream(
             {"messages": [{"role": "user", "content": message_with_criteria}]},
             stream_mode="values",
             #config = config
         ):
+            result.append(step["messages"][-1])
             step["messages"][-1].pretty_print()
+        return result
 
 async def make_graph(config: RunnableConfig) -> CompiledGraph:
     return await EmailRAG(config).CreateGraph()
