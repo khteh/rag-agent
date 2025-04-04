@@ -4,9 +4,6 @@ from src.utils.image import show_graph
 from .State import State
 from dotenv import load_dotenv
 from langchain.chat_models import init_chat_model
-from langchain_openai import OpenAIEmbeddings
-from langchain_google_vertexai import VertexAIEmbeddings
-from langchain_core.vectorstores import InMemoryVectorStore
 from langchain import hub
 from langchain_community.document_loaders import WebBaseLoader
 from langchain_core.documents import Document
@@ -28,18 +25,17 @@ load_dotenv()
 https://python.langchain.com/api_reference/langchain/chat_models/langchain.chat_models.base.init_chat_model.html
 #vertexai.init(project=os.environ.get("GOOGLE_CLOUD_PROJECT"), location=os.environ.get("GOOGLE_CLOUD_LOCATION"))
 For VertexAI, use VertexAIEmbeddings, model="text-embedding-005"; "gemini-2.0-flash" model_provider="google_genai"
+https://cloud.google.com/vertex-ai/generative-ai/docs/embeddings/get-text-embeddings
+embeddings = VertexAIEmbeddings(model="text-embedding-005")
+
 """
 llm = init_chat_model("llama3.3", model_provider="ollama", base_url=appconfig.OLLAMA_URI, streaming=True).bind_tools(self._tools)
-#embeddings = VertexAIEmbeddings(model="text-embedding-005")
 """
 llm = init_chat_model("gpt-4o-mini", model_provider="openai")
 embeddings = OpenAIEmbeddings(model="text-embedding-3-large")"
 """
 from .VectorStore import VectorStore
 vector_store = VectorStore(model="llama3.3", chunk_size=1000, chunk_overlap=100)
-
-# https://cloud.google.com/vertex-ai/generative-ai/docs/embeddings/get-text-embeddings
-#vector_store = InMemoryVectorStore(embeddings)
 
 def LoadDocuments(url: str):
     # Load and chunk contents of the blog

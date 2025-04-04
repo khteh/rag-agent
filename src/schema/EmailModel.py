@@ -7,7 +7,7 @@ class EmailModel(BaseModel):
         default=None,
         exclude=True,
         repr=False,
-        description="The date of the email reformatted to match mm-dd-YYYY. This is usually found in the Date: field in the email.",
+        description="The date of the email reformatted to match mm-dd-YYYY. This is usually found in the Date: field in the email. Ignore the timestamp and timezone part of the Date:",
     )
     name: str | None = Field(
         default=None,

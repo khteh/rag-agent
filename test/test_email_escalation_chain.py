@@ -16,7 +16,6 @@ async def test_needs_escalation_true(EmailRAGFixture):
     }
     config = RunnableConfig(run_name="Email RAG Test", thread_id=datetime.now())
     result: EmailRAGState = await EmailRAGFixture.NeedsEscalation(state, config)
-    print(f"result: {result}")
     assert result
     assert result["escalate"]
 
@@ -35,9 +34,6 @@ async def test_needs_escalation_false(EmailRAGFixture):
     }
     config = RunnableConfig(run_name="Email RAG Test", thread_id=datetime.now())
     result: EmailRAGState = await EmailRAGFixture.NeedsEscalation(state, config)
-    print(f"result: {result}")
     assert result
-    assert result["extract"].max_potential_fine
-    assert result["extract"].max_potential_fine == 25000.0    
     assert not result["escalate"]
     

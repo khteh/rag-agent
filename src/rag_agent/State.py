@@ -1,7 +1,6 @@
 """Define the state structures for the agent."""
 from __future__ import annotations
 from langchain_core.documents import Document
-from langchain_core.vectorstores import InMemoryVectorStore
 from typing_extensions import List, TypedDict
 from dataclasses import dataclass, field
 from typing import Sequence

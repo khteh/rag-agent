@@ -44,12 +44,12 @@ class RAGAgent():
     _config = None
     _urls = [
         "https://lilianweng.github.io/posts/2023-06-23-agent/",
-        "https://lilianweng.github.io/posts/2023-03-15-prompt-engineering/",
-        "https://lilianweng.github.io/posts/2023-10-25-adv-attack-llm/",
-        "https://mlflow.org/docs/latest/index.html",
-        "https://mlflow.org/docs/latest/tracking/autolog.html",
-        "https://mlflow.org/docs/latest/getting-started/tracking-server-overview/index.html",
-        "https://mlflow.org/docs/latest/python_api/mlflow.deployments.html",        
+        #"https://lilianweng.github.io/posts/2023-03-15-prompt-engineering/",
+        #"https://lilianweng.github.io/posts/2023-10-25-adv-attack-llm/",
+        #"https://mlflow.org/docs/latest/index.html",
+        #"https://mlflow.org/docs/latest/tracking/autolog.html",
+        #"https://mlflow.org/docs/latest/getting-started/tracking-server-overview/index.html",
+        #"https://mlflow.org/docs/latest/python_api/mlflow.deployments.html",        
     ]    
     _prompt = ChatPromptTemplate.from_messages([
                 ("system", "You are a helpful AI assistant named Bob."),
@@ -101,6 +101,7 @@ class RAGAgent():
             await self._vectorStore.LoadDocuments(self._urls)
             # https://langchain-ai.github.io/langgraph/reference/prebuilt/#langgraph.prebuilt.chat_agent_executor.create_react_agent
             self._agent = create_react_agent(self._llm, self._tools, store=InMemoryStore(), checkpointer=MemorySaver(), config_schema=Configuration, state_schema=CustomAgentState, name=self._name, prompt=self._prompt)
+            #show_graph(self._agent, "RAG ReAct Agent") # This blocks
         except ResourceExhausted as e:
             logging.exception(f"google.api_core.exceptions.ResourceExhausted {e}")
         return self._agent
@@ -128,7 +129,6 @@ async def main():
     config = RunnableConfig(run_name="RAG ReAct Agent", thread_id=datetime.now())
     rag = RAGAgent(config)
     await rag.CreateGraph()
-    #show_graph(agent, "RAG ReAct Agent") # This blocks
     """
     graph = agent.get_graph().draw_mermaid_png()
     # Save the PNG data to a file

@@ -68,10 +68,10 @@ EMAILS = [
     # Email 3
     """
     Date: Thu, 3 Apr 2025 11:36:10 +0000
-    From: City of Los Angeles Building and Safety Department <safety@building-safety.la.com>
+    From: City of Los Angeles Building and Safety Department <inspections@lacity.gov>
     Reply-To: Admin <admin@building-safety.la.com>
     To: West Coast Development <admin@west-coast-dev.com>
-    Cc: Donald Duck <donald@duck.com>, Support <support@building-safety.la.com>
+    Cc: Donald Duck <donald@duck.com>, Support <inspections@lacity.gov>
     Message-ID: <f967b2d6-1036-11f0-9701-9775a4ad682f@prod.outlook.com>
     References: <7d29dafe-1037-11f0-a588-8f6b1b834703@prod.outlook.com> <859cc44e-1037-11f0-b15c-6b9d5cb20c47@prod.outlook.com>
     Subject: Project 345678123 - Sunset Luxury Condominiums
