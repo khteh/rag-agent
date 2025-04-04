@@ -51,7 +51,7 @@ EMAILS = [
     """,
     # Email 2
     """
-    Date: THu, 3 Apr 2025 11:36:10 +0000
+    Date: Thu, 3 Apr 2025 11:36:10 +0000
     From: David <tdavid@companyxyz.com>
     Reply-To: David <tdavid@companyxyz.com>
     To: Paul <paul@hvac.com>
@@ -67,7 +67,7 @@ EMAILS = [
     """,
     # Email 3
     """
-    Date: THu, 3 Apr 2025 11:36:10 +0000
+    Date: Thu, 3 Apr 2025 11:36:10 +0000
     From: City of Los Angeles Building and Safety Department <safety@building-safety.la.com>
     Reply-To: Admin <admin@building-safety.la.com>
     To: West Coast Development <admin@west-coast-dev.com>
