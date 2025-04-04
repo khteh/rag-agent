@@ -239,7 +239,7 @@ class EmailRAG():
         ):
             result.append(step["messages"][-1])
             step["messages"][-1].pretty_print()
-        return result
+        return result[-1]
 
 async def make_graph(config: RunnableConfig) -> CompiledGraph:
     return await EmailRAG(config).CreateGraph()
