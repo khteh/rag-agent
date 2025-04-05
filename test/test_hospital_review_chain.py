@@ -4,7 +4,7 @@ pytest_plugins = ('pytest_asyncio',)
 load_dotenv()
 
 @pytest.mark.asyncio(loop_scope="function")
-#@pytest.mark.skip(reason="Needs billing")
+@pytest.mark.skip(reason="https://github.com/langchain-ai/langchain/issues/30687 https://github.com/neo4j/neo4j/issues/13636")
 async def test_hospital_review_chain():
     #vertexai.init(project=os.environ.get("GOOGLE_CLOUD_PROJECT"), location=os.environ.get("GOOGLE_CLOUD_LOCATION"))
     query = """What have patients said about hospital efficiency?

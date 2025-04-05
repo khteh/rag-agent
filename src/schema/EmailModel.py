@@ -23,7 +23,7 @@ class EmailModel(BaseModel):
     )
     project_id: int | None = Field(
         default=None,
-        description="The project ID (if present in the message) - must be an integer",
+        description="The project ID (if present in the message) - must be an integer. This is usually found in the Subject: field or email body text",
     )
     site_location: str | None = Field(
         default=None,
@@ -41,7 +41,7 @@ class EmailModel(BaseModel):
         default=None,
         exclude=True,
         repr=False,
-        description="The date that the company must comply (if any) reformatted to match YYYY-mm-dd",
+        description="The date that the company must comply (if any) reformatted to match dd-mm-YYYY",
     )
     max_potential_fine: float | None = Field(
         default=None,

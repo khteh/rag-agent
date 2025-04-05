@@ -84,9 +84,10 @@ class EmailRAG():
                 "system",
                 """
                 You are an expert email parser.
-                Parse the Date of email into the dd-mm-YYYY format, sender's name, sender's phone, sender's email, project id, site location, violation type, required changes, 
-                compliance deadline, and maximum potential fine from the email. If any of the fields aren't present, don't populate them. 
-                Ignore the timestamp and timezone part of the Date. Don't populate fields if they're not present in the email.
+                Extract date from the Date: field, name and email from the From: field, project id from the Subject: field or email body text, 
+                phone number, site location, violation type, required changes, compliance deadline, and maximum potential fine from the email body text.
+                If any of the fields aren't present, don't populate them. Don't populate fields if they're not present in the email.
+                Try to cast dates into the dd-mm-YYYY format. Ignore the timestamp and timezone part of the Date. 
 
                 Here's the email:
                 {email}
@@ -172,7 +173,6 @@ class EmailRAG():
         #print(f"state: {state}, email: {state['email']}")
         state["extract"] = await self._email_parser_chain.with_config(config).ainvoke({"email": state["email"]})
         logging.debug(f"Extract: {state['extract']}")
-        print(f"Extract: {state['extract']}")
         return state
 
     async def NeedsEscalation(self, state: EmailRAGState, config: RunnableConfig) -> EmailRAGState:
@@ -265,7 +265,7 @@ async def main():
         "escalation_dollar_criteria": 100_000,
         "escalation_emails": ["brog@abc.com", "bigceo@company.com"],
     }
-    await rag.Chat("\"There's an immediate risk of electrical, water, or fire damage\"", EMAILS[3], email_state, config)
+    await rag.Chat("There's an immediate risk of electrical, water, or fire damage", EMAILS[3], email_state, config)
 
 if __name__ == "__main__":
     asyncio.run(main())
