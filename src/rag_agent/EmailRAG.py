@@ -230,7 +230,7 @@ class EmailRAG():
 
     async def Chat(self, criteria, email, email_state, config: RunnableConfig) -> List[str]:
         logging.info(f"\n=== {self.Chat.__name__} ===")
-        message_with_criteria = f"The escalation criteria is: {criteria}. Here's the email: \"{email}\""
+        message_with_criteria = f"The escalation criteria is: {criteria}. Here's the email: {email}"
         result: List[str] = []
         async for step in self._agent.with_config({"graph": self._graph, "email_state": email_state, "thread_id": datetime.now()}).astream(
             {"messages": [{"role": "user", "content": message_with_criteria}]},

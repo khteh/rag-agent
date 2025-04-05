@@ -11,7 +11,7 @@ from src.config import config
 load_dotenv()
 # For VertexAI, use VertexAIEmbeddings, model="text-embedding-005"; "gemini-2.0-flash" model_provider="google_genai"
 neo4j_vector_index = Neo4jVector.from_existing_graph(
-    embedding = OllamaEmbeddings(model="llama3.3"),
+    embedding = OllamaEmbeddings(model="llama3.3", base_url=config.OLLAMA_URI, num_ctx=4096, num_gpu=1, temperature=0, top_k=10),
     url = config.NEO4J_URI,
     username = config.NEO4J_USERNAME,
     password = config.NEO4J_PASSWORD,
