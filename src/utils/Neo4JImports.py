@@ -1,8 +1,10 @@
 import os, logging
+from dotenv import load_dotenv
 from neo4j import GraphDatabase
 from retry import retry
 from pathlib import Path
-
+from src.config import config
+#load_dotenv()
 HOSPITALS_CSV_PATH = "/Healthcare/hospitals.csv"
 PAYERS_CSV_PATH = "/Healthcare/payers.csv"
 PHYSICIANS_CSV_PATH = "/Healthcare/physicians.csv"
@@ -12,10 +14,11 @@ REVIEWS_CSV_PATH = "/Healthcare/reviews.csv"
 
 """
 bolt://svc-neo4j-nodeport:7687
+neo4j://svc-neo4j-nodeport:7687
 """
-NEO4J_URI = "bolt://10.152.183.170:7687"
-NEO4J_USERNAME = "neo4j"
-NEO4J_PASSWORD = "P@$$w0rd"
+NEO4J_URI = config.NEO4J_URI
+NEO4J_USERNAME = config.NEO4J_USERNAME
+NEO4J_PASSWORD = config.NEO4J_PASSWORD
 
 logging.basicConfig(
     level=logging.INFO,
@@ -26,6 +29,7 @@ logging.basicConfig(
 LOGGER = logging.getLogger(__name__)
 
 NODES = ["Hospital", "Payer", "Physician", "Patient", "Visit", "Review"]
+LOGGER.info(f"Loading {NEO4J_URI}...")
 
 def _set_uniqueness_constraints(tx, node):
     """

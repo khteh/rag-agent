@@ -1,5 +1,6 @@
 import bs4, logging
 from dotenv import load_dotenv
+from src.config import config
 from typing_extensions import List, TypedDict, Optional, Any
 from langchain.tools.retriever import create_retriever_tool
 #from langchain_google_vertexai import VertexAIEmbeddings
@@ -42,7 +43,7 @@ class VectorStore(metaclass=VectorStoreSingleton):
         self._model = model
         self._chunk_size = chunk_size
         self._chunk_overlap = chunk_overlap
-        self._embeddings = OllamaEmbeddings(model=self._model)
+        self._embeddings = OllamaEmbeddings(model=self._model, base_url=config.OLLAMA_URI)
         self._vector_store = InMemoryVectorStore(self._embeddings)
         # https://api.python.langchain.com/en/latest/tools/langchain.tools.retriever.create_retriever_tool.html
         self.retriever_tool = create_retriever_tool(

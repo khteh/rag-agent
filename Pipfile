@@ -24,7 +24,6 @@ quart-trio = "*"
 quart-wtforms = "*"
 Quart-CORS = "*"
 langgraph-checkpoint-postgres = "*"
-uuid7 = "*"
 langchain-core = "*"
 vertexai = "*"
 psycopg-pool = "*"
@@ -37,6 +36,7 @@ jsonpickle = "*"
 mlflow = {extras = ["genai"], version = "*"}
 databricks-sdk = "*"
 langchain-ollama = "*"
+uuid7 = "*"
 
 [dev-packages]
 pytest-flask = "*"

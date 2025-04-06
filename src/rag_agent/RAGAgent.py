@@ -1,6 +1,7 @@
 import os, bs4, vertexai, asyncio, logging
 from dotenv import load_dotenv
 from datetime import datetime
+from uuid_extensions import uuid7, uuid7str
 from typing import Annotated
 from typing import Any, Callable, List, Optional, cast
 from google.api_core.exceptions import ResourceExhausted
@@ -54,7 +55,7 @@ class RAGAgent():
     _prompt = ChatPromptTemplate.from_messages([
                 ("system", "You are a helpful AI assistant named Bob."),
                 ("placeholder", "{messages}"),
-                ("user", "Remember, always provide accurate answer!"),
+                ("human", "Remember, always provide accurate answer!"),
         ])
     _vectorStore = None
     _tools: List[Callable[..., Any]] = None #[vector_store.retriever_tool, ground_search, save_memory]
@@ -109,10 +110,11 @@ class RAGAgent():
     def ShowGraph(self):
         show_graph(self._agent, self._name) # This blocks
 
-    async def ChatAgent(self, config: RunnableConfig, messages: List[str]):
+    async def ChatAgent(self, config: RunnableConfig, messages: List[tuple]): #messages: List[str]):
         logging.info(f"\n=== {self.ChatAgent.__name__} ===")
-        async for event in self._agent.with_config({"user_id": datetime.now()}).astream(
-            {"messages": [{"role": "user", "content": messages}]},
+        async for event in self._agent.with_config({"user_id": uuid7str()}).astream(
+            #{"messages": [{"role": "user", "content": messages}]}, This works with gemini-2.0-flash
+            {"messages": messages},
             stream_mode="values", # Use this to stream all values in the state after each step.
             config=config, # This is needed by Checkpointer
         ):
@@ -137,7 +139,7 @@ async def main():
     img = Image.open("/tmp/agent_graph.png")
     img.show()
     """
-    input_message = ["What is the standard method for Task Decomposition?", "Once you get the answer, look up common extensions of that method."]
+    input_message = [("human", "What is the standard method for Task Decomposition?"), ("human", "Once you get the answer, look up common extensions of that method.")]
     await rag.ChatAgent(config, input_message)
 
 if __name__ == "__main__":

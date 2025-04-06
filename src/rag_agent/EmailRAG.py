@@ -39,6 +39,7 @@ load_dotenv()
 from src.config import config as appconfig
 from .State import EmailRAGState, EmailAgentState
 from src.utils.image import show_graph
+from src.schema import ChatMessage
 from src.schema.EmailModel import EmailModel
 from src.schema.EscalationModel import EscalationCheckModel
 from .VectorStore import VectorStore
@@ -216,6 +217,7 @@ class EmailRAG():
             graph_builder.add_node("EmailTools", ToolNode([email_processing_tool]))
             graph_builder.add_edge(START, "EmailAgent")
             graph_builder.add_conditional_edges(
+                # if the EmailAgent node returns a tool message, your graph moves to the EmailTools node to call the respective tool.
                 "EmailAgent", self.route_agent_graph_edge, ["EmailTools", END]
             )
             graph_builder.add_edge("EmailTools", "EmailAgent")
@@ -257,7 +259,7 @@ async def main():
     img = Image.open("/tmp/checkpoint_graph.png")
     img.show()
     """
-    config = RunnableConfig(run_name="Email RAG Test", thread_id=datetime.now())
+    config = RunnableConfig(run_name="Email RAG", thread_id=datetime.now())
     rag = EmailRAG(config)
     await rag.CreateGraph()
     #rag.ShowGraph()
@@ -265,7 +267,11 @@ async def main():
         "escalation_dollar_criteria": 100_000,
         "escalation_emails": ["brog@abc.com", "bigceo@company.com"],
     }
-    await rag.Chat("There's an immediate risk of electrical, water, or fire damage", EMAILS[3], email_state, config)
+    result = await rag.Chat("There's an immediate risk of electrical, water, or fire damage", EMAILS[3], email_state, config)
+    assert result
+    ai_message = ChatMessage.from_langchain(result)
+    assert not ai_message.tool_calls
+    assert ai_message.content
 
 if __name__ == "__main__":
     asyncio.run(main())
