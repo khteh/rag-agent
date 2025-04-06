@@ -1,6 +1,5 @@
 import pytest, sys, pytest_asyncio, logging, vertexai, os, sys
 from datetime import datetime
-from dotenv import load_dotenv
 from os.path import dirname, join, abspath
 from langchain_core.runnables import RunnableConfig
 from langgraph.graph.graph import (
@@ -12,7 +11,6 @@ from langgraph.graph.graph import (
 )
 sys.path.insert(0, abspath(join(dirname(__file__), '../src')))
 pytest_plugins = ('pytest_asyncio',)
-load_dotenv()
 
 @pytest_asyncio.fixture(scope="function")
 async def EmailRAGFixture():
@@ -32,7 +30,4 @@ async def HealthcareRAGFixture() -> CompiledGraph:
     from Healthcare.RAGAgent import make_graph
     return await make_graph(config)
 
-def pytest_generate_tests(metafunc):
-    """ called once per each test function """
-    logging.info(f"\n=== {pytest_generate_tests.__name__} ===")
-    os.environ['JWT_SECRET_KEY'] = 'pythonflaskrestapipostgres'
+# https://docs.pytest.org/en/7.1.x/how-to/parametrize.html#basic-pytest-generate-tests-example

@@ -1,6 +1,5 @@
 import logging, os, re, json, asyncio, psycopg, json, vertexai
 from urllib import parse
-from dotenv import load_dotenv
 from datetime import date, datetime, timedelta, timezone
 from hypercorn.config import Config
 from hypercorn.asyncio import serve
@@ -14,9 +13,8 @@ from langchain_core.callbacks import AsyncCallbackHandler
 from langchain_core.runnables import RunnableConfig
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
 from langgraph.graph.graph import CompiledGraph
-from src.config import config as appconfig
+from src.config import config
 # Make the WSGI interface available at the top level so wfastcgi can get it.
-load_dotenv()
 #print(f"GEMINI_API_KEY: {os.environ.get("GEMINI_API_KEY")}")
 config = Config()
 config.from_toml("/etc/hypercorn.toml")

@@ -1,12 +1,10 @@
 import os, logging
-from dotenv import load_dotenv
 from langchain.chat_models import init_chat_model
 from langchain_neo4j import Neo4jGraph
 from langchain.chains import GraphCypherQAChain
 from langchain.prompts import PromptTemplate
 from .prompts import cypher_generation_template, qa_generation_template
 from src.config import config
-load_dotenv()
 
 graph = Neo4jGraph(
     url=config.NEO4J_URI,

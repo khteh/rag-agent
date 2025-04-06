@@ -1,7 +1,6 @@
 import os, logging, vertexai
 from src.config import config as appconfig
 from datetime import datetime
-from dotenv import load_dotenv
 from typing_extensions import List, TypedDict
 from typing import Any, Callable, List, Optional, cast
 from google.api_core.exceptions import ResourceExhausted
@@ -33,7 +32,6 @@ from langgraph.graph.graph import (
 from langgraph.prebuilt import ToolNode, tools_condition, create_react_agent, InjectedStore
 from langgraph.checkpoint.memory import MemorySaver
 from .Tools import TOOLS
-load_dotenv()
 class RAGAgent():
     _llm = None
     _config = None

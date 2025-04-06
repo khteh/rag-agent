@@ -1,5 +1,4 @@
 import asyncio, logging, os, vertexai
-from dotenv import load_dotenv
 from typing import Annotated, Literal, Sequence
 from datetime import datetime
 from google.api_core.exceptions import ResourceExhausted
@@ -35,7 +34,6 @@ https://github.com/langchain-ai/langgraph/blob/main/libs/langgraph/langgraph/gra
 https://langchain-ai.github.io/langgraph/how-tos/streaming/#values
 https://python.langchain.com/docs/how_to/configure/
 """
-load_dotenv()
 from src.config import config as appconfig
 from .State import EmailRAGState, EmailAgentState
 from src.utils.image import show_graph

@@ -1,7 +1,5 @@
 import os,pytest, re
-from dotenv import load_dotenv
 pytest_plugins = ('pytest_asyncio',)
-load_dotenv()
 
 @pytest.mark.asyncio(loop_scope="function")
 @pytest.mark.skip(reason="Needs billing; https://github.com/langchain-ai/langchain/issues/30547")

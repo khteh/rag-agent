@@ -3,8 +3,6 @@ It includes a basic Tavily search function (as an example)
 These tools are intended as free examples to get started. For production use,
 consider implementing more robust and specialized tools tailored to your needs.
 """
-import os
-from dotenv import load_dotenv
 from typing import Any, Callable, List, Optional, cast
 from langchain_community.tools.tavily_search import TavilySearchResults
 from langchain_core.runnables import RunnableConfig, ensure_config
@@ -17,7 +15,8 @@ from google.genai import types
 from google.genai.types import Tool, GenerateContentConfig, GoogleSearch
 from typing_extensions import Annotated
 from .configuration import Configuration
-load_dotenv()
+from src.config import config
+
 async def search(
     query: str, *, config: Annotated[RunnableConfig, InjectedToolArg]
 ) -> Optional[list[dict[str, Any]]]:
@@ -52,7 +51,7 @@ def ground_search(
     to provide comprehensive, accurate, and trusted results. It's particularly useful
     for answering questions about current events.
     """
-    client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
+    client = genai.Client(api_key=config.GEMINI_API_KEY)
     model_id = "gemini-2.0-flash"
     google_search_tool = Tool(
         google_search = GoogleSearch()

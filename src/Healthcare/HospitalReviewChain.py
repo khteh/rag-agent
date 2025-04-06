@@ -1,5 +1,4 @@
 import os
-from dotenv import load_dotenv
 from langchain.chat_models import init_chat_model
 from langchain_community.vectorstores import Neo4jVector
 from langchain_openai import OpenAIEmbeddings
@@ -8,7 +7,6 @@ from langchain_ollama import OllamaEmbeddings
 from langchain.chains import RetrievalQA
 from langchain_core.prompts import ChatPromptTemplate, HumanMessagePromptTemplate, PromptTemplate, SystemMessagePromptTemplate
 from src.config import config
-load_dotenv()
 # For VertexAI, use VertexAIEmbeddings, model="text-embedding-005"; "gemini-2.0-flash" model_provider="google_genai"
 neo4j_vector_index = Neo4jVector.from_existing_graph(
     embedding = OllamaEmbeddings(model="llama3.3", base_url=config.OLLAMA_URI, num_ctx=4096, num_gpu=1, temperature=0, top_k=10),

@@ -1,10 +1,8 @@
 import os, logging
-from dotenv import load_dotenv
 from neo4j import GraphDatabase
 from retry import retry
 from pathlib import Path
 from src.config import config
-#load_dotenv()
 HOSPITALS_CSV_PATH = "/Healthcare/hospitals.csv"
 PAYERS_CSV_PATH = "/Healthcare/payers.csv"
 PHYSICIANS_CSV_PATH = "/Healthcare/physicians.csv"

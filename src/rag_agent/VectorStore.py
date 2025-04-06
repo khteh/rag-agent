@@ -1,7 +1,4 @@
 import bs4, chromadb, hashlib, logging
-from uuid_extensions import uuid7, uuid7str
-from dotenv import load_dotenv
-from src.config import config
 from chromadb.config import Settings
 from typing_extensions import List, TypedDict, Optional, Any
 from langchain.tools.retriever import create_retriever_tool
@@ -12,7 +9,7 @@ from langchain_chroma import Chroma
 from langchain_core.documents import Document
 from langchain_community.document_loaders import WebBaseLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-load_dotenv()
+from src.config import config
 """
 https://cloud.google.com/vertex-ai/generative-ai/docs/embeddings/get-text-embeddings
 https://realpython.com/python-class-constructor/

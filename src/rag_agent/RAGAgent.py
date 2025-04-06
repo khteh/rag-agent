@@ -1,5 +1,4 @@
 import os, bs4, vertexai, asyncio, logging
-from dotenv import load_dotenv
 from datetime import datetime
 from uuid_extensions import uuid7, uuid7str
 from typing import Annotated
@@ -31,7 +30,6 @@ https://cloud.google.com/vertex-ai/generative-ai/docs/embeddings/get-text-embedd
 https://langchain-ai.github.io/langgraph/how-tos/streaming/#values
 https://python.langchain.com/docs/how_to/configure/
 """
-load_dotenv()
 from src.config import config as appconfig
 from .VectorStore import VectorStore
 from .State import CustomAgentState

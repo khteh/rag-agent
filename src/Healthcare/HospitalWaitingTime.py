@@ -1,10 +1,8 @@
 import os
-from dotenv import load_dotenv
 from typing import Any
 import numpy as np
 from langchain_neo4j import Neo4jGraph
 from src.config import config
-load_dotenv()
 
 def _get_current_hospitals() -> list[str]:
     """Fetch a list of current hospital names from a Neo4j database."""

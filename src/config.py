@@ -25,6 +25,7 @@ class Config(metaclass=ConfigSingleton):
     NEO4J_PASSWORD:str = None
     NEO4J_URI:str = None
     OLLAMA_URI:str = None
+    GEMINI_API_KEY:str = None
     def __new__(cls, *args, **kwargs):
         return super().__new__(cls)
     def __init__(self, environment="Development"):
@@ -37,6 +38,7 @@ class Config(metaclass=ConfigSingleton):
         credential = os.environ.get('NEO4J_AUTH').split('/')
         self.CHROMA_URI = config["CHROMA_URI"]
         self.CHROMA_TOKEN = os.environ.get("CHROMA_TOKEN")
+        self.GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
         self.NEO4J_USERNAME = credential[0]
         self.NEO4J_PASSWORD = credential[1]
         self.NEO4J_URI = config['NEO4J_URI']

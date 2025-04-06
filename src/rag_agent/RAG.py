@@ -2,7 +2,6 @@ import os, bs4, vertexai, asyncio, logging
 from PIL import Image
 from src.utils.image import show_graph
 from .State import State
-from dotenv import load_dotenv
 from langchain.chat_models import init_chat_model
 from langchain import hub
 from langchain_community.document_loaders import WebBaseLoader
@@ -20,7 +19,6 @@ from langgraph.graph.graph import (
 )
 from src.config import config as appconfig
 # https://python.langchain.com/docs/tutorials/rag/
-load_dotenv()
 """
 https://python.langchain.com/api_reference/langchain/chat_models/langchain.chat_models.base.init_chat_model.html
 #vertexai.init(project=os.environ.get("GOOGLE_CLOUD_PROJECT"), location=os.environ.get("GOOGLE_CLOUD_LOCATION"))

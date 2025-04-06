@@ -1,5 +1,4 @@
 import asyncio, logging, os, vertexai
-from dotenv import load_dotenv
 from typing import Annotated, Literal, Sequence
 from datetime import datetime
 from langchain import hub
@@ -30,7 +29,6 @@ https://python.langchain.com/api_reference/langchain/chat_models/langchain.chat_
 https://github.com/langchain-ai/langgraph/blob/main/libs/langgraph/langgraph/graph/message.py
 https://langchain-ai.github.io/langgraph/how-tos/streaming/#values
 """
-load_dotenv()
 from src.config import config as appconfig
 from .State import State
 from ..utils.image import show_graph
