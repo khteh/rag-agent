@@ -37,6 +37,8 @@ mlflow = {extras = ["genai"], version = "*"}
 databricks-sdk = "*"
 langchain-ollama = "*"
 uuid7 = "*"
+chromadb = "*"
+langchain-chroma = "*"
 
 [dev-packages]
 pytest-flask = "*"

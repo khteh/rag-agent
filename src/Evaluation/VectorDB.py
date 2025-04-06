@@ -1,13 +1,4 @@
 import ast, os, mlflow, mlflow.deployments, pandas
-from langchain.chains import RetrievalQA
-from langchain_community.document_loaders import WebBaseLoader
-from langchain_community.embeddings import DatabricksEmbeddings
-from langchain_community.embeddings import SentenceTransformerEmbeddings
-from langchain_community.llms import Databricks
-from langchain_text_splitters import CharacterTextSplitter
-from langchain_core.vectorstores import InMemoryVectorStore
-from mlflow.deployments import set_deployments_target
-from mlflow.metrics.genai.metric_definitions import relevance
 
 EVALUATION_DATASET_PATH = "https://raw.githubusercontent.com/mlflow/mlflow/master/examples/llms/RAG/static_evaluation_dataset.csv"
 

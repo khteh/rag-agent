@@ -1,11 +1,14 @@
-import bs4, logging
+import bs4, chromadb, hashlib, logging
+from uuid_extensions import uuid7, uuid7str
 from dotenv import load_dotenv
 from src.config import config
+from chromadb.config import Settings
 from typing_extensions import List, TypedDict, Optional, Any
 from langchain.tools.retriever import create_retriever_tool
 #from langchain_google_vertexai import VertexAIEmbeddings
 from langchain_ollama import OllamaEmbeddings
 from langchain_core.vectorstores import InMemoryVectorStore
+from langchain_chroma import Chroma
 from langchain_core.documents import Document
 from langchain_community.document_loaders import WebBaseLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
@@ -34,17 +37,28 @@ class VectorStore(metaclass=VectorStoreSingleton):
     _embeddings: OllamaEmbeddings = None
     _chunk_size = None
     _chunk_overlap = None
-    _vector_store: InMemoryVectorStore = None
-    retriever_tool: None
+    _vector_store: Chroma = None
+    retriever_tool = None
+    _client: chromadb.HttpClient = None
+    _collection: str = None
     _docs = set()
     def __new__(cls, *args, **kwargs):
         return super().__new__(cls)
-    def __init__(self, model, chunk_size, chunk_overlap):
+    def __init__(self, model, chunk_size, chunk_overlap, collection="LLM-RAG-Agent"):
         self._model = model
         self._chunk_size = chunk_size
         self._chunk_overlap = chunk_overlap
+        self._collection = collection
         self._embeddings = OllamaEmbeddings(model=self._model, base_url=config.OLLAMA_URI)
-        self._vector_store = InMemoryVectorStore(self._embeddings)
+        print(f"Chroma token: {config.CHROMA_TOKEN}, uri: {config.CHROMA_URI}")
+        self._client = chromadb.HttpClient(host=config.CHROMA_URI,
+                                settings=Settings(
+                                    chroma_client_auth_provider = "chromadb.auth.token_authn.TokenAuthenticationServerProvider",
+                                    chroma_client_auth_credentials = config.CHROMA_TOKEN,
+                                    chroma_auth_token_transport_header = "X-Chroma-Token"
+                                ))
+        #self._vector_store = InMemoryVectorStore(self._embeddings)
+        self._vector_store = Chroma(client = self._client, collection_name = self._collection, embedding_function = self._embeddings)        
         # https://api.python.langchain.com/en/latest/tools/langchain.tools.retriever.create_retriever_tool.html
         self.retriever_tool = create_retriever_tool(
             self._vector_store.as_retriever(),
@@ -85,7 +99,13 @@ class VectorStore(metaclass=VectorStoreSingleton):
     async def _IndexChunks(self, subdocs):
         # Index chunks
         logging.info(f"\n=== {self._IndexChunks.__name__} ===")
-        ids = await self._vector_store.aadd_documents(documents=subdocs)
+        # Create a list of unique ids for each document based on the content
+        ids = [hashlib.sha3_512().update(doc.encode('utf8')).hexdigest() for doc in subdocs]
+        unique_ids = list(set(ids))
+        # Ensure that only docs that correspond to unique ids are kept and that only one of the duplicate ids is kept
+        seen_ids = set()
+        unique_docs = [doc for doc, id in zip(subdocs, ids) if id not in seen_ids and (seen_ids.add(id) or True)]
+        ids = await self._vector_store.aadd_documents(documents = unique_docs, ids = unique_ids)
         logging.debug(f"{len(ids)} documents added successfully!")
     
     async def asimilarity_search(

@@ -1,4 +1,5 @@
-import re, jsonpickle, logging
+import chromadb, re, jsonpickle, logging
+from chromadb.config import Settings
 from psycopg_pool import AsyncConnectionPool, ConnectionPool
 from quart import (
     Blueprint,
@@ -9,9 +10,10 @@ from quart import (
     render_template,
     session
 )
+from src.config import config
 health_api = Blueprint("health", __name__)
-@health_api.route("/ready")
-async def readiness() -> ResponseReturnValue:
+
+async def _healthcheck() -> ResponseReturnValue:
     try:
         connection_kwargs = {
             "autocommit": True,
@@ -36,14 +38,24 @@ async def readiness() -> ResponseReturnValue:
                     except Exception as e:
                         logging.exception(f"Error checking for checkpoints table: Exception: {e}")
                         raise e
-        logging.debug("Ready!")
+        client = chromadb.HttpClient(host=config.CHROMA_URI,
+                                settings=Settings(
+                                    chroma_client_auth_provider = "chromadb.auth.token_authn.TokenAuthenticationServerProvider",
+                                    chroma_client_auth_credentials = config.CHROMA_TOKEN,
+                                    chroma_auth_token_transport_header = "X-Chroma-Token"
+                                ))
+        client.heartbeat()  # this should work with or without authentication - it is a public endpoint
+        logging.debug("Healthcheck OK!")
         return "OK", 200
     except Exception:
         logging.exception(f"{readiness.__name__} Exception: {e}")
-        return "Exceptions!", 500
+    return "Exceptions!", 500
+
+@health_api.route("/ready")
+async def readiness() -> ResponseReturnValue:
+    return await _healthcheck()
 
 @health_api.route("/live")
-def liveness():
-    logging.debug("Alive!")
-    return "OK", 200
+async def liveness():
+    return await _healthcheck()  
 
