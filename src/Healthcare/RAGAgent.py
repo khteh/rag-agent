@@ -96,8 +96,6 @@ async def ChatAgent(agent, config, messages: List[str]):
 
 async def main():
     # httpx library is a dependency of LangGraph and is used under the hood to communicate with the AI models.
-    logging.getLogger("httpx").setLevel(logging.WARNING)
-    logging.basicConfig(format='%(asctime)s %(levelname)-8s %(message)s', level=logging.DEBUG, datefmt='%Y-%m-%d %H:%M:%S')
     #vertexai.init(project=os.environ.get("GOOGLE_CLOUD_PROJECT"), location=os.environ.get("GOOGLE_CLOUD_LOCATION"))
     config = RunnableConfig(run_name="Healthcare ReAct Agent", thread_id=datetime.now())
     agent = await make_graph(config)

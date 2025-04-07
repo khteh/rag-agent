@@ -246,8 +246,6 @@ async def make_graph(config: RunnableConfig) -> CompiledGraph:
 
 async def main():
     # httpx library is a dependency of LangGraph and is used under the hood to communicate with the AI models.
-    logging.getLogger("httpx").setLevel(logging.WARNING)
-    logging.basicConfig(format='%(asctime)s %(levelname)-8s %(message)s', level=logging.DEBUG, datefmt='%Y-%m-%d %H:%M:%S')
     #vertexai.init(project=os.environ.get("GOOGLE_CLOUD_PROJECT"), location=os.environ.get("GOOGLE_CLOUD_LOCATION"))
     """
     graph = checkpoint_graph.get_graph().draw_mermaid_png()

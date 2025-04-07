@@ -33,7 +33,7 @@ llm = init_chat_model("gpt-4o-mini", model_provider="openai")
 embeddings = OpenAIEmbeddings(model="text-embedding-3-large")"
 """
 from .VectorStore import VectorStore
-vector_store = VectorStore(model="llama3.3", chunk_size=1000, chunk_overlap=100)
+vector_store = VectorStore(model="llama3.3", chunk_size=1000, chunk_overlap=0)
 
 def LoadDocuments(url: str):
     # Load and chunk contents of the blog
@@ -53,7 +53,7 @@ def LoadDocuments(url: str):
 
 def SplitDocuments(docs):
     logging.info(f"\n=== {SplitDocuments.__name__} ===")
-    text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
+    text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=0)
     subdocs = text_splitter.split_documents(docs)
     logging.debug(f"Split blog post into {len(subdocs)} sub-documents.")
     return subdocs

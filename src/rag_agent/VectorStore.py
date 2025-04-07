@@ -1,4 +1,4 @@
-import bs4, chromadb, hashlib, logging
+import asyncio, bs4, chromadb, hashlib, logging
 from chromadb.config import Settings
 from typing_extensions import List, TypedDict, Optional, Any
 from langchain.tools.retriever import create_retriever_tool
@@ -38,33 +38,79 @@ class VectorStore(metaclass=VectorStoreSingleton):
     retriever_tool = None
     _client: chromadb.HttpClient = None
     _collection: str = None
+    _tenant: str = None
+    _database: str = None
     _docs = set()
     def __new__(cls, *args, **kwargs):
         return super().__new__(cls)
-    def __init__(self, model, chunk_size, chunk_overlap, collection="LLM-RAG-Agent"):
+    def __init__(self, model, chunk_size, chunk_overlap, tenant="khteh", database="LLM-RAG-Agent", collection="LLM-RAG-Agent"):
         self._model = model
         self._chunk_size = chunk_size
         self._chunk_overlap = chunk_overlap
         self._collection = collection
+        self._tenant = tenant
+        self._database = database
         self._embeddings = OllamaEmbeddings(model=self._model, base_url=config.OLLAMA_URI)
-        print(f"Chroma token: {config.CHROMA_TOKEN}, uri: {config.CHROMA_URI}")
-        self._client = chromadb.HttpClient(host=config.CHROMA_URI,
-                                settings=Settings(
-                                    chroma_client_auth_provider = "chromadb.auth.token_authn.TokenAuthenticationServerProvider",
+        """
+        settings=Settings(chroma_client_auth_provider = "chromadb.auth.token_authn.TokenAuthenticationServerProvider",
                                     chroma_client_auth_credentials = config.CHROMA_TOKEN,
-                                    chroma_auth_token_transport_header = "X-Chroma-Token"
-                                ))
+                                    #chroma_client_auth_token_transport_header = "X-Chroma-Token"
+        ))
+        https://github.com/chroma-core/chroma/issues/1474
+        https://github.com/chroma-core/chroma/blob/main/chromadb/test/client/test_database_tenant.py
+        # Create two databases with same name in different tenants
+        admin_client = client_factories.create_admin_client_from_system()
+        admin_client.create_tenant("test_tenant1")
+        admin_client.create_tenant("test_tenant2")
+        admin_client.create_database("test_db", tenant="test_tenant1")
+        admin_client.create_database("test_db", tenant="test_tenant2")
+
+        # Create collections in each database with same name
+        client.set_tenant(tenant="test_tenant1", database="test_db")
+        coll_tenant1 = client.create_collection("collection")
+        client.set_tenant(tenant="test_tenant2", database="test_db")
+        coll_tenant2 = client.create_collection("collection")
+        """
+        self.CreateTenantDatabase()
+        self._client = chromadb.HttpClient(host=config.CHROMA_URI, port=80, headers={"X-Chroma-Token": config.CHROMA_TOKEN}, tenant=self._tenant, database=self._database)
         #self._vector_store = InMemoryVectorStore(self._embeddings)
-        self._vector_store = Chroma(client = self._client, collection_name = self._collection, embedding_function = self._embeddings)        
+        self._vector_store = Chroma(client = self._client, collection_name = self._collection, embedding_function = self._embeddings)
         # https://api.python.langchain.com/en/latest/tools/langchain.tools.retriever.create_retriever_tool.html
         self.retriever_tool = create_retriever_tool(
             self._vector_store.as_retriever(),
             "Retrieve information related to a query",
             "Search and return information about the query from the documents available in the store",
-        )   
+        )
 
-    async def LoadDocuments(self, urls: List[str]):
+    def CreateTenantDatabase(self):
+        #tenant_id = f"tenant_user:{user_id}"
+        """
+        For Local Chroma server:
+        adminClient = chromadb.AsyncAdminClient(Settings(
+            chroma_api_impl="chromadb.api.segment.SegmentAPI",
+            is_persistent=True,
+            persist_directory="multitenant",
+        ))
+        """
+        logging.info(f"{self._SplitDocuments.__name__} tenant: {self._tenant}, database: {self._database}")
+        # For Remote Chroma server:
+        adminClient= chromadb.AdminClient(Settings(
+           chroma_api_impl="chromadb.api.fastapi.FastAPI",
+           chroma_server_host=config.CHROMA_URI,
+           chroma_server_http_port=80,
+        ))
+        try:
+            adminClient.get_tenant(name=self._tenant)
+        except Exception:
+            adminClient.create_tenant(name=self._tenant)
+        try:
+            adminClient.get_database(name=self._database, tenant=self._tenant)
+        except Exception:
+            adminClient.create_database(name=self._database, tenant=self._tenant)
+
+    async def LoadDocuments(self, urls: List[str]) -> int:
         # Load and chunk contents of the blog
+        count: int = 0
         for url in urls:
             if url not in self._docs:
                 logging.info(f"\n=== {self.LoadDocuments.__name__} loading {url}... ===")
@@ -80,8 +126,9 @@ class VectorStore(metaclass=VectorStoreSingleton):
                 assert len(docs) == 1
                 logging.debug(f"Total characters: {len(docs[0].page_content)}")
                 subdocs = self._SplitDocuments(docs)
-                await self._IndexChunks(subdocs)
+                count += await self._IndexChunks(subdocs)
                 self._docs.add(url)
+        return count
 
     def _SplitDocuments(self, docs):
         """
@@ -93,17 +140,27 @@ class VectorStore(metaclass=VectorStoreSingleton):
         logging.debug(f"Split blog post into {len(subdocs)} sub-documents.")
         return subdocs
 
-    async def _IndexChunks(self, subdocs):
+    async def _IndexChunks(self, subdocs) -> int:
         # Index chunks
         logging.info(f"\n=== {self._IndexChunks.__name__} ===")
         # Create a list of unique ids for each document based on the content
-        ids = [hashlib.sha3_512().update(doc.encode('utf8')).hexdigest() for doc in subdocs]
+        string = "Hello World!!!"
+        string_utf8 = string.encode('utf8')
+        hash = hashlib.sha3_512()
+        hash.update(string_utf8)
+        print(f"{string}.hexdigest(): {hash.hexdigest()}")
+        ids: List[str] = []
+        for doc in subdocs:
+            hash = hashlib.sha3_512()
+            hash.update(doc.page_content.encode('utf8'))
+            ids.append(hash.hexdigest())
         unique_ids = list(set(ids))
         # Ensure that only docs that correspond to unique ids are kept and that only one of the duplicate ids is kept
         seen_ids = set()
         unique_docs = [doc for doc, id in zip(subdocs, ids) if id not in seen_ids and (seen_ids.add(id) or True)]
         ids = await self._vector_store.aadd_documents(documents = unique_docs, ids = unique_ids)
         logging.debug(f"{len(ids)} documents added successfully!")
+        return len(ids)
     
     async def asimilarity_search(
         self, query: str, k: int = 4, **kwargs: Any

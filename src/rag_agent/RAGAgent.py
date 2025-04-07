@@ -1,4 +1,4 @@
-import os, bs4, vertexai, asyncio, logging
+import argparse, bs4, vertexai, asyncio, logging
 from datetime import datetime
 from uuid_extensions import uuid7, uuid7str
 from typing import Annotated
@@ -36,6 +36,13 @@ from .State import CustomAgentState
 from ..utils.image import show_graph
 from .Tools import ground_search, save_memory
 from .configuration import Configuration
+"""
+https://docs.python.org/3/library/argparse.html
+'store_true' and 'store_false' - These are special cases of 'store_const' used for storing the values True and False respectively. In addition, they create default values of False and True respectively:
+"""
+parser = argparse.ArgumentParser(description='Start this LLM-RAG Agent')
+parser.add_argument('--load-urls', action='store_true', help='Load documents from URLs')
+args = parser.parse_args()
 #agent = None
 class RAGAgent():
     _name:str = "RAG ReAct Agent"
@@ -70,7 +77,7 @@ class RAGAgent():
         If the agent LLM determines that its input requires a tool call, it’ll return a JSON tool message with the name of the tool it wants to use, along with the input arguments.
         For VertexAI, use VertexAIEmbeddings, model="text-embedding-005"; "gemini-2.0-flash" model_provider="google_genai"
         """
-        self._vectorStore = VectorStore(model="llama3.3", chunk_size=1000, chunk_overlap=100)
+        self._vectorStore = VectorStore(model="llama3.3", chunk_size=1000, chunk_overlap=0)
         self._tools = [self._vectorStore.retriever_tool, ground_search, save_memory]
         self._llm = init_chat_model("llama3.3", model_provider="ollama", base_url=appconfig.OLLAMA_URI, streaming=True).bind_tools(self._tools)
         # https://python.langchain.com/docs/integrations/chat/google_vertex_ai_palm/
@@ -94,10 +101,13 @@ class RAGAgent():
         system_msg = f"User memories: {', '.join(memories)}"
         return [{"role": "system", "content": system_msg}] + state["messages"]
 
+    async def LoadDocuments(self):
+        logging.debug(f"\n=== {self.LoadDocuments.__name__} ===")
+        await self._vectorStore.LoadDocuments(self._urls)
+
     async def CreateGraph(self) -> CompiledGraph:
         logging.debug(f"\n=== {self.CreateGraph.__name__} ===")
         try:
-            await self._vectorStore.LoadDocuments(self._urls)
             # https://langchain-ai.github.io/langgraph/reference/prebuilt/#langgraph.prebuilt.chat_agent_executor.create_react_agent
             self._agent = create_react_agent(self._llm, self._tools, store=InMemoryStore(), checkpointer=MemorySaver(), config_schema=Configuration, state_schema=CustomAgentState, name=self._name, prompt=self._prompt)
             #show_graph(self._agent, "RAG ReAct Agent") # This blocks
@@ -123,8 +133,6 @@ async def make_graph(config: RunnableConfig) -> CompiledGraph:
 
 async def main():
     # httpx library is a dependency of LangGraph and is used under the hood to communicate with the AI models.
-    logging.getLogger("httpx").setLevel(logging.WARNING)
-    logging.basicConfig(format='%(asctime)s %(levelname)-8s %(message)s', level=logging.DEBUG, datefmt='%Y-%m-%d %H:%M:%S')
     #vertexai.init(project=os.environ.get("GOOGLE_CLOUD_PROJECT"), location=os.environ.get("GOOGLE_CLOUD_LOCATION"))
     config = RunnableConfig(run_name="RAG ReAct Agent", thread_id=datetime.now())
     rag = RAGAgent(config)
@@ -137,6 +145,9 @@ async def main():
     img = Image.open("/tmp/agent_graph.png")
     img.show()
     """
+    print(f"args: {args}")
+    if args.load_urls:
+        await rag.LoadDocuments()
     input_message = [("human", "What is the standard method for Task Decomposition?"), ("human", "Once you get the answer, look up common extensions of that method.")]
     await rag.ChatAgent(config, input_message)
 
