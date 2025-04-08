@@ -15,7 +15,7 @@ from google.genai import types
 from google.genai.types import Tool, GenerateContentConfig, GoogleSearch
 from typing_extensions import Annotated
 from .configuration import Configuration
-from src.config import config
+from src.config import config as appconfig
 
 async def search(
     query: str, *, config: Annotated[RunnableConfig, InjectedToolArg]
@@ -51,7 +51,7 @@ def ground_search(
     to provide comprehensive, accurate, and trusted results. It's particularly useful
     for answering questions about current events.
     """
-    client = genai.Client(api_key=config.GEMINI_API_KEY)
+    client = genai.Client(api_key=appconfig.GEMINI_API_KEY)
     model_id = "gemini-2.0-flash"
     google_search_tool = Tool(
         google_search = GoogleSearch()

@@ -150,11 +150,6 @@ class VectorStore(metaclass=VectorStoreSingleton):
         # Index chunks
         logging.info(f"\n=== {self._IndexChunks.__name__} ===")
         # Create a list of unique ids for each document based on the content
-        string = "Hello World!!!"
-        string_utf8 = string.encode('utf8')
-        hash = hashlib.sha3_512()
-        hash.update(string_utf8)
-        print(f"{string}.hexdigest(): {hash.hexdigest()}")
         ids: List[str] = []
         for doc in subdocs:
             hash = hashlib.sha3_512()
@@ -164,8 +159,10 @@ class VectorStore(metaclass=VectorStoreSingleton):
         # Ensure that only docs that correspond to unique ids are kept and that only one of the duplicate ids is kept
         seen_ids = set()
         unique_docs = [doc for doc, id in zip(subdocs, ids) if id not in seen_ids and (seen_ids.add(id) or True)]
-        ids = await self.vector_store.aadd_documents(documents = unique_docs, ids = unique_ids)
-        logging.debug(f"{len(ids)} documents added successfully!")
+        ids = []
+        if len(unique_docs) and len(unique_ids) and len(unique_docs) == len(unique_ids):
+            ids = await self.vector_store.aadd_documents(documents = unique_docs, ids = unique_ids)
+            logging.debug(f"{len(ids)} documents added successfully!")
         return len(ids)
     
     async def asimilarity_search(
