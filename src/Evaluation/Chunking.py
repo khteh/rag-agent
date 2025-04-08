@@ -6,6 +6,7 @@ from langchain_community.llms import Databricks
 from mlflow.deployments import set_deployments_target
 from mlflow.metrics.genai.metric_definitions import relevance
 from src.rag_agent.VectorStore import VectorStore
+from src.config import config
 _urls = [
     "https://lilianweng.github.io/posts/2023-06-23-agent/",
     "https://lilianweng.github.io/posts/2023-03-15-prompt-engineering/",
@@ -40,7 +41,7 @@ _eval_data = DataFrame(
 )
 def evaluate_chunk_size(chunk_size):
     # For VertexAI, use VertexAIEmbeddings, model="text-embedding-005"; "gemini-2.0-flash" model_provider="google_genai"
-    vector_store = VectorStore(model="llama3.3", chunk_size=chunk_size, chunk_overlap=0)
+    vector_store = VectorStore(model=config.EMBEDDING_MODEL, chunk_size=chunk_size, chunk_overlap=0)
     vector_store.load(_urls)
     #embedding_function = SentenceTransformerEmbeddings(model_name="all-MiniLM-L6-v2")
     #retriever = Chroma.from_documents(docs, embedding_function).as_retriever()

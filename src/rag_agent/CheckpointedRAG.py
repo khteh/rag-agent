@@ -68,24 +68,14 @@ class CheckpointedRAG():
         """
         self._config = config
         # https://python.langchain.com/api_reference/langchain/chat_models/langchain.chat_models.base.init_chat_model.html
-        self._vectorStore = VectorStore(model="llama3.3", chunk_size=1000, chunk_overlap=0)
+        self._vectorStore = VectorStore(model=appconfig.EMBEDDING_MODEL, chunk_size=1000, chunk_overlap=0)
         """
         .bind_tools() gives the agent LLM descriptions of each tool from their docstring and input arguments. 
         If the agent LLM determines that its input requires a tool call, it’ll return a JSON tool message with the name of the tool it wants to use, along with the input arguments.
         For VertexAI, use VertexAIEmbeddings, model="text-embedding-005"; "gemini-2.0-flash" model_provider="google_genai"
         """
-        self._llm = init_chat_model("llama3.3", model_provider="ollama", base_url=appconfig.OLLAMA_URI, streaming=True).bind_tools([self._vectorStore.retriever_tool])
+        self._llm = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider="ollama", base_url=appconfig.OLLAMA_URI, streaming=True).bind_tools([self._vectorStore.retriever_tool])
         # https://python.langchain.com/docs/integrations/chat/google_vertex_ai_palm/
-        """
-        self._llm = ChatVertexAI(
-                        model="gemini-2.0-flash",
-                        temperature=0,
-                        max_tokens=None,
-                        max_retries=6,
-                        stop=None,
-                        streaming=True
-                    )
-        """
 
     async def Agent(self, state: State, config: RunnableConfig):
         """

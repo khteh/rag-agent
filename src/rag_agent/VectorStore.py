@@ -50,7 +50,12 @@ class VectorStore(metaclass=VectorStoreSingleton):
         self._collection = collection
         self._tenant = tenant
         self._database = database
-        self._embeddings = OllamaEmbeddings(model=self._model, base_url=config.OLLAMA_URI)
+        """
+        https://python.langchain.com/api_reference/_modules/langchain_ollama/embeddings.html#OllamaEmbeddings
+        https://huggingface.co/blog/matryoshka
+        https://ollama.com/library/nomic-embed-text
+        """
+        self._embeddings = OllamaEmbeddings(model=config.EMBEDDING_MODEL, base_url=config.OLLAMA_URI, num_ctx=8192, num_gpu=1, temperature=0)
         """
         settings=Settings(chroma_client_auth_provider = "chromadb.auth.token_authn.TokenAuthenticationServerProvider",
                                     chroma_client_auth_credentials = config.CHROMA_TOKEN,

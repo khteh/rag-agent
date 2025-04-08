@@ -139,18 +139,8 @@ class EmailRAG():
         If the agent LLM determines that its input requires a tool call, it’ll return a JSON tool message with the name of the tool it wants to use, along with the input arguments.
         For VertexAI, use VertexAIEmbeddings, model="text-embedding-005"; "gemini-2.0-flash" model_provider="google_genai"
         """
-        self._llm = init_chat_model("llama3.3", model_provider="ollama", base_url=appconfig.OLLAMA_URI, configurable_fields=("user_id", "graph", "email_state"), streaming=True, temperature=0).bind_tools([email_processing_tool])
-        self._chainLLM = init_chat_model("llama3.3", model_provider="ollama", base_url=appconfig.OLLAMA_URI, temperature=0)
-        """
-        self._llm = ChatVertexAI(
-                        model="gemini-2.0-flash",
-                        temperature=0,
-                        max_tokens=None,
-                        max_retries=6,
-                        stop=None,
-                        streaming=True
-                    )
-        """
+        self._llm = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider="ollama", base_url=appconfig.OLLAMA_URI, configurable_fields=("user_id", "graph", "email_state"), streaming=True, temperature=0).bind_tools([email_processing_tool])
+        self._chainLLM = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider="ollama", base_url=appconfig.OLLAMA_URI, temperature=0)
         self._email_parser_chain = (
             self._email_parser_prompt
             | self._chainLLM.with_structured_output(EmailModel)
