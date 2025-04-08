@@ -33,7 +33,9 @@ from src.config import config as appconfig
 from .State import State
 from ..utils.image import show_graph
 #from .State import State
-from .VectorStore import VectorStore
+from src.Infrastructure.VectorStore import VectorStore
+from src.Infrastructure.Checkpointer import GetCheckpointer
+
 class CheckpointedRAG():
     _llm = None
     _config = None
@@ -268,7 +270,7 @@ class CheckpointedRAG():
             )
             graph_builder.add_edge("Generate", END)
             graph_builder.add_edge("Rewrite", "Agent")
-            self._graph = graph_builder.compile(store=InMemoryStore(), checkpointer=MemorySaver(), name="Checkedpoint StateGraph RAG")
+            self._graph = graph_builder.compile(store=self._vectorStore.vector_store, checkpointer=GetCheckpointer(), name="Checkedpoint StateGraph RAG")
             show_graph(self._graph, "Checkedpoint StateGraph RAG") # This blocks
         except ResourceExhausted as e:
             logging.exception(f"google.api_core.exceptions.ResourceExhausted")

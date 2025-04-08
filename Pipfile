@@ -39,6 +39,7 @@ langchain-ollama = "*"
 uuid7 = "*"
 chromadb = "*"
 langchain-chroma = "*"
+langchain-nomic = "*"
 
 [dev-packages]
 pytest-flask = "*"

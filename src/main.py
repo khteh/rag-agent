@@ -14,15 +14,18 @@ from langchain_core.runnables import RunnableConfig
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
 from langgraph.graph.graph import CompiledGraph
 from src.config import config
+from src.Infrastructure.Checkpointer import GetConnectionPool
 # Make the WSGI interface available at the top level so wfastcgi can get it.
 #print(f"GEMINI_API_KEY: {os.environ.get("GEMINI_API_KEY")}")
 config = Config()
 config.from_toml("/etc/hypercorn.toml")
 # httpx library is a dependency of LangGraph and is used under the hood to communicate with the AI models.
+"""
 connection_kwargs = {
     "autocommit": True,
     "prepare_threshold": 0,
 }
+"""
 def _add_secure_headers(response: Response) -> Response:
     response.headers["Strict-Transport-Security"] = (
         "max-age=63072000; includeSubDomains; preload"
@@ -62,15 +65,12 @@ async def create_app() -> Quart:
         app.config["TEMPLATES_AUTO_RELOAD"] = True
     @app.before_serving
     async def startup() -> None:
-        async with AsyncConnectionPool(
-            conninfo=app.config["POSTGRESQL_DATABASE_URI"],
-            max_size=app.config["DB_MAX_CONNECTIONS"],
-            kwargs=connection_kwargs,
-        ) as pool:
+        async with GetConnectionPool() as pool:
             # Create the AsyncPostgresSaver
             checkpointer = AsyncPostgresSaver(pool)
             # Set up the checkpointer (uncomment this line the first time you run the app)
-            #await checkpointer.setup()
+            logging.INFO("checkpointer.setup()")
+            await checkpointer.setup()
             # Check if the checkpoints table exists
             async with pool.connection() as conn:
                 async with conn.cursor() as cur:

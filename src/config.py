@@ -18,6 +18,7 @@ class Config(metaclass=ConfigSingleton):
     SECRET_KEY:str = None
     SQLALCHEMY_DATABASE_URI:str = None
     POSTGRESQL_DATABASE_URI:str = None
+    DB_MAX_CONNECTIONS:int = None
     JWT_SECRET_KEY:str = None
     CHROMA_URI:str = None
     CHROMA_TOKEN:str = None
@@ -36,6 +37,7 @@ class Config(metaclass=ConfigSingleton):
         self.SECRET_KEY = config["SECRET_KEY"] or "you-will-never-guess"
         self.SQLALCHEMY_DATABASE_URI = f"postgresql+psycopg://{os.environ.get('DB_USERNAME')}:{parse.quote(os.environ.get('DB_PASSWORD'))}@{config['DB_HOST']}/LangchainCheckpoint"
         self.POSTGRESQL_DATABASE_URI = f"postgresql://{os.environ.get('DB_USERNAME')}:{parse.quote(os.environ.get('DB_PASSWORD'))}@{config['DB_HOST']}/LangchainCheckpoint"
+        self.DB_MAX_CONNECTIONS = config["DB_MAX_CONNECTIONS"]
         self.JWT_SECRET_KEY = config["JWT_SECRET_KEY"]
         credential = os.environ.get('NEO4J_AUTH').split('/')
         self.CHROMA_URI = config["CHROMA_URI"]
@@ -50,6 +52,7 @@ class Config(metaclass=ConfigSingleton):
         """
         https://docs.python.org/3/library/logging.html
         The level parameter now accepts a string representation of the level such as ‘INFO’ as an alternative to the integer constants such as INFO.
+        httpx library is a dependency of LangGraph and is used under the hood to communicate with the AI models.
         """
         logging.getLogger("httpx").setLevel(logging.WARNING)
         logging.basicConfig(filename='/var/log/ragagent/log', filemode='w', format='%(asctime)s %(levelname)-8s %(message)s', level=config['LOGLEVEL'], datefmt='%Y-%m-%d %H:%M:%S')	

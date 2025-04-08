@@ -32,6 +32,8 @@ from langgraph.graph.graph import (
 from langgraph.prebuilt import ToolNode, tools_condition, create_react_agent, InjectedStore
 from langgraph.checkpoint.memory import MemorySaver
 from .Tools import TOOLS
+from src.Infrastructure.VectorStore import VectorStore
+from src.Infrastructure.Checkpointer import GetCheckpointer
 class RAGAgent():
     _llm = None
     _config = None
@@ -45,6 +47,7 @@ class RAGAgent():
                 ("placeholder", "{messages}"),
                 ("user", "Remember, always provide accurate answer!"),
         ])
+    _vectorStore = None
     """
     Prompt
     https://smith.langchain.com/hub
@@ -62,13 +65,14 @@ class RAGAgent():
         If the agent LLM determines that its input requires a tool call, it’ll return a JSON tool message with the name of the tool it wants to use, along with the input arguments.
         For VertexAI, use VertexAIEmbeddings, model="text-embedding-005"; "gemini-2.0-flash" model_provider="google_genai"
         """
+        self._vectorStore = VectorStore(model=appconfig.EMBEDDING_MODEL, chunk_size=1000, chunk_overlap=0)
         self._llm = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider="ollama", base_url=appconfig.OLLAMA_URI, streaming=True).bind_tools(self._tools)
         # https://python.langchain.com/docs/integrations/chat/google_vertex_ai_palm/
     async def CreateGraph(self, config: RunnableConfig) -> CompiledGraph:
         logging.debug(f"\n=== {self.CreateGraph.__name__} ===")
         try:
             # https://langchain-ai.github.io/langgraph/reference/prebuilt/#langgraph.prebuilt.chat_agent_executor.create_react_agent
-            return create_react_agent(self._llm, TOOLS, store=InMemoryStore(), checkpointer=MemorySaver(), state_schema=AgentState, name="Healthcare ReAct Agent", prompt=self._rag_prompt)
+            return create_react_agent(self._llm, TOOLS, store=self._vectorStore.vector_store, checkpointer=GetCheckpointer(), state_schema=AgentState, name="Healthcare ReAct Agent", prompt=self._rag_prompt)
         except ResourceExhausted as e:
             logging.exception(f"google.api_core.exceptions.ResourceExhausted")
 

@@ -3,7 +3,7 @@ from datetime import datetime
 from langchain_core.runnables import RunnableConfig
 from rag_agent.State import EmailRAGState
 from data.sample_emails import EMAILS
-from src.schema import ChatMessage
+from src.models import ChatMessage
 pytest_plugins = ('pytest_asyncio',)
 
 @pytest.mark.asyncio(loop_scope="function")

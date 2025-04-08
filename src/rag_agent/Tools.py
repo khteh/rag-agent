@@ -83,9 +83,13 @@ async def retrieve(query: str, *, config: Annotated[RunnableConfig, InjectedTool
     )
     return serialized, retrieved_docs#
 
+#https://langchain-ai.github.io/langgraph/reference/prebuilt/#langgraph.prebuilt.chat_agent_executor.create_react_agent
 @tool
 async def save_memory(memory: str, *, config: Annotated[RunnableConfig, InjectedToolArg], store: Annotated[BaseStore, InjectedStore()]) -> str:
-    """Save the given memory for the current user."""
+    """
+    Save the given memory for the current user.
+    This should only be used after you have accomplised your task and ready to respond to user request with an answer.
+    """
     # This is a **tool** the model can use to save memories to storage
     config = ensure_config(config)
     user_id = config.get("configurable", {}).get("user_id")

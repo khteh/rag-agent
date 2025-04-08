@@ -4,7 +4,7 @@ from langchain.chains import RetrievalQA
 from langchain_community.llms import Databricks
 from mlflow.deployments import set_deployments_target
 from mlflow.metrics.genai.metric_definitions import relevance
-from src.rag_agent.VectorStore import VectorStore
+from src.Infrastructure.VectorStore import VectorStore
 from src.config import config
 _urls = [
     "https://lilianweng.github.io/posts/2023-06-23-agent/",

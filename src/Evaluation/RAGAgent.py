@@ -7,7 +7,7 @@ from langchain_community.llms import Databricks
 from mlflow.deployments import set_deployments_target
 from mlflow.metrics.genai.metric_definitions import relevance
 from langchain_core.runnables import RunnableConfig
-from src.rag_agent.VectorStore import VectorStore
+from src.Infrastructure.VectorStore import VectorStore
 from src.rag_agent.RAGAgent import RAGAgent
 from src.config import config
 _urls = [

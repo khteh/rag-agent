@@ -7,13 +7,13 @@ from quart import Quart
 from werkzeug.exceptions import HTTPException
 from contextlib import asynccontextmanager
 from quart.helpers import stream_with_context
-from src.schema.schema import ChatMessage, UserInput, StreamInput
+from src.models.schema import ChatMessage, UserInput, StreamInput
 from langchain_core.callbacks import AsyncCallbackHandler
 from langgraph.graph.graph import CompiledGraph
 from langchain_core.runnables import RunnableConfig
 from src.utils.AsyncRetry import async_retry
-from src.schema.schema import UserInput
-from src.schema.HealthcareModel import HospitalQueryOutput
+from src.models.schema import UserInput
+from src.models.HealthcareModel import HospitalQueryOutput
 healthcare_api = Blueprint("healthcare", __name__)
 @healthcare_api.context_processor
 

@@ -23,6 +23,7 @@ from langchain_core.prompts import ChatPromptTemplate
 from langgraph.managed import IsLastStep
 from langgraph.store.base import BaseStore
 from langgraph.store.memory import InMemoryStore
+from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
 """
 https://python.langchain.com/docs/tutorials/qa_chat_history/
 https://python.langchain.com/api_reference/langchain/chat_models/langchain.chat_models.base.init_chat_model.html
@@ -31,7 +32,8 @@ https://langchain-ai.github.io/langgraph/how-tos/streaming/#values
 https://python.langchain.com/docs/how_to/configure/
 """
 from src.config import config as appconfig
-from .VectorStore import VectorStore
+from src.Infrastructure.VectorStore import VectorStore
+from src.Infrastructure.Checkpointer import GetCheckpointer, GetAsyncCheckpointer
 from .State import CustomAgentState
 from ..utils.image import show_graph
 from .Tools import ground_search, save_memory
@@ -50,13 +52,14 @@ class RAGAgent():
     _config = None
     _urls = [
         "https://lilianweng.github.io/posts/2023-06-23-agent/",
-        #"https://lilianweng.github.io/posts/2023-03-15-prompt-engineering/",
-        #"https://lilianweng.github.io/posts/2023-10-25-adv-attack-llm/",
-        #"https://mlflow.org/docs/latest/index.html",
-        #"https://mlflow.org/docs/latest/tracking/autolog.html",
-        #"https://mlflow.org/docs/latest/getting-started/tracking-server-overview/index.html",
-        #"https://mlflow.org/docs/latest/python_api/mlflow.deployments.html",        
-    ]    
+        "https://lilianweng.github.io/posts/2023-03-15-prompt-engineering/",
+        "https://lilianweng.github.io/posts/2023-10-25-adv-attack-llm/",
+        "https://mlflow.org/docs/latest/index.html",
+        "https://mlflow.org/docs/latest/tracking/autolog.html",
+        "https://mlflow.org/docs/latest/getting-started/tracking-server-overview/index.html",
+        "https://mlflow.org/docs/latest/python_api/mlflow.deployments.html",        
+    ]
+    # https://langchain-ai.github.io/langgraph/reference/prebuilt/#langgraph.prebuilt.chat_agent_executor.create_react_agent
     _prompt = ChatPromptTemplate.from_messages([
                 ("system", "You are a helpful AI assistant named Bob."),
                 ("placeholder", "{messages}"),
@@ -98,8 +101,12 @@ class RAGAgent():
     async def CreateGraph(self) -> CompiledGraph:
         logging.debug(f"\n=== {self.CreateGraph.__name__} ===")
         try:
+            #checkpointer = GetCheckpointer()
+            #if __name__ == "__main__":
+            #    print("checkpointer.setup()")
+            #    checkpointer.setup()
             # https://langchain-ai.github.io/langgraph/reference/prebuilt/#langgraph.prebuilt.chat_agent_executor.create_react_agent
-            self._agent = create_react_agent(self._llm, self._tools, store=InMemoryStore(), checkpointer=MemorySaver(), config_schema=Configuration, state_schema=CustomAgentState, name=self._name, prompt=self._prompt)
+            self._agent = create_react_agent(self._llm, self._tools, store=self._vectorStore.vector_store, checkpointer=MemorySaver(), config_schema=Configuration, state_schema=CustomAgentState, name=self._name, prompt=self._prompt)
             #show_graph(self._agent, "RAG ReAct Agent") # This blocks
         except ResourceExhausted as e:
             logging.exception(f"google.api_core.exceptions.ResourceExhausted {e}")

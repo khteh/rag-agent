@@ -17,7 +17,7 @@ from langgraph.graph.graph import (
     Graph,
     Send,
 )
-from src.schema.EmailModel import EmailModel
+from src.models.EmailModel import EmailModel
 from pydantic import EmailStr
 
 """

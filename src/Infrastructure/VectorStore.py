@@ -34,7 +34,7 @@ class VectorStore(metaclass=VectorStoreSingleton):
     _embeddings: OllamaEmbeddings = None
     _chunk_size = None
     _chunk_overlap = None
-    _vector_store: Chroma = None
+    vector_store: Chroma = None
     retriever_tool = None
     _client: chromadb.HttpClient = None
     _collection: str = None
@@ -78,11 +78,12 @@ class VectorStore(metaclass=VectorStoreSingleton):
         """
         self.CreateTenantDatabase()
         self._client = chromadb.HttpClient(host=config.CHROMA_URI, port=80, headers={"X-Chroma-Token": config.CHROMA_TOKEN}, tenant=self._tenant, database=self._database)
+        #self._client.reset()  # resets the database - delete all data. Must be enabled with ALLOW_RESET env in chroma server
         #self._vector_store = InMemoryVectorStore(self._embeddings)
-        self._vector_store = Chroma(client = self._client, collection_name = self._collection, embedding_function = self._embeddings)
+        self.vector_store = Chroma(client = self._client, collection_name = self._collection, embedding_function = self._embeddings)
         # https://api.python.langchain.com/en/latest/tools/langchain.tools.retriever.create_retriever_tool.html
         self.retriever_tool = create_retriever_tool(
-            self._vector_store.as_retriever(),
+            self.vector_store.as_retriever(),
             "Retrieve information related to a query",
             "Search and return information about the query from the documents available in the store",
         )
@@ -97,7 +98,7 @@ class VectorStore(metaclass=VectorStoreSingleton):
             persist_directory="multitenant",
         ))
         """
-        logging.info(f"{self._SplitDocuments.__name__} tenant: {self._tenant}, database: {self._database}")
+        logging.info(f"{self.CreateTenantDatabase.__name__} tenant: {self._tenant}, database: {self._database}")
         # For Remote Chroma server:
         adminClient= chromadb.AdminClient(Settings(
            chroma_api_impl="chromadb.api.fastapi.FastAPI",
@@ -163,7 +164,7 @@ class VectorStore(metaclass=VectorStoreSingleton):
         # Ensure that only docs that correspond to unique ids are kept and that only one of the duplicate ids is kept
         seen_ids = set()
         unique_docs = [doc for doc, id in zip(subdocs, ids) if id not in seen_ids and (seen_ids.add(id) or True)]
-        ids = await self._vector_store.aadd_documents(documents = unique_docs, ids = unique_ids)
+        ids = await self.vector_store.aadd_documents(documents = unique_docs, ids = unique_ids)
         logging.debug(f"{len(ids)} documents added successfully!")
         return len(ids)
     
@@ -171,4 +172,4 @@ class VectorStore(metaclass=VectorStoreSingleton):
         self, query: str, k: int = 4, **kwargs: Any
     ) -> list[Document]:
         logging.info(f"\n=== {self.asimilarity_search.__name__} ===")
-        return await self._vector_store.asimilarity_search(query=query, k=k, **kwargs)
+        return await self.vector_store.asimilarity_search(query=query, k=k, **kwargs)
