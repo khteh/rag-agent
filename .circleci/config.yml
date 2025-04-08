@@ -22,7 +22,7 @@ jobs:
       - checkout
       - restore_cache:
           key: v1-dependencies-{{ .Branch }}-{{ checksum "Pipfile.lock" }}
-      - run: pipenv install -d
+      - run: pipenv install #-d
       #- run: pipenv run pytest -v Needs /etc/ragagent_config.json
       - run:
           name: Build docker image
