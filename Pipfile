@@ -17,7 +17,6 @@ google-genai = "*"
 pillow = "*"
 psycopg = {extras = ["binary"] }
 psycopg2-binary = "*"
-hypercorn = {extras = ["h3"], version = "*"}
 quart = "*"
 quart-bcrypt = "*"
 quart-trio = "*"
@@ -40,6 +39,7 @@ uuid7 = "*"
 chromadb = "*"
 langchain-chroma = "*"
 langchain-nomic = "*"
+hypercorn = {extras = ["h3", "trio"], version = "*"}
 
 [dev-packages]
 pytest-flask = "*"
