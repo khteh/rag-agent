@@ -15,13 +15,13 @@ async def GetConnectionPool():
         return pool
     
 async def GetAsyncCheckpointer():
-    pool = AsyncConnectionPool(
+    async with AsyncConnectionPool(
         conninfo = config.POSTGRESQL_DATABASE_URI,
         max_size = config.DB_MAX_CONNECTIONS,
         kwargs = _connection_kwargs,
-    )
+    ) as pool:
     # Create the AsyncPostgresSaver
-    return AsyncPostgresSaver(pool)
+        return AsyncPostgresSaver(pool)
     
 def GetCheckpointer():
     return PostgresSaver(ConnectionPool(

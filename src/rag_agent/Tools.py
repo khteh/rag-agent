@@ -82,13 +82,16 @@ async def retrieve(query: str, *, config: Annotated[RunnableConfig, InjectedTool
         for doc in retrieved_docs
     )
     return serialized, retrieved_docs#
-
-#https://langchain-ai.github.io/langgraph/reference/prebuilt/#langgraph.prebuilt.chat_agent_executor.create_react_agent
+"""
+https://langchain-ai.github.io/langgraph/reference/prebuilt/#langgraph.prebuilt.chat_agent_executor.create_react_agent
+https://langchain-ai.github.io/langgraph/concepts/memory/
+https://langchain-ai.github.io/langgraph/how-tos/cross-thread-persistence/
+"""
 @tool
 async def save_memory(memory: str, *, config: Annotated[RunnableConfig, InjectedToolArg], store: Annotated[BaseStore, InjectedStore()]) -> str:
     """
     Save the given memory for the current user.
-    This should only be used after you have accomplised your task and ready to respond to user request with an answer.
+    This should only be used after you have exhausted all other tools to accomplish your task. After saving the memory for the current user, you should return to the user with your answer.
     """
     # This is a **tool** the model can use to save memories to storage
     config = ensure_config(config)

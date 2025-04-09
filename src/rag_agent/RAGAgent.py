@@ -23,7 +23,9 @@ from langchain_core.prompts import ChatPromptTemplate
 from langgraph.managed import IsLastStep
 from langgraph.store.base import BaseStore
 from langgraph.store.memory import InMemoryStore
+from langchain_ollama import OllamaEmbeddings
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
+from psycopg_pool import AsyncConnectionPool, ConnectionPool
 """
 https://python.langchain.com/docs/tutorials/qa_chat_history/
 https://python.langchain.com/api_reference/langchain/chat_models/langchain.chat_models.base.init_chat_model.html
@@ -101,15 +103,34 @@ class RAGAgent():
     async def CreateGraph(self) -> CompiledGraph:
         logging.debug(f"\n=== {self.CreateGraph.__name__} ===")
         try:
-            #checkpointer = GetCheckpointer()
+            in_memory_store = InMemoryStore(
+                index={
+                    "embed": OllamaEmbeddings(model=appconfig.EMBEDDING_MODEL, base_url=appconfig.OLLAMA_URI, num_ctx=8192, num_gpu=1, temperature=0),
+                    #"dims": 1536,
+                }
+            )
+            """
+            _connection_kwargs = {
+                "autocommit": True,
+                "prepare_threshold": 0,
+            }
+            pool = AsyncConnectionPool(
+                conninfo = appconfig.POSTGRESQL_DATABASE_URI,
+                max_size = appconfig.DB_MAX_CONNECTIONS,
+                kwargs = _connection_kwargs,
+            )
+            # Create the AsyncPostgresSaver
+            checkpointer = AsyncPostgresSaver(pool)
+            """
+            #checkpointer = await GetAsyncCheckpointer()
             #if __name__ == "__main__":
             #    print("checkpointer.setup()")
-            #    checkpointer.setup()
+            #    await checkpointer.setup()
             # https://langchain-ai.github.io/langgraph/reference/prebuilt/#langgraph.prebuilt.chat_agent_executor.create_react_agent
-            self._agent = create_react_agent(self._llm, self._tools, store=self._vectorStore.vector_store, checkpointer=MemorySaver(), config_schema=Configuration, state_schema=CustomAgentState, name=self._name, prompt=self._prompt)
+            self._agent = create_react_agent(self._llm, self._tools, store = in_memory_store, checkpointer = MemorySaver(), config_schema = Configuration, state_schema = CustomAgentState, name = self._name, prompt = self._prompt)
             #show_graph(self._agent, "RAG ReAct Agent") # This blocks
-        except ResourceExhausted as e:
-            logging.exception(f"google.api_core.exceptions.ResourceExhausted {e}")
+        except Exception as e:
+            logging.exception(f"Exception! {e}")
         return self._agent
 
     def ShowGraph(self):
@@ -119,7 +140,7 @@ class RAGAgent():
         logging.info(f"\n=== {self.ChatAgent.__name__} ===")
         async for event in self._agent.with_config({"user_id": uuid7str()}).astream(
             #{"messages": [{"role": "user", "content": messages}]}, This works with gemini-2.0-flash
-            {"messages": messages},
+            {"messages": messages}, # This works with Ollama llama3.3
             stream_mode="values", # Use this to stream all values in the state after each step.
             config=config, # This is needed by Checkpointer
         ):

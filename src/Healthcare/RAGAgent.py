@@ -31,9 +31,10 @@ from langgraph.graph.graph import (
 )
 from langgraph.prebuilt import ToolNode, tools_condition, create_react_agent, InjectedStore
 from langgraph.checkpoint.memory import MemorySaver
+from langchain_ollama import OllamaEmbeddings
 from .Tools import TOOLS
 from src.Infrastructure.VectorStore import VectorStore
-from src.Infrastructure.Checkpointer import GetCheckpointer
+from src.Infrastructure.Checkpointer import GetCheckpointer, GetAsyncCheckpointer
 class RAGAgent():
     _llm = None
     _config = None
@@ -71,8 +72,17 @@ class RAGAgent():
     async def CreateGraph(self, config: RunnableConfig) -> CompiledGraph:
         logging.debug(f"\n=== {self.CreateGraph.__name__} ===")
         try:
+            in_memory_store = InMemoryStore(
+                index={
+                    "embed": OllamaEmbeddings(model=appconfig.EMBEDDING_MODEL, base_url=appconfig.OLLAMA_URI, num_ctx=8192, num_gpu=1, temperature=0),
+                    #"dims": 1536,
+                }
+            )
+            checkpointer = await GetAsyncCheckpointer()
+            if __name__ == "__main__":
+                await checkpointer.setup()
             # https://langchain-ai.github.io/langgraph/reference/prebuilt/#langgraph.prebuilt.chat_agent_executor.create_react_agent
-            return create_react_agent(self._llm, TOOLS, store=self._vectorStore.vector_store, checkpointer=GetCheckpointer(), state_schema=AgentState, name="Healthcare ReAct Agent", prompt=self._rag_prompt)
+            return create_react_agent(self._llm, TOOLS, store = in_memory_store, checkpointer = checkpointer, state_schema=AgentState, name="Healthcare ReAct Agent", prompt=self._rag_prompt)
         except ResourceExhausted as e:
             logging.exception(f"google.api_core.exceptions.ResourceExhausted")
 
