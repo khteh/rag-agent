@@ -44,6 +44,7 @@ from src.models import ChatMessage
 from src.models.EmailModel import EmailModel
 from src.models.EscalationModel import EscalationCheckModel
 from src.Infrastructure.VectorStore import VectorStore
+from src.Infrastructure.Checkpointer import CheckpointerSetup
 from data.sample_emails import EMAILS
 from .configuration import EmailConfiguration
 
@@ -233,13 +234,9 @@ class EmailRAG():
             kwargs = appconfig.connection_kwargs,
         ) as pool:
             # Create the AsyncPostgresSaver
-            checkpointer = AsyncPostgresSaver(pool)
+            checkpointer = await CheckpointerSetup(pool)
             self._agent.checkpointer = checkpointer
             self._graph.checkpointer = checkpointer
-            # Set up the checkpointer (uncomment this line the first time you run the app)
-            if __name__ == "__main__":
-                print("checkpointer.setup()...")
-                await self._agent.checkpointer.setup()
             async for step in self._agent.with_config({"graph": self._graph, "email_state": email_state, "thread_id": uuid7str()}).astream(
                 {"messages": [{"role": "user", "content": message_with_criteria}]},
                 stream_mode="values",

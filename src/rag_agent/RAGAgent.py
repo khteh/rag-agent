@@ -36,9 +36,10 @@ https://python.langchain.com/docs/how_to/configure/
 from src.config import config as appconfig
 from src.Infrastructure.VectorStore import VectorStore
 from .State import CustomAgentState
-from ..utils.image import show_graph
+from src.utils.image import show_graph
 from .Tools import ground_search, save_memory
 from .configuration import Configuration
+from src.Infrastructure.Checkpointer import CheckpointerSetup
 """
 https://docs.python.org/3/library/argparse.html
 'store_true' and 'store_false' - These are special cases of 'store_const' used for storing the values True and False respectively. In addition, they create default values of False and True respectively:
@@ -128,11 +129,7 @@ class RAGAgent():
             kwargs = appconfig.connection_kwargs,
         ) as pool:
             # Create the AsyncPostgresSaver
-            self._agent.checkpointer = AsyncPostgresSaver(pool)
-            # Set up the checkpointer (uncomment this line the first time you run the app)
-            if __name__ == "__main__":
-                print("checkpointer.setup()...")
-                await self._agent.checkpointer.setup()
+            self._agent.checkpointer = await CheckpointerSetup(pool)
             async for event in self._agent.with_config({"user_id": uuid7str()}).astream(
                 #{"messages": [{"role": "user", "content": messages}]}, This works with gemini-2.0-flash
                 {"messages": messages}, # This works with Ollama llama3.3

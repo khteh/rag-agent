@@ -34,7 +34,8 @@ https://langchain-ai.github.io/langgraph/how-tos/streaming/#values
 """
 from src.config import config as appconfig
 from .State import State
-from ..utils.image import show_graph
+from src.utils.image import show_graph
+from src.Infrastructure.Checkpointer import CheckpointerSetup
 #from .State import State
 from src.Infrastructure.VectorStore import VectorStore
 
@@ -295,11 +296,7 @@ class CheckpointedRAG():
             kwargs = appconfig.connection_kwargs,
         ) as pool:
             # Create the AsyncPostgresSaver
-            self._agent.checkpointer = AsyncPostgresSaver(pool)
-            # Set up the checkpointer (uncomment this line the first time you run the app)
-            if __name__ == "__main__":
-                print("checkpointer.setup()...")
-                await self._agent.checkpointer.setup()
+            self._agent.checkpointer = await CheckpointerSetup(pool)
             for message in messages:
                 #input_message = "What is Task Decomposition?"
                 async for step in self._graph.astream(
