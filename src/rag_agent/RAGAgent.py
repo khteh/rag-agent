@@ -40,13 +40,6 @@ from src.utils.image import show_graph
 from .Tools import ground_search, save_memory
 from .configuration import Configuration
 from src.Infrastructure.Checkpointer import CheckpointerSetup
-"""
-https://docs.python.org/3/library/argparse.html
-'store_true' and 'store_false' - These are special cases of 'store_const' used for storing the values True and False respectively. In addition, they create default values of False and True respectively:
-"""
-parser = argparse.ArgumentParser(description='Start this LLM-RAG Agent')
-parser.add_argument('--load-urls', action='store_true', help='Load documents from URLs')
-args = parser.parse_args()
 
 class RAGAgent():
     _name:str = "RAG ReAct Agent"
@@ -68,6 +61,7 @@ class RAGAgent():
                 ("human", "Remember, always provide accurate answer!"),
         ])
     _vectorStore = None
+    _in_memory_store: InMemoryStore = None
     _tools: List[Callable[..., Any]] = None #[vector_store.retriever_tool, ground_search, save_memory]
     _agent: CompiledGraph = None
     # Class constructor
@@ -82,6 +76,12 @@ class RAGAgent():
         If the agent LLM determines that its input requires a tool call, it’ll return a JSON tool message with the name of the tool it wants to use, along with the input arguments.
         For VertexAI, use VertexAIEmbeddings, model="text-embedding-005"; "gemini-2.0-flash" model_provider="google_genai"
         """
+        self._in_memory_store = InMemoryStore(
+            index={
+                "embed": OllamaEmbeddings(model=appconfig.EMBEDDING_MODEL, base_url=appconfig.OLLAMA_URI, num_ctx=8192, num_gpu=1, temperature=0),
+                #"dims": 1536,
+            }
+        )
         self._vectorStore = VectorStore(model=appconfig.EMBEDDING_MODEL, chunk_size=1000, chunk_overlap=0)
         self._tools = [self._vectorStore.retriever_tool, ground_search, save_memory]
         self._llm = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider="ollama", base_url=appconfig.OLLAMA_URI, streaming=True).bind_tools(self._tools)
@@ -104,16 +104,9 @@ class RAGAgent():
     async def CreateGraph(self) -> CompiledGraph:
         logging.debug(f"\n=== {self.CreateGraph.__name__} ===")
         try:
-            in_memory_store = InMemoryStore(
-                index={
-                    "embed": OllamaEmbeddings(model=appconfig.EMBEDDING_MODEL, base_url=appconfig.OLLAMA_URI, num_ctx=8192, num_gpu=1, temperature=0),
-                    #"dims": 1536,
-                }
-            )
             # https://langchain-ai.github.io/langgraph/reference/prebuilt/#langgraph.prebuilt.chat_agent_executor.create_react_agent
-            print("create_react_agent()...")
-            self._agent = create_react_agent(self._llm, self._tools, store = in_memory_store, config_schema = Configuration, state_schema = CustomAgentState, name = self._name, prompt = self._prompt)
-            self.ShowGraph() # This blocks
+            self._agent = create_react_agent(self._llm, self._tools, store = self._in_memory_store, config_schema = Configuration, state_schema = CustomAgentState, name = self._name, prompt = self._prompt)
+            #self.ShowGraph() # This blocks
         except Exception as e:
             logging.exception(f"Exception! {e}")
         return self._agent
@@ -142,6 +135,14 @@ async def make_graph(config: RunnableConfig) -> CompiledGraph:
     return await RAGAgent(config).CreateGraph()
 
 async def main():
+    """
+    https://docs.python.org/3/library/argparse.html
+    'store_true' and 'store_false' - These are special cases of 'store_const' used for storing the values True and False respectively. In addition, they create default values of False and True respectively:
+    """
+    parser = argparse.ArgumentParser(description='Start this LLM-RAG Agent')
+    parser.add_argument('--load-urls', action='store_true', help='Load documents from URLs')
+    args = parser.parse_args()
+
     # httpx library is a dependency of LangGraph and is used under the hood to communicate with the AI models.
     #vertexai.init(project=os.environ.get("GOOGLE_CLOUD_PROJECT"), location=os.environ.get("GOOGLE_CLOUD_LOCATION"))
     config = RunnableConfig(run_name="RAG ReAct Agent", thread_id=uuid7str())

@@ -27,6 +27,7 @@ from langchain_core.prompts import PromptTemplate
 from langchain_google_vertexai import ChatVertexAI
 from langchain_core.tools import InjectedToolArg, tool
 from langgraph.prebuilt import ToolNode, tools_condition, create_react_agent, InjectedStore
+from langchain_ollama import OllamaEmbeddings
 from pydantic import BaseModel, Field
 """
 https://langchain-ai.github.io/langgraph/tutorials/rag/langgraph_agentic_rag/
@@ -125,6 +126,7 @@ class EmailRAG():
         ])
     # https://realpython.com/build-llm-rag-chatbot-with-langchain/#chains-and-langchain-expression-language-lcel
     _vectorStore = None
+    _in_memory_store: InMemoryStore = None
     _email_parser_chain = None
     _escalation_chain = None
     _graph: CompiledGraph = None
@@ -144,6 +146,12 @@ class EmailRAG():
         If the agent LLM determines that its input requires a tool call, it’ll return a JSON tool message with the name of the tool it wants to use, along with the input arguments.
         For VertexAI, use VertexAIEmbeddings, model="text-embedding-005"; "gemini-2.0-flash" model_provider="google_genai"
         """
+        self._in_memory_store = InMemoryStore(
+            index={
+                "embed": OllamaEmbeddings(model=appconfig.EMBEDDING_MODEL, base_url=appconfig.OLLAMA_URI, num_ctx=8192, num_gpu=1, temperature=0),
+                #"dims": 1536,
+            }
+        )
         self._vectorStore = VectorStore(model=appconfig.EMBEDDING_MODEL, chunk_size=1000, chunk_overlap=0)
         self._llm = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider="ollama", base_url=appconfig.OLLAMA_URI, configurable_fields=("user_id", "graph", "email_state"), streaming=True, temperature=0).bind_tools([email_processing_tool])
         self._chainLLM = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider="ollama", base_url=appconfig.OLLAMA_URI, temperature=0)
@@ -203,9 +211,9 @@ class EmailRAG():
             graph_builder.add_edge(START, "ParseEmail")
             graph_builder.add_edge("ParseEmail", "NeedsEscalation")
             graph_builder.add_edge("NeedsEscalation", END)
-            self._graph = graph_builder.compile(store=self._vectorStore.vector_store, name=self._graphName)
+            self._graph = graph_builder.compile(store=self._in_memory_store, name=self._graphName)
             # https://langchain-ai.github.io/langgraph/reference/prebuilt/#langgraph.prebuilt.chat_agent_executor.create_react_agent
-            #self._agent = create_react_agent(self._llm, [email_processing_tool], store=self._vectorStore.vector_store, config_schema=EmailConfiguration, state_schema=EmailAgentState, name=self._name, prompt=self._prompt) This doesn't work well as the LLM preprocess the input email instead of passing it through to email_processing_tool as is done in call_agent_model_node
+            #self._agent = create_react_agent(self._llm, [email_processing_tool], store=self._in_memory_store, config_schema=EmailConfiguration, state_schema=EmailAgentState, name=self._name, prompt=self._prompt) This doesn't work well as the LLM preprocess the input email instead of passing it through to email_processing_tool as is done in call_agent_model_node
             graph_builder = StateGraph(EmailAgentState)
             graph_builder.add_node("EmailAgent", self.call_agent_model_node)
             graph_builder.add_node("EmailTools", ToolNode([email_processing_tool]))
@@ -215,7 +223,7 @@ class EmailRAG():
                 "EmailAgent", self.route_agent_graph_edge, ["EmailTools", END]
             )
             graph_builder.add_edge("EmailTools", "EmailAgent")
-            self._agent = graph_builder.compile(store=self._vectorStore.vector_store, name=self._agentName)
+            self._agent = graph_builder.compile(store=self._in_memory_store, name=self._agentName)
         except ResourceExhausted as e:
             logging.exception(f"google.api_core.exceptions.ResourceExhausted")
         return self._agent

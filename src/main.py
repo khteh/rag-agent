@@ -21,12 +21,6 @@ from src.Infrastructure.Checkpointer import CheckpointerSetup
 config = Config()
 config.from_toml("/etc/hypercorn.toml")
 # httpx library is a dependency of LangGraph and is used under the hood to communicate with the AI models.
-"""
-connection_kwargs = {
-    "autocommit": True,
-    "prepare_threshold": 0,
-}
-"""
 def _add_secure_headers(response: Response) -> Response:
     response.headers["Strict-Transport-Security"] = (
         "max-age=63072000; includeSubDomains; preload"
@@ -55,11 +49,13 @@ async def create_app() -> Quart:
             max_size = appconfig.DB_MAX_CONNECTIONS,
             kwargs = appconfig.connection_kwargs,
         )
+        await app.db_pool.open()
         # Create the AsyncPostgresSaver
         checkpointer = await CheckpointerSetup(app.db_pool)
         # Assign the checkpointer to the assistant
         app.agent.checkpointer = checkpointer
-        app.healthcare_agent.checkpointer = checkpointer
+        app.graph_rag.checkpointer = checkpointer
+        #app.healthcare_agent.checkpointer = checkpointer
         logging.debug(f"\n=== {before_serving.__name__} done! ===")
 
     @app.after_serving
@@ -70,23 +66,20 @@ async def create_app() -> Quart:
     app.after_request(_add_secure_headers)
     from src.controllers.HomeController import home_api as home_blueprint
     from src.controllers.HealthController import health_api as health_blueprint
-    logging.debug("Registering home_blueprint...")
     app.register_blueprint(home_blueprint, url_prefix="/")
-    logging.debug("Registering health_blueprint...")
     app.register_blueprint(health_blueprint, url_prefix="/health")
     # https://quart-wtf.readthedocs.io/en/stable/how_to_guides/configuration.html
-    logging.debug("CSRFProtect...")
-    csrf = CSRFProtect(app)
-    logging.debug("bcrypt.init_app...")
+    #csrf = CSRFProtect(app)
     bcrypt.init_app(app)
-    from src.rag_agent.RAGAgent import make_graph#, agent
-    from src.Healthcare.RAGAgent import make_graph as healthcare_make_graph#, agent
+    from src.rag_agent.RAGAgent import make_graph
+    from src.rag_agent.GraphRAG import make_graph as graph_rag_make_graph
+    #from src.Healthcare.RAGAgent import make_graph as healthcare_make_graph # https://github.com/neo4j/neo4j/issues/13633
     config = RunnableConfig(run_name="RAG ReAct Agent", thread_id=uuid7str())
-    healthcare_config = RunnableConfig(run_name="Healthcare ReAct Agent", thread_id=uuid7str())
-    logging.debug("RAGAGent make_graph...")
+    grapg_rag_config = RunnableConfig(run_name="RAG ReAct Agent", thread_id=uuid7str())
+    #healthcare_config = RunnableConfig(run_name="Healthcare ReAct Agent", thread_id=uuid7str())
     app.agent = await make_graph(config)
-    logging.debug("Healthcare make_graph...")
-    app.healthcare_agent = await healthcare_make_graph(healthcare_config)
+    app.graph_rag = await graph_rag_make_graph(config)
+    #app.healthcare_agent = await healthcare_make_graph(healthcare_config)
     #if app.debug:
     # https://github.com/pgjones/hypercorn/issues/294
     #    return HTTPToHTTPSRedirectMiddleware(app, "khteh.com")  # type: ignore - Defined in hypercorn.toml server_names

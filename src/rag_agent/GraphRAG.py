@@ -18,10 +18,12 @@ from langgraph.graph.graph import (
 from langgraph.prebuilt import ToolNode, tools_condition
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
+from langchain_ollama import OllamaEmbeddings
 from psycopg_pool import AsyncConnectionPool, ConnectionPool
 from typing_extensions import List, TypedDict
 from langgraph.store.memory import InMemoryStore
 from langchain_core.prompts import PromptTemplate
+from langchain.tools.retriever import create_retriever_tool
 from google.api_core.exceptions import ResourceExhausted
 from pydantic import BaseModel, Field
 """
@@ -31,18 +33,18 @@ https://python.langchain.com/docs/tutorials/qa_chat_history/
 https://python.langchain.com/api_reference/langchain/chat_models/langchain.chat_models.base.init_chat_model.html
 https://github.com/langchain-ai/langgraph/blob/main/libs/langgraph/langgraph/graph/message.py
 https://langchain-ai.github.io/langgraph/how-tos/streaming/#values
+https://langchain-ai.github.io/langgraph/tutorials/rag/langgraph_agentic_rag/
 """
 from src.config import config as appconfig
-from .State import State
+from .configuration import Configuration
+from .State import State, CustomAgentState
 from src.utils.image import show_graph
 from src.Infrastructure.Checkpointer import CheckpointerSetup
 #from .State import State
 from src.Infrastructure.VectorStore import VectorStore
-parser = argparse.ArgumentParser(description='Start this LLM-RAG Agent')
-parser.add_argument('--load-urls', action='store_true', help='Load documents from URLs')
-args = parser.parse_args()
 
-class CheckpointedRAG():
+class GraphRAG():
+    _name: str = "Checkedpoint StateGraph RAG"
     _llm = None
     _config = None
     _prompt = PromptTemplate(
@@ -67,25 +69,38 @@ class CheckpointedRAG():
         "https://mlflow.org/docs/latest/getting-started/tracking-server-overview/index.html",
         "https://mlflow.org/docs/latest/python_api/mlflow.deployments.html",        
     ]
+    _in_memory_store: InMemoryStore = None
     _vectorStore = None
     _graph: CompiledGraph =  None
+    _retriever_tool = None
     # Class constructor
     def __init__(self, config: RunnableConfig={}):
         """
-        Class CheckpointedRAG Constructor
+        Class GraphRAG Constructor
         """
         self._config = config
         # https://python.langchain.com/api_reference/langchain/chat_models/langchain.chat_models.base.init_chat_model.html
+        self._in_memory_store = InMemoryStore(
+            index={
+                "embed": OllamaEmbeddings(model=appconfig.EMBEDDING_MODEL, base_url=appconfig.OLLAMA_URI, num_ctx=8192, num_gpu=1, temperature=0),
+                #"dims": 1536,
+            }
+        )
         self._vectorStore = VectorStore(model=appconfig.EMBEDDING_MODEL, chunk_size=1000, chunk_overlap=0)
+        self._retriever_tool = create_retriever_tool(
+            self._vectorStore.retriever_tool,
+            "retrieve_blog_posts",
+            "Search and return information LLM agents, prompt engineering, adversarial attacks on LLMs and MLFlow",
+        )        
         """
         .bind_tools() gives the agent LLM descriptions of each tool from their docstring and input arguments. 
         If the agent LLM determines that its input requires a tool call, it’ll return a JSON tool message with the name of the tool it wants to use, along with the input arguments.
         For VertexAI, use VertexAIEmbeddings, model="text-embedding-005"; "gemini-2.0-flash" model_provider="google_genai"
         """
-        self._llm = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider="ollama", base_url=appconfig.OLLAMA_URI, streaming=True).bind_tools([self._vectorStore.retriever_tool])
+        self._llm = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider="ollama", base_url=appconfig.OLLAMA_URI, streaming=True).bind_tools([self._retriever_tool])
         # https://python.langchain.com/docs/integrations/chat/google_vertex_ai_palm/
 
-    async def Agent(self, state: State, config: RunnableConfig):
+    async def Agent(self, state: CustomAgentState, config: RunnableConfig):
         """
         # Step 1: Generate an AIMessage that may include a tool-call to be sent.
         Generate tool call for retrieval or respond
@@ -105,7 +120,7 @@ class CheckpointedRAG():
         # MessageState appends messages to state instead of overwriting
         return {"messages": [response]}
 
-    async def GradeDocuments(self, state: State, config: RunnableConfig) -> Literal["Generate", "Rewrite"]:
+    async def GradeDocuments(self, state: CustomAgentState, config: RunnableConfig) -> Literal["Generate", "Rewrite"]:
         """
         Determines whether the retrieved documents are relevant to the question.
 
@@ -147,7 +162,7 @@ class CheckpointedRAG():
             logging.debug(f"---DECISION: DOCS NOT RELEVANT (score: {score})---")
             return "Rewrite"
         
-    async def Rewrite(self, state: State, config: RunnableConfig):
+    async def Rewrite(self, state: CustomAgentState, config: RunnableConfig):
         """
         Transform the query to produce a better question.
 
@@ -175,7 +190,7 @@ class CheckpointedRAG():
         response = await self._llm.with_config(config).ainvoke(msg)
         return {"messages": [response]}
 
-    async def Generate(self, state: State, config: RunnableConfig):
+    async def Generate(self, state: CustomAgentState, config: RunnableConfig):
         """
         Generate answer
 
@@ -204,7 +219,7 @@ class CheckpointedRAG():
         return {"messages": [response]}
     
     # Step 3: Generate a response using the retrieved content.
-    async def Generate1(self, state: State, config: RunnableConfig):
+    async def Generate1(self, state: CustomAgentState, config: RunnableConfig):
         """Generate answer."""
         logging.info(f"\n=== {self.Generate1.__name__} ===")
         #logging.debug(f"\nstate['messages']: {state['messages']}")
@@ -247,8 +262,7 @@ class CheckpointedRAG():
         # Compile application and test
         logging.info(f"\n=== {self.CreateGraph.__name__} ===")
         try:
-            await self._vectorStore.LoadDocuments(self._urls)
-            graph_builder = StateGraph(State)
+            graph_builder = StateGraph(CustomAgentState)
             graph_builder.add_node("Agent", self.Agent)
             graph_builder.add_node("Retrieve", ToolNode([self._vectorStore.retriever_tool])) # Execute the retrieval.
             graph_builder.add_node("Rewrite", self.Rewrite)
@@ -276,7 +290,7 @@ class CheckpointedRAG():
             )
             graph_builder.add_edge("Generate", END)
             graph_builder.add_edge("Rewrite", "Agent")
-            self._graph = graph_builder.compile(store=self._vectorStore.vector_store, name="Checkedpoint StateGraph RAG")
+            self._graph = graph_builder.compile(store=self._in_memory_store, name=self._name)
             #show_graph(self._graph, "Checkedpoint StateGraph RAG") # This blocks
         except ResourceExhausted as e:
             logging.exception(f"google.api_core.exceptions.ResourceExhausted")
@@ -310,13 +324,17 @@ class CheckpointedRAG():
                     step["messages"][-1].pretty_print()
 
 async def make_graph(config: RunnableConfig) -> CompiledGraph:
-    return await CheckpointedRAG(config).CreateGraph(config)
+    return await GraphRAG(config).CreateGraph(config)
 
 async def main():
+    parser = argparse.ArgumentParser(description='Start this LLM-RAG Agent')
+    parser.add_argument('--load-urls', action='store_true', help='Load documents from URLs')
+    args = parser.parse_args()
+
     # httpx library is a dependency of LangGraph and is used under the hood to communicate with the AI models.
     #vertexai.init(project=os.environ.get("GOOGLE_CLOUD_PROJECT"), location=os.environ.get("GOOGLE_CLOUD_LOCATION"))
     config = RunnableConfig(run_name="Checkedpoint StateGraph RAG", thread_id=uuid7str())
-    graph = CheckpointedRAG(config)
+    graph = GraphRAG(config)
     print(f"args: {args}")
     if args.load_urls:
         await graph.LoadDocuments()

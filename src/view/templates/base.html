@@ -35,9 +35,6 @@
 <!-- https://www.w3schools.com/howto/tryit.asp?filename=tryhow_js_sidenav_push -->
 <div id="mySidenav" class="sidenav">
   <a id="closeLeftNav" href="javascript:void(0)" class="closebtn" style="position: relative; top: 100%; transform: translateY(-100%); text-align: right;">&lt;&lt;</a>
-  <a id="userLeftNav" href="{{url_for('user.create')}}">Register User</a>
-  <a id="authorLeftNav" href="{{url_for('author.create')}}">Add Author</a>
-  <a id="bookLeftNav" href="{{url_for('book.create')}}">Add Book</a>
 </div>
 <div id="main" class="container-fluid text-center">
   <nav role="navigation" class="navbar navbar-fixed-top navbar-expand-sm bg-light">
@@ -50,19 +47,8 @@
       </div>
       <div class="collapse navbar-collapse" id="myNavbar">
         <ul class="navbar-nav mr-auto">
-          <li class="nav-item"><a class="nav-link" href="{{url_for('fibonacci.fibonacci')}}">Fibonacci</a></li>
-          <li class="nav-item"><a id="user" class="nav-link" href="{{url_for('user.index')}}">Users</a></li>
-          <li class="nav-item"><a id="author" class="nav-link" href="{{url_for('author.index')}}">Authors</a></li>
-		      <li class="nav-item"><a id="book" class="nav-link" href="{{url_for('book.index')}}">Books</a></li>
         </ul>
         <ul class="nav navbar-nav ms-auto">
-		    {% if session["user"] %}   
-		    <!-- Logged in -->
-		      <li><a href="{{url_for('auth.logout')}}" class="btn btn-default btn-sm"><span class="material-icons">logout</span></a></li>
-		    {% else %}
-		    <!-- Not Logged in -->
-          <li><a href="{{url_for('auth.login')}}" class="btn btn-default btn-sm"><span class="material-icons">login</span></a></li>		
-		    {% endif %}	  
         </ul>
       </div>
     </div>

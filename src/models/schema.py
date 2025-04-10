@@ -1,4 +1,4 @@
-from typing import Dict, Any, List, Literal
+from typing import Dict, Any, List, Literal, Optional
 from langchain_core.messages import (
     BaseMessage,
     HumanMessage,

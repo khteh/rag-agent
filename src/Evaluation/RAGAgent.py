@@ -39,7 +39,7 @@ def model(input_df):
     qa = RetrievalQA.from_chain_type(
           llm = model,
           chain_type="stuff",
-          retriever=vectorStore.as_retriever(fetch_k=3),
+          retriever=vectorStore.vector_store.as_retriever(fetch_k=3),
           return_source_documents=True,
     )
     return input_df["questions"].map(qa).tolist()

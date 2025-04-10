@@ -1,8 +1,9 @@
-import re, asyncio, json, jsonpickle, logging
-from uuid_extensions import uuid7
+import re, asyncio, json, jsonpickle, logging, jsonpickle, pickle
+from uuid_extensions import uuid7, uuid7str
 from typing import AsyncGenerator, Dict, Any, Tuple
 from quart import (
     Blueprint,
+    request,
     Response,
     ResponseReturnValue,
     current_app,
@@ -11,7 +12,6 @@ from quart import (
     session
 )
 from datetime import datetime, timezone
-from quart import Quart
 from werkzeug.exceptions import HTTPException
 from contextlib import asynccontextmanager
 from quart.helpers import stream_with_context
@@ -20,7 +20,7 @@ from src.models.schema import ChatMessage, UserInput, StreamInput
 from langchain_core.callbacks import AsyncCallbackHandler
 from langgraph.graph.graph import CompiledGraph
 from langchain_core.runnables import RunnableConfig
-#from src.rag_agent.RAGAgent import agent
+from urllib.parse import urlparse, parse_qs
 from ..common.ResponseHelper import Respond
 from ..common.Response import custom_response
 home_api = Blueprint("home", __name__)
@@ -85,7 +85,8 @@ class TokenQueueStreamingHandler(AsyncCallbackHandler):
 
 def _parse_input(user_input: UserInput) -> Tuple[Dict[str, Any], str]:
     run_id = uuid7()
-    thread_id = user_input.thread_id or str(uuid7())
+    logging.debug(f"user_input: {user_input}")
+    thread_id = "thread_id" in user_input and user_input.thread_id or uuid7str()
     input_message = ChatMessage(type="human", content=user_input.message)
     kwargs = dict(
         input={"messages": [input_message.to_langchain()]},
@@ -97,14 +98,18 @@ def _parse_input(user_input: UserInput) -> Tuple[Dict[str, Any], str]:
     return kwargs, run_id
 
 @home_api.post("/invoke")
-async def invoke(user_input: UserInput) -> ChatMessage:
+async def invoke(): #user_input: UserInput) -> ChatMessage:
     """
     Invoke the agent with user input to retrieve a final response.
 
     Use thread_id to persist and continue a multi-turn conversation. run_id kwarg
     is also attached to messages for recording feedback.
     """
-    kwargs, run_id = _parse_input(user_input)
+    data = await request.get_data()
+    params = parse_qs(data.decode('utf-8'))
+    logging.debug(f"data: {data}, params: {params}")
+    user_input: UserInput = jsonpickle.decode(data)
+    kwargs, run_id = _parse_input(data)
     logging.debug(kwargs)
     try:
         response = await current_app.agent.ainvoke(**kwargs)
@@ -169,13 +174,17 @@ async def message_generator(user_input: StreamInput) -> AsyncGenerator[str, None
     yield "data: [DONE]\n\n"
 
 @home_api.post("/stream")
-async def stream_agent(user_input: StreamInput):
+async def stream_agent(): #user_input: StreamInput):
     """
     Stream the agent's response to a user input, including intermediate messages and tokens.
 
     Use thread_id to persist and continue a multi-turn conversation. run_id kwarg
     is also attached to all messages for recording feedback.
     """
+    data = await request.get_data()
+    params = parse_qs(data.decode('utf-8'))
+    logging.debug(f"data: {data}, params: {params}")
+    user_input: UserInput = jsonpickle.decode(data)
     @stream_with_context
     async def async_generator():
         message = message_generator(user_input)

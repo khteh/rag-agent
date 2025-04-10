@@ -99,4 +99,3 @@ async def save_memory(memory: str, *, config: Annotated[RunnableConfig, Injected
     namespace = ("memories", user_id)
     store.put(namespace, f"memory_{len(await store.asearch(namespace))}", {"data": memory})
     return f"Saved memory: {memory}"
-
