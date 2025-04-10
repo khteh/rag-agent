@@ -47,7 +47,7 @@ https://docs.python.org/3/library/argparse.html
 parser = argparse.ArgumentParser(description='Start this LLM-RAG Agent')
 parser.add_argument('--load-urls', action='store_true', help='Load documents from URLs')
 args = parser.parse_args()
-#agent = None
+
 class RAGAgent():
     _name:str = "RAG ReAct Agent"
     _llm = None

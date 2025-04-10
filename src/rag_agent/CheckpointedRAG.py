@@ -1,4 +1,4 @@
-import asyncio, logging, os, vertexai
+import argparse, asyncio, logging, os, vertexai
 from uuid_extensions import uuid7, uuid7str
 from typing import Annotated, Literal, Sequence
 from datetime import datetime
@@ -38,6 +38,9 @@ from src.utils.image import show_graph
 from src.Infrastructure.Checkpointer import CheckpointerSetup
 #from .State import State
 from src.Infrastructure.VectorStore import VectorStore
+parser = argparse.ArgumentParser(description='Start this LLM-RAG Agent')
+parser.add_argument('--load-urls', action='store_true', help='Load documents from URLs')
+args = parser.parse_args()
 
 class CheckpointedRAG():
     _llm = None
@@ -314,6 +317,9 @@ async def main():
     #vertexai.init(project=os.environ.get("GOOGLE_CLOUD_PROJECT"), location=os.environ.get("GOOGLE_CLOUD_LOCATION"))
     config = RunnableConfig(run_name="Checkedpoint StateGraph RAG", thread_id=uuid7str())
     graph = CheckpointedRAG(config)
+    print(f"args: {args}")
+    if args.load_urls:
+        await graph.LoadDocuments()
     await graph.CreateGraph(config) # config input parameter is required by langgraph.json to define the graph
     """
     graph = checkpoint_graph.get_graph().draw_mermaid_png()

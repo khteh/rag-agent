@@ -38,13 +38,14 @@ async def create_app() -> Quart:
     """
     Create App
     """
-    # App initialization
+    logging.debug(f"\n=== {create_app.__name__} ===")
     #vertexai.init(project=os.environ.get("GOOGLE_CLOUD_PROJECT"), location=os.environ.get("GOOGLE_CLOUD_LOCATION"))
     app = Quart(__name__, template_folder='view/templates', static_url_path='', static_folder='view/static')
     app.config.from_file("/etc/ragagent_config.json", json.load)
     app.config["SEND_FILE_MAX_AGE_DEFAULT"] = timedelta(days=90)
     app.config["SQLALCHEMY_DATABASE_URI"] = f"postgresql+psycopg://{os.environ.get('DB_USERNAME')}:{parse.quote(os.environ.get('DB_PASSWORD'))}@{app.config['DB_HOST']}/LangchainCheckpoint"
     app.config["POSTGRESQL_DATABASE_URI"] = f"postgresql://{os.environ.get('DB_USERNAME')}:{parse.quote(os.environ.get('DB_PASSWORD'))}@{app.config['DB_HOST']}/LangchainCheckpoint"
+    app.config["TEMPLATES_AUTO_RELOAD"] = True
     app = cors(app, allow_credentials=True, allow_origin="https://localhost:4433")
     @app.before_serving
     async def before_serving() -> None:
@@ -69,25 +70,30 @@ async def create_app() -> Quart:
     app.after_request(_add_secure_headers)
     from src.controllers.HomeController import home_api as home_blueprint
     from src.controllers.HealthController import health_api as health_blueprint
+    logging.debug("Registering home_blueprint...")
     app.register_blueprint(home_blueprint, url_prefix="/")
+    logging.debug("Registering health_blueprint...")
     app.register_blueprint(health_blueprint, url_prefix="/health")
     # https://quart-wtf.readthedocs.io/en/stable/how_to_guides/configuration.html
+    logging.debug("CSRFProtect...")
     csrf = CSRFProtect(app)
+    logging.debug("bcrypt.init_app...")
     bcrypt.init_app(app)
-    config = RunnableConfig(run_name="RAG ReAct Agent", thread_id=uuid7str())
-    healthcare_config = RunnableConfig(run_name="Healthcare ReAct Agent", thread_id=uuid7str())
     from src.rag_agent.RAGAgent import make_graph#, agent
     from src.Healthcare.RAGAgent import make_graph as healthcare_make_graph#, agent
+    config = RunnableConfig(run_name="RAG ReAct Agent", thread_id=uuid7str())
+    healthcare_config = RunnableConfig(run_name="Healthcare ReAct Agent", thread_id=uuid7str())
+    logging.debug("RAGAGent make_graph...")
     app.agent = await make_graph(config)
+    logging.debug("Healthcare make_graph...")
     app.healthcare_agent = await healthcare_make_graph(healthcare_config)
-    if app.debug:
-        return HTTPToHTTPSRedirectMiddleware(app, "khteh.com")  # type: ignore - Defined in hypercorn.toml server_names
-    else:
-        app.config["TEMPLATES_AUTO_RELOAD"] = True
+    #if app.debug:
+    # https://github.com/pgjones/hypercorn/issues/294
+    #    return HTTPToHTTPSRedirectMiddleware(app, "khteh.com")  # type: ignore - Defined in hypercorn.toml server_names
+    #else:
     return app
 
 app = asyncio.get_event_loop().run_until_complete(create_app())
-
 
 logging.info(f"Running app...")
 #asyncio.run(serve(app, config), debug=True)

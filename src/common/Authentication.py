@@ -2,7 +2,7 @@ import jwt, logging, jsonpickle
 from datetime import datetime, timezone, timedelta
 from quart import json, Response, session, redirect, url_for, session, abort, current_app
 from functools import wraps
-from src.models.UserModel import UserModel
+
 """
 https://github.com/kroketio/quart-keycloak for OIDC
 """
@@ -86,11 +86,13 @@ class Authentication():
                     #await flash(f"{data['error']}", "danger")
                     return redirect(url_for("auth.login"))
                 user_id = data["data"]["user_id"]
+                """
                 check_user = UserModel.get_user(user_id)
                 if not check_user:
                     logging.warning(f"[Auth] Invalid user {user_id}!")
                     #await flash(f"Invalid username and/or password!", "danger")
                     return redirect(url_for("auth.login"))
+                """
                 return func(*args, **kwargs)
             return decorated_auth_required
         return actual_auth_required
