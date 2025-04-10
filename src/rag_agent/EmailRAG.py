@@ -39,7 +39,7 @@ https://langchain-ai.github.io/langgraph/how-tos/streaming/#values
 https://python.langchain.com/docs/how_to/configure/
 """
 from src.config import config as appconfig
-from .State import EmailRAGState, EmailAgentState
+from src.common.State import EmailRAGState, EmailAgentState
 from src.utils.image import show_graph
 from src.models import ChatMessage
 from src.models.EmailModel import EmailModel

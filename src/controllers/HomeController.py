@@ -21,8 +21,9 @@ from langchain_core.callbacks import AsyncCallbackHandler
 from langgraph.graph.graph import CompiledGraph
 from langchain_core.runnables import RunnableConfig
 from urllib.parse import urlparse, parse_qs
-from ..common.ResponseHelper import Respond
-from ..common.Response import custom_response
+from src.common.ResponseHelper import Respond
+from src.common.Response import custom_response
+from src.utils.InputParser import parse_input
 home_api = Blueprint("home", __name__)
 @home_api.context_processor
 def inject_now():
@@ -83,20 +84,6 @@ class TokenQueueStreamingHandler(AsyncCallbackHandler):
         if token:
             await self.queue.put(token)
 
-def _parse_input(user_input: UserInput) -> Tuple[Dict[str, Any], str]:
-    run_id = uuid7()
-    logging.debug(f"user_input: {user_input}")
-    thread_id = "thread_id" in user_input and user_input.thread_id or uuid7str()
-    input_message = ChatMessage(type="human", content=user_input["message"])
-    kwargs = dict(
-        input={"messages": [input_message.to_langchain()]},
-        config=RunnableConfig(
-            configurable={"thread_id": thread_id},
-            run_id=run_id,
-        ),
-    )
-    return kwargs, run_id
-
 @home_api.post("/invoke")
 async def invoke(): #user_input: UserInput) -> ChatMessage:
     """
@@ -109,7 +96,7 @@ async def invoke(): #user_input: UserInput) -> ChatMessage:
     params = parse_qs(data.decode('utf-8'))
     logging.debug(f"data: {data}, params: {params}")
     user_input: UserInput = json.loads(data)
-    kwargs, run_id = _parse_input(user_input)
+    kwargs, run_id = parse_input(user_input)
     logging.debug(kwargs)
     try:
         response = await current_app.agent.ainvoke(**kwargs)
@@ -118,9 +105,10 @@ async def invoke(): #user_input: UserInput) -> ChatMessage:
         #return output
         #return await Respond("index.html", title="Welcome to Python LLM-RAG", greeting=greeting)
         # res.json({ 'message': this.presenter.Message, "errors": this.presenter.Errors });
+        logging.debug(f"/invoke respose: {output}")
         return custom_response(output, 200)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(description = str(e))
 
 async def message_generator(user_input: StreamInput) -> AsyncGenerator[str, None]:
     """
@@ -128,7 +116,7 @@ async def message_generator(user_input: StreamInput) -> AsyncGenerator[str, None
 
     This is the workhorse method for the /stream endpoint.
     """
-    kwargs, run_id = _parse_input(user_input)
+    kwargs, run_id = parse_input(user_input)
 
     # Use an asyncio queue to process both messages and tokens in
     # chronological order, so we can easily yield them to the client.

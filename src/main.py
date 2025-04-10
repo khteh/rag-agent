@@ -55,7 +55,7 @@ async def create_app() -> Quart:
         # Assign the checkpointer to the assistant
         app.agent.checkpointer = checkpointer
         app.graph_rag.checkpointer = checkpointer
-        #app.healthcare_agent.checkpointer = checkpointer
+        app.healthcare_agent.checkpointer = checkpointer
         logging.debug(f"\n=== {before_serving.__name__} done! ===")
 
     @app.after_serving
@@ -66,20 +66,22 @@ async def create_app() -> Quart:
     app.after_request(_add_secure_headers)
     from src.controllers.HomeController import home_api as home_blueprint
     from src.controllers.HealthController import health_api as health_blueprint
+    from src.controllers.HealthcareController import healthcare_api as healthcare_blueprint
     app.register_blueprint(home_blueprint, url_prefix="/")
     app.register_blueprint(health_blueprint, url_prefix="/health")
+    app.register_blueprint(healthcare_blueprint, url_prefix="/healthcare")
     # https://quart-wtf.readthedocs.io/en/stable/how_to_guides/configuration.html
     #csrf = CSRFProtect(app)
     bcrypt.init_app(app)
     from src.rag_agent.RAGAgent import make_graph
     from src.rag_agent.GraphRAG import make_graph as graph_rag_make_graph
-    #from src.Healthcare.RAGAgent import make_graph as healthcare_make_graph # https://github.com/neo4j/neo4j/issues/13633
+    from src.Healthcare.RAGAgent import make_graph as healthcare_make_graph
     config = RunnableConfig(run_name="RAG ReAct Agent", thread_id=uuid7str())
     grapg_rag_config = RunnableConfig(run_name="RAG ReAct Agent", thread_id=uuid7str())
-    #healthcare_config = RunnableConfig(run_name="Healthcare ReAct Agent", thread_id=uuid7str())
+    healthcare_config = RunnableConfig(run_name="Healthcare ReAct Agent", thread_id=uuid7str())
     app.agent = await make_graph(config)
-    app.graph_rag = await graph_rag_make_graph(config)
-    #app.healthcare_agent = await healthcare_make_graph(healthcare_config)
+    app.graph_rag = await graph_rag_make_graph(grapg_rag_config)
+    app.healthcare_agent = await healthcare_make_graph(healthcare_config)
     #if app.debug:
     # https://github.com/pgjones/hypercorn/issues/294
     #    return HTTPToHTTPSRedirectMiddleware(app, "khteh.com")  # type: ignore - Defined in hypercorn.toml server_names

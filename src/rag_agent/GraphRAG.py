@@ -36,8 +36,8 @@ https://langchain-ai.github.io/langgraph/how-tos/streaming/#values
 https://langchain-ai.github.io/langgraph/tutorials/rag/langgraph_agentic_rag/
 """
 from src.config import config as appconfig
-from .configuration import Configuration
-from .State import State, CustomAgentState
+from src.common.configuration import Configuration
+from src.common.State import State, CustomAgentState
 from src.utils.image import show_graph
 from src.Infrastructure.Checkpointer import CheckpointerSetup
 #from .State import State

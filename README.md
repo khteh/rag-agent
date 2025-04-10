@@ -96,6 +96,26 @@ $  gcloud iam service-accounts list
 $ k create secret generic gcloud-service-account --from-file=service-account.json
 ```
 
+## Start the application:
+
+- `./hypercorn.sh`
+
+## Curl
+
+- Add `Host` header which is defined as `server_names` in `hypercorn.toml`
+
+### Home controller endpoints:
+
+```
+$ c3 -v https://localhost:4433/invoke -X POST -d '{"message": "What is task decomposition?"}'
+```
+
+### Hospital controller endpoints:
+
+```
+$ c3 -v https://localhost:4433/healthcare/invoke -X POST -d '{"message": "Which hospital has the shortest wait time?"}'
+```
+
 ## Launch LangGraph Server
 
 ### Checkpointed RAG

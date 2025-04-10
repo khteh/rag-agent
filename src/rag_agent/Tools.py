@@ -14,7 +14,7 @@ from google import genai
 from google.genai import types
 from google.genai.types import Tool, GenerateContentConfig, GoogleSearch
 from typing_extensions import Annotated
-from .configuration import Configuration
+from src.common.configuration import Configuration
 from src.config import config as appconfig
 
 async def search(
@@ -87,7 +87,10 @@ https://langchain-ai.github.io/langgraph/reference/prebuilt/#langgraph.prebuilt.
 https://langchain-ai.github.io/langgraph/concepts/memory/
 https://langchain-ai.github.io/langgraph/how-tos/cross-thread-persistence/
 """
-@tool
+@tool(description="""
+      Save the given memory for the current user. This should only be used after you have exhausted all other tools to accomplish your task. 
+      After saving the memory for the current user, you should return to the user with your answer.
+      """)
 async def save_memory(memory: str, *, config: Annotated[RunnableConfig, InjectedToolArg], store: Annotated[BaseStore, InjectedStore()]) -> str:
     """
     Save the given memory for the current user.

@@ -1,6 +1,7 @@
 import os
 from typing import Any
 import numpy as np
+from langchain_core.tools import InjectedToolArg, tool, Tool
 from langchain_neo4j import Neo4jGraph
 from src.config import config
 
@@ -26,6 +27,14 @@ def _get_current_wait_time_minutes(hospital: str) -> int:
         return -1
     return np.random.randint(low=0, high=600) # random integer between 0 and 600 simulating a wait time in minutes.
 
+@tool(description="""Use when asked about current wait times
+        at a specific hospital. This tool can only get the current
+        wait time at a hospital and does not have any information about
+        aggregate or historical wait times. Do not pass the word "hospital"
+        as input, only the hospital name itself. For example, if the prompt
+        is "What is the current wait time at Jordan Inc Hospital?", the
+        input should be "Jordan Inc".
+        """)
 def get_current_wait_times(hospital: str) -> str:
     """Get the current wait time at a hospital formatted as a string."""
     wait_time_in_minutes = _get_current_wait_time_minutes(hospital)

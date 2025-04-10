@@ -1,18 +1,19 @@
 from langchain_core.tools import InjectedToolArg, tool, Tool
 from typing_extensions import Annotated
 from langchain_core.runnables import RunnableConfig, ensure_config
-from langchain_core.tools import InjectedToolArg, tool
 from langgraph.store.base import BaseStore
 from langgraph.prebuilt import InjectedStore
 from .HospitalWaitingTime import get_current_wait_times, get_most_available_hospital
-from .HospitalReviewChain import reviews_vector_chain, hospital_cypher_chain
+from .HospitalReviewChain import reviews_vector_chain
+from .HospitalCypherChain import hospital_cypher_chain
 from src.rag_agent.Tools import save_memory
 
 TOOLS = [
     Tool(
         name = "Experiences",
-        func = reviews_vector_chain.ainvoke,
-        description="""Useful when you need to answer questions
+        coroutine = reviews_vector_chain.ainvoke,
+        func = reviews_vector_chain.invoke,
+        description ="""Useful when you need to answer questions
         about patient experiences, feelings, or any other qualitative
         question that could be answered about a patient using semantic
         search. Not useful for answering objective questions that involve
@@ -24,7 +25,8 @@ TOOLS = [
     ),
     Tool(
         name="Graph",
-        func=hospital_cypher_chain.ainvoke,
+        coroutine = hospital_cypher_chain.ainvoke,
+        func = hospital_cypher_chain.invoke,
         description="""Useful for answering questions about patients,
         physicians, hospitals, insurance payers, patient review
         statistics, and hospital visit details. Use the entire prompt as

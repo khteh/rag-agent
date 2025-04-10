@@ -1,7 +1,7 @@
 import os, bs4, vertexai, asyncio, logging
 from PIL import Image
 from src.utils.image import show_graph
-from .State import State
+from src.common.State import State
 from langchain.chat_models import init_chat_model
 from langchain import hub
 from langchain_community.document_loaders import WebBaseLoader

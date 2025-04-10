@@ -2,10 +2,10 @@ import os,pytest, vertexai, re
 pytest_plugins = ('pytest_asyncio',)
 
 @pytest.mark.asyncio(loop_scope="function")
-@pytest.mark.skip(reason="https://github.com/langchain-ai/langchain/issues/30547")
+#@pytest.mark.skip(reason="https://github.com/langchain-ai/langchain/issues/30547")
 async def test_hospital_visit_duration():
     query = "What is the average visit duration for emergency visits in North Carolina?"
-    from Healthcare.HospitalCypherChain import hospital_cypher_chain
+    from src.Healthcare.HospitalCypherChain import hospital_cypher_chain
     response = await hospital_cypher_chain.ainvoke(query)
     result = response.get('result')
     assert result
@@ -15,10 +15,10 @@ async def test_hospital_visit_duration():
     assert len(duration[0])
 
 @pytest.mark.asyncio(loop_scope="function")
-@pytest.mark.skip(reason="https://github.com/langchain-ai/langchain/issues/30547")
+#@pytest.mark.skip(reason="https://github.com/langchain-ai/langchain/issues/30547")
 async def test_hospital_percent_increase():
     query = "Which state had the largest percent increase in Medicaid visits from 2022 to 2023?"
-    from Healthcare.HospitalCypherChain import hospital_cypher_chain
+    from src.Healthcare.HospitalCypherChain import hospital_cypher_chain
     response = await hospital_cypher_chain.ainvoke(query)
     result = response.get('result')
     assert result
