@@ -45,8 +45,28 @@ async def create_app() -> Quart:
     app.config["SEND_FILE_MAX_AGE_DEFAULT"] = timedelta(days=90)
     app.config["SQLALCHEMY_DATABASE_URI"] = f"postgresql+psycopg://{os.environ.get('DB_USERNAME')}:{parse.quote(os.environ.get('DB_PASSWORD'))}@{app.config['DB_HOST']}/LangchainCheckpoint"
     app.config["POSTGRESQL_DATABASE_URI"] = f"postgresql://{os.environ.get('DB_USERNAME')}:{parse.quote(os.environ.get('DB_PASSWORD'))}@{app.config['DB_HOST']}/LangchainCheckpoint"
-    app.after_request(_add_secure_headers)
     app = cors(app, allow_credentials=True, allow_origin="https://localhost:4433")
+    @app.before_serving
+    async def before_serving() -> None:
+        logging.debug(f"\n=== {before_serving.__name__} ===")
+        app.db_pool = AsyncConnectionPool(
+            conninfo = app.config["POSTGRESQL_DATABASE_URI"],
+            max_size = appconfig.DB_MAX_CONNECTIONS,
+            kwargs = appconfig.connection_kwargs,
+        )
+        # Create the AsyncPostgresSaver
+        checkpointer = await CheckpointerSetup(app.db_pool)
+        # Assign the checkpointer to the assistant
+        app.agent.checkpointer = checkpointer
+        app.healthcare_agent.checkpointer = checkpointer
+        logging.debug(f"\n=== {before_serving.__name__} done! ===")
+
+    @app.after_serving
+    async def after_serving():
+        logging.debug(f"\n=== {after_serving.__name__} ===")
+        await app.db_pool.close()
+
+    app.after_request(_add_secure_headers)
     from src.controllers.HomeController import home_api as home_blueprint
     from src.controllers.HealthController import health_api as health_blueprint
     app.register_blueprint(home_blueprint, url_prefix="/")
@@ -68,25 +88,6 @@ async def create_app() -> Quart:
 
 app = asyncio.get_event_loop().run_until_complete(create_app())
 
-@app.before_serving
-async def startup() -> None:
-    logging.debug(f"\n=== {startup.__name__} ===")
-    app.db_pool = AsyncConnectionPool(
-        conninfo = app.config["POSTGRESQL_DATABASE_URI"],
-        max_size = appconfig.DB_MAX_CONNECTIONS,
-        kwargs = appconfig.connection_kwargs,
-    )
-    # Create the AsyncPostgresSaver
-    checkpointer = await CheckpointerSetup(app.db_pool)
-    # Assign the checkpointer to the assistant
-    app.agent.checkpointer = checkpointer
-    app.healthcare_agent.checkpointer = checkpointer
-    logging.debug(f"\n=== {startup.__name__} done! ===")
-
-@app.after_serving
-async def shutdown():
-    logging.debug(f"\n=== {shutdown.__name__} ===")
-    await app.db_pool.close()
 
 logging.info(f"Running app...")
 #asyncio.run(serve(app, config), debug=True)
