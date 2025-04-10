@@ -2,7 +2,7 @@ import pytest, json
 from datetime import datetime
 from uuid_extensions import uuid7, uuid7str
 from langchain_core.runnables import RunnableConfig
-from rag_agent.State import EmailRAGState
+from src.common.State import EmailRAGState
 from data.sample_emails import EMAILS
 from src.models import ChatMessage
 pytest_plugins = ('pytest_asyncio',)

@@ -47,7 +47,7 @@ from src.models.EscalationModel import EscalationCheckModel
 from src.Infrastructure.VectorStore import VectorStore
 from src.Infrastructure.Checkpointer import CheckpointerSetup
 from data.sample_emails import EMAILS
-from .configuration import EmailConfiguration
+from src.common.configuration import EmailConfiguration
 
 @tool
 async def email_processing_tool(

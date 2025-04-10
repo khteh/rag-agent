@@ -3,7 +3,7 @@ from datetime import datetime
 from uuid_extensions import uuid7, uuid7str
 from langchain_core.runnables import RunnableConfig
 from data.sample_emails import EMAILS
-from rag_agent.State import EmailRAGState
+from src.common.State import EmailRAGState
 
 @pytest.mark.asyncio(loop_scope="function")
 async def test_needs_escalation_true(EmailRAGFixture):
