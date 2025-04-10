@@ -87,7 +87,7 @@ def _parse_input(user_input: UserInput) -> Tuple[Dict[str, Any], str]:
     run_id = uuid7()
     logging.debug(f"user_input: {user_input}")
     thread_id = "thread_id" in user_input and user_input.thread_id or uuid7str()
-    input_message = ChatMessage(type="human", content=user_input.message)
+    input_message = ChatMessage(type="human", content=user_input["message"])
     kwargs = dict(
         input={"messages": [input_message.to_langchain()]},
         config=RunnableConfig(
@@ -108,8 +108,8 @@ async def invoke(): #user_input: UserInput) -> ChatMessage:
     data = await request.get_data()
     params = parse_qs(data.decode('utf-8'))
     logging.debug(f"data: {data}, params: {params}")
-    user_input: UserInput = jsonpickle.decode(data)
-    kwargs, run_id = _parse_input(data)
+    user_input: UserInput = json.loads(data)
+    kwargs, run_id = _parse_input(user_input)
     logging.debug(kwargs)
     try:
         response = await current_app.agent.ainvoke(**kwargs)
