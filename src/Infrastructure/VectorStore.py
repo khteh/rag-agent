@@ -21,7 +21,7 @@ class VectorStoreSingleton(type): # Inherit from "type" in order to gain access 
         registry = type(cls).__registry
         if cls not in registry:
               registry[cls] = (super().__call__(*args, **kwargs), args, kwargs)
-        elif registry[cls][1] != args or registry(cls)[2] != kwargs:
+        elif registry[cls][1] != args or registry[cls][2] != kwargs:
               raise TypeError(f"Class already initialized with different arguments!")
         return registry[cls][0]
 class VectorStore(metaclass=VectorStoreSingleton):
@@ -32,8 +32,8 @@ class VectorStore(metaclass=VectorStoreSingleton):
     """
     _model: str = None
     _embeddings: OllamaEmbeddings = None
-    _chunk_size = None
-    _chunk_overlap = None
+    _chunk_size: int = None
+    _chunk_overlap: int = None
     vector_store: Chroma = None
     retriever_tool = None
     _client: chromadb.HttpClient = None

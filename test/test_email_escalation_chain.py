@@ -1,5 +1,6 @@
 import pytest, json
 from datetime import datetime
+from uuid_extensions import uuid7, uuid7str
 from langchain_core.runnables import RunnableConfig
 from data.sample_emails import EMAILS
 from rag_agent.State import EmailRAGState
@@ -14,7 +15,7 @@ async def test_needs_escalation_true(EmailRAGFixture):
          "escalate": False,
          "escalation_emails": ["brog@abc.com", "bigceo@company.com"],
     }
-    config = RunnableConfig(run_name="Email RAG Test", thread_id=datetime.now())
+    config = RunnableConfig(run_name="Email RAG Test", thread_id=uuid7str())
     result: EmailRAGState = await EmailRAGFixture.NeedsEscalation(state, config)
     assert result
     assert result["escalate"]
@@ -32,7 +33,7 @@ async def test_needs_escalation_false(EmailRAGFixture):
          "escalate": False,
          "escalation_emails": ["brog@abc.com", "bigceo@company.com"],
     }
-    config = RunnableConfig(run_name="Email RAG Test", thread_id=datetime.now())
+    config = RunnableConfig(run_name="Email RAG Test", thread_id=uuid7str())
     result: EmailRAGState = await EmailRAGFixture.NeedsEscalation(state, config)
     assert result
     assert not result["escalate"]

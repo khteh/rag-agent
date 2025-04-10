@@ -15,6 +15,7 @@ from quart import Quart
 from werkzeug.exceptions import HTTPException
 from contextlib import asynccontextmanager
 from quart.helpers import stream_with_context
+from src.common.Authentication import Authentication
 from src.models.schema import ChatMessage, UserInput, StreamInput
 from langchain_core.callbacks import AsyncCallbackHandler
 from langgraph.graph.graph import CompiledGraph

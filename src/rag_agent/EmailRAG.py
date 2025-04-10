@@ -1,4 +1,5 @@
 import asyncio, logging, os, vertexai
+from uuid_extensions import uuid7, uuid7str
 from typing import Annotated, Literal, Sequence
 from datetime import datetime
 from google.api_core.exceptions import ResourceExhausted
@@ -15,6 +16,8 @@ from langgraph.graph.graph import (
     Graph,
     Send,
 )
+from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
+from psycopg_pool import AsyncConnectionPool, ConnectionPool
 from langchain_core.prompts import ChatPromptTemplate, HumanMessagePromptTemplate, PromptTemplate, SystemMessagePromptTemplate
 from langgraph.prebuilt import ToolNode, tools_condition
 from langgraph.checkpoint.memory import MemorySaver
@@ -41,7 +44,6 @@ from src.models import ChatMessage
 from src.models.EmailModel import EmailModel
 from src.models.EscalationModel import EscalationCheckModel
 from src.Infrastructure.VectorStore import VectorStore
-from src.Infrastructure.Checkpointer import GetCheckpointer
 from data.sample_emails import EMAILS
 from .configuration import EmailConfiguration
 
@@ -200,9 +202,9 @@ class EmailRAG():
             graph_builder.add_edge(START, "ParseEmail")
             graph_builder.add_edge("ParseEmail", "NeedsEscalation")
             graph_builder.add_edge("NeedsEscalation", END)
-            self._graph = graph_builder.compile(store=self._vectorStore.vector_store, checkpointer=GetCheckpointer(), name=self._graphName)
+            self._graph = graph_builder.compile(store=self._vectorStore.vector_store, name=self._graphName)
             # https://langchain-ai.github.io/langgraph/reference/prebuilt/#langgraph.prebuilt.chat_agent_executor.create_react_agent
-            #self._agent = create_react_agent(self._llm, [email_processing_tool], store=self._vectorStore.vector_store, checkpointer=GetCheckpointer(), config_schema=EmailConfiguration, state_schema=EmailAgentState, name=self._name, prompt=self._prompt) This doesn't work well as the LLM preprocess the input email instead of passing it through to email_processing_tool as is done in call_agent_model_node
+            #self._agent = create_react_agent(self._llm, [email_processing_tool], store=self._vectorStore.vector_store, config_schema=EmailConfiguration, state_schema=EmailAgentState, name=self._name, prompt=self._prompt) This doesn't work well as the LLM preprocess the input email instead of passing it through to email_processing_tool as is done in call_agent_model_node
             graph_builder = StateGraph(EmailAgentState)
             graph_builder.add_node("EmailAgent", self.call_agent_model_node)
             graph_builder.add_node("EmailTools", ToolNode([email_processing_tool]))
@@ -212,7 +214,7 @@ class EmailRAG():
                 "EmailAgent", self.route_agent_graph_edge, ["EmailTools", END]
             )
             graph_builder.add_edge("EmailTools", "EmailAgent")
-            self._agent = graph_builder.compile(store=self._vectorStore.vector_store, checkpointer=GetCheckpointer(), name=self._agentName)
+            self._agent = graph_builder.compile(store=self._vectorStore.vector_store, name=self._agentName)
         except ResourceExhausted as e:
             logging.exception(f"google.api_core.exceptions.ResourceExhausted")
         return self._agent
@@ -225,14 +227,27 @@ class EmailRAG():
         logging.info(f"\n=== {self.Chat.__name__} ===")
         message_with_criteria = f"The escalation criteria is: {criteria}. Here's the email: {email}"
         result: List[str] = []
-        async for step in self._agent.with_config({"graph": self._graph, "email_state": email_state, "thread_id": datetime.now()}).astream(
-            {"messages": [{"role": "user", "content": message_with_criteria}]},
-            stream_mode="values",
-            #config = config
-        ):
-            result.append(step["messages"][-1])
-            step["messages"][-1].pretty_print()
-        return result[-1]
+        async with AsyncConnectionPool(
+            conninfo = appconfig.POSTGRESQL_DATABASE_URI,
+            max_size = appconfig.DB_MAX_CONNECTIONS,
+            kwargs = appconfig.connection_kwargs,
+        ) as pool:
+            # Create the AsyncPostgresSaver
+            checkpointer = AsyncPostgresSaver(pool)
+            self._agent.checkpointer = checkpointer
+            self._graph.checkpointer = checkpointer
+            # Set up the checkpointer (uncomment this line the first time you run the app)
+            if __name__ == "__main__":
+                print("checkpointer.setup()...")
+                await self._agent.checkpointer.setup()
+            async for step in self._agent.with_config({"graph": self._graph, "email_state": email_state, "thread_id": uuid7str()}).astream(
+                {"messages": [{"role": "user", "content": message_with_criteria}]},
+                stream_mode="values",
+                #config = config
+            ):
+                result.append(step["messages"][-1])
+                step["messages"][-1].pretty_print()
+            return result[-1]
 
 async def make_graph(config: RunnableConfig) -> CompiledGraph:
     return await EmailRAG(config).CreateGraph()
@@ -248,7 +263,7 @@ async def main():
     img = Image.open("/tmp/checkpoint_graph.png")
     img.show()
     """
-    config = RunnableConfig(run_name="Email RAG", thread_id=datetime.now())
+    config = RunnableConfig(run_name="Email RAG", thread_id=uuid7str())
     rag = EmailRAG(config)
     await rag.CreateGraph()
     #rag.ShowGraph()

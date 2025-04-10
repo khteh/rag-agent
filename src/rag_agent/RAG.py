@@ -32,7 +32,7 @@ llm = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider="ollama", base_url
 llm = init_chat_model("gpt-4o-mini", model_provider="openai")
 embeddings = OpenAIEmbeddings(model="text-embedding-3-large")"
 """
-from ..Infrastructure.VectorStore import VectorStore
+from src.Infrastructure.VectorStore import VectorStore
 vector_store = VectorStore(model=appconfig.EMBEDDING_MODEL, chunk_size=1000, chunk_overlap=0)
 
 def LoadDocuments(url: str):

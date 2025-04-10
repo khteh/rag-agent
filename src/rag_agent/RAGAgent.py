@@ -35,7 +35,6 @@ https://python.langchain.com/docs/how_to/configure/
 """
 from src.config import config as appconfig
 from src.Infrastructure.VectorStore import VectorStore
-from src.Infrastructure.Checkpointer import GetCheckpointer, GetAsyncCheckpointer
 from .State import CustomAgentState
 from ..utils.image import show_graph
 from .Tools import ground_search, save_memory
@@ -75,7 +74,7 @@ class RAGAgent():
         """
         Class RAGAgent Constructor
         """
-        ##vertexai.init(project=os.environ.get("GOOGLE_CLOUD_PROJECT"), location=os.environ.get("GOOGLE_CLOUD_LOCATION"))
+        #vertexai.init(project=os.environ.get("GOOGLE_CLOUD_PROJECT"), location=os.environ.get("GOOGLE_CLOUD_LOCATION"))
         self._config = config
         """
         .bind_tools() gives the agent LLM descriptions of each tool from their docstring and input arguments. 
@@ -86,6 +85,7 @@ class RAGAgent():
         self._tools = [self._vectorStore.retriever_tool, ground_search, save_memory]
         self._llm = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider="ollama", base_url=appconfig.OLLAMA_URI, streaming=True).bind_tools(self._tools)
         # https://python.langchain.com/docs/integrations/chat/google_vertex_ai_palm/
+
     async def prepare_model_inputs(self, state: CustomAgentState, config: RunnableConfig, store: BaseStore):
         # Retrieve user memories and add them to the system message
         # This function is called **every time** the model is prompted. It converts the state to a prompt
@@ -109,26 +109,10 @@ class RAGAgent():
                     #"dims": 1536,
                 }
             )
-            """
-            _connection_kwargs = {
-                "autocommit": True,
-                "prepare_threshold": 0,
-            }
-            pool = AsyncConnectionPool(
-                conninfo = appconfig.POSTGRESQL_DATABASE_URI,
-                max_size = appconfig.DB_MAX_CONNECTIONS,
-                kwargs = _connection_kwargs,
-            )
-            # Create the AsyncPostgresSaver
-            checkpointer = AsyncPostgresSaver(pool)
-            """
-            #checkpointer = await GetAsyncCheckpointer()
-            #if __name__ == "__main__":
-            #    print("checkpointer.setup()")
-            #    await checkpointer.setup()
             # https://langchain-ai.github.io/langgraph/reference/prebuilt/#langgraph.prebuilt.chat_agent_executor.create_react_agent
-            self._agent = create_react_agent(self._llm, self._tools, store = in_memory_store, checkpointer = MemorySaver(), config_schema = Configuration, state_schema = CustomAgentState, name = self._name, prompt = self._prompt)
-            #show_graph(self._agent, "RAG ReAct Agent") # This blocks
+            print("create_react_agent()...")
+            self._agent = create_react_agent(self._llm, self._tools, store = in_memory_store, config_schema = Configuration, state_schema = CustomAgentState, name = self._name, prompt = self._prompt)
+            self.ShowGraph() # This blocks
         except Exception as e:
             logging.exception(f"Exception! {e}")
         return self._agent
@@ -138,13 +122,24 @@ class RAGAgent():
 
     async def ChatAgent(self, config: RunnableConfig, messages: List[tuple]): #messages: List[str]):
         logging.info(f"\n=== {self.ChatAgent.__name__} ===")
-        async for event in self._agent.with_config({"user_id": uuid7str()}).astream(
-            #{"messages": [{"role": "user", "content": messages}]}, This works with gemini-2.0-flash
-            {"messages": messages}, # This works with Ollama llama3.3
-            stream_mode="values", # Use this to stream all values in the state after each step.
-            config=config, # This is needed by Checkpointer
-        ):
-            event["messages"][-1].pretty_print()
+        async with AsyncConnectionPool(
+            conninfo = appconfig.POSTGRESQL_DATABASE_URI,
+            max_size = appconfig.DB_MAX_CONNECTIONS,
+            kwargs = appconfig.connection_kwargs,
+        ) as pool:
+            # Create the AsyncPostgresSaver
+            self._agent.checkpointer = AsyncPostgresSaver(pool)
+            # Set up the checkpointer (uncomment this line the first time you run the app)
+            if __name__ == "__main__":
+                print("checkpointer.setup()...")
+                await self._agent.checkpointer.setup()
+            async for event in self._agent.with_config({"user_id": uuid7str()}).astream(
+                #{"messages": [{"role": "user", "content": messages}]}, This works with gemini-2.0-flash
+                {"messages": messages}, # This works with Ollama llama3.3
+                stream_mode="values", # Use this to stream all values in the state after each step.
+                config=config, # This is needed by Checkpointer
+            ):
+                event["messages"][-1].pretty_print()
 
 async def make_graph(config: RunnableConfig) -> CompiledGraph:
     return await RAGAgent(config).CreateGraph()
@@ -152,7 +147,7 @@ async def make_graph(config: RunnableConfig) -> CompiledGraph:
 async def main():
     # httpx library is a dependency of LangGraph and is used under the hood to communicate with the AI models.
     #vertexai.init(project=os.environ.get("GOOGLE_CLOUD_PROJECT"), location=os.environ.get("GOOGLE_CLOUD_LOCATION"))
-    config = RunnableConfig(run_name="RAG ReAct Agent", thread_id=datetime.now())
+    config = RunnableConfig(run_name="RAG ReAct Agent", thread_id=uuid7str())
     rag = RAGAgent(config)
     await rag.CreateGraph()
     """

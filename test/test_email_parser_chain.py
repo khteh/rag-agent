@@ -1,5 +1,6 @@
 import pytest, json
 from datetime import datetime, date
+from uuid_extensions import uuid7, uuid7str
 from langchain_core.runnables import RunnableConfig
 from rag_agent.State import EmailRAGState
 from data.sample_emails import EMAILS
@@ -14,7 +15,7 @@ async def test_email_parser_chain_email0(EmailRAGFixture):
          "escalate": False,
          "escalation_emails": ["brog@abc.com", "bigceo@company.com"],
     }
-    config = RunnableConfig(run_name="Email RAG Test Email[0]", thread_id=datetime.now())
+    config = RunnableConfig(run_name="Email RAG Test Email[0]", thread_id=uuid7str())
     result: EmailRAGState = await EmailRAGFixture.ParseEmail(state, config)
     #print(f"extract: {result['extract']}")
     assert result
@@ -48,7 +49,7 @@ async def test_email_parser_chain_email3(EmailRAGFixture):
          "escalate": False,
          "escalation_emails": ["brog@abc.com", "bigceo@company.com"],
     }
-    config = RunnableConfig(run_name="Email RAG Test Email[3]", thread_id=datetime.now())
+    config = RunnableConfig(run_name="Email RAG Test Email[3]", thread_id=uuid7str())
     result: EmailRAGState = await EmailRAGFixture.ParseEmail(state, config)
     #print(f"extract: {result['extract']}")
     assert result

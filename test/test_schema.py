@@ -1,5 +1,5 @@
 from langchain_core.messages import HumanMessage, AIMessage, ToolMessage, SystemMessage, ToolCall
-from schema import ChatMessage
+from models import ChatMessage
 
 def test_messages_to_langchain():
     human_message = ChatMessage(type="human", content="Hello, world!")

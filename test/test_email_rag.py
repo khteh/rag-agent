@@ -1,5 +1,6 @@
 import pytest, json
 from datetime import datetime
+from uuid_extensions import uuid7, uuid7str
 from langchain_core.runnables import RunnableConfig
 from rag_agent.State import EmailRAGState
 from data.sample_emails import EMAILS
@@ -12,7 +13,7 @@ async def test_email_escalate_safety_protocol(EmailRAGFixture):
         "escalation_dollar_criteria": 100_000,
         "escalation_emails": ["brog@abc.com", "bigceo@company.com"],
     }
-    config = RunnableConfig(run_name="Email escalate safety protocol", thread_id=datetime.now())
+    config = RunnableConfig(run_name="Email escalate safety protocol", thread_id=uuid7str())
     """
     Should escalate because the workers are violating safety protocols by not wearing PPE.
     ai_message: type='ai' 
@@ -52,7 +53,7 @@ async def test_email_escalate_fire_safety_violation(EmailRAGFixture):
         "escalation_dollar_criteria": 100_000,
         "escalation_emails": ["brog@abc.com", "bigceo@company.com"],
     }
-    config = RunnableConfig(run_name="Email escalate fire safety", thread_id=datetime.now())
+    config = RunnableConfig(run_name="Email escalate fire safety", thread_id=uuid7str())
     """
     Should escalate because the workers are violating safety protocols by not wearing PPE.
     ai_message: type='ai' 
@@ -89,7 +90,7 @@ async def test_email_should_NOT_escalate(EmailRAGFixture):
         "escalation_dollar_criteria": 100_000,
         "escalation_emails": ["brog@abc.com", "bigceo@company.com"],
     }
-    config = RunnableConfig(run_name="Email should NOT escalate", thread_id=datetime.now())
+    config = RunnableConfig(run_name="Email should NOT escalate", thread_id=uuid7str())
     """
     EMAILS[0] doesn’t say anything about fire or water damage, and the maximum potential fine is less than $100,000.
     ai_message: type='ai' 

@@ -12,7 +12,7 @@ from langgraph.graph.graph import (
 )
 from .prompts import SYSTEM_PROMPT
 from .State import EmailRAGState
-from ..Infrastructure.VectorStore import VectorStore
+from src.Infrastructure.VectorStore import VectorStore
 @dataclass(kw_only=True)
 class Configuration:
     """The configuration for the agent."""

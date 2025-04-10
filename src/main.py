@@ -1,4 +1,5 @@
 import logging, os, re, json, asyncio, psycopg, json, vertexai
+from uuid_extensions import uuid7, uuid7str
 from urllib import parse
 from datetime import date, datetime, timedelta, timezone
 from hypercorn.config import Config
@@ -13,8 +14,7 @@ from langchain_core.callbacks import AsyncCallbackHandler
 from langchain_core.runnables import RunnableConfig
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
 from langgraph.graph.graph import CompiledGraph
-from src.config import config
-from src.Infrastructure.Checkpointer import GetConnectionPool
+from src.config import config as appconfig
 # Make the WSGI interface available at the top level so wfastcgi can get it.
 #print(f"GEMINI_API_KEY: {os.environ.get("GEMINI_API_KEY")}")
 config = Config()
@@ -53,23 +53,28 @@ async def create_app() -> Quart:
     # https://quart-wtf.readthedocs.io/en/stable/how_to_guides/configuration.html
     csrf = CSRFProtect(app)
     bcrypt.init_app(app)
-    config = RunnableConfig(run_name="RAG ReAct Agent", thread_id=datetime.now())
-    healthcare_config = RunnableConfig(run_name="Healthcare ReAct Agent", thread_id=datetime.now())
+    config = RunnableConfig(run_name="RAG ReAct Agent", thread_id=uuid7str())
+    healthcare_config = RunnableConfig(run_name="Healthcare ReAct Agent", thread_id=uuid7str())
     from src.rag_agent.RAGAgent import make_graph#, agent
     from src.Healthcare.RAGAgent import make_graph as healthcare_make_graph#, agent
-    agent = await make_graph(config)
-    healthcare_agent = await healthcare_make_graph(healthcare_config)
+    app.agent = await make_graph(config)
+    app.healthcare_agent = await healthcare_make_graph(healthcare_config)
     if app.debug:
         return HTTPToHTTPSRedirectMiddleware(app, "khteh.com")  # type: ignore - Defined in hypercorn.toml server_names
     else:
         app.config["TEMPLATES_AUTO_RELOAD"] = True
     @app.before_serving
     async def startup() -> None:
-        async with GetConnectionPool() as pool:
+        logging.debug(f"\n=== {startup.__name__} ===")
+        async with AsyncConnectionPool(
+            conninfo = app.config["POSTGRESQL_DATABASE_URI"],
+            max_size = appconfig.DB_MAX_CONNECTIONS,
+            kwargs = appconfig.connection_kwargs,
+        ) as pool:
             # Create the AsyncPostgresSaver
             checkpointer = AsyncPostgresSaver(pool)
             # Set up the checkpointer (uncomment this line the first time you run the app)
-            logging.INFO("checkpointer.setup()")
+            logging.INFO("checkpointer setup...")
             await checkpointer.setup()
             # Check if the checkpoints table exists
             async with pool.connection() as conn:
@@ -93,14 +98,9 @@ async def create_app() -> Quart:
                         # Optionally, you might want to raise this error
                         # raise
             # Assign the checkpointer to the assistant
-            if agent:
-                agent.checkpointer = checkpointer
-                healthcare_agent.checkpointer = checkpointer
-                app.agent = agent
-                app.healthcare_agent = healthcare_agent
-                logging.info("Agent is assigned a checkpointer")
-            else:
-                logging.warning(f"Agent not ready")
+            app.agent.checkpointer = checkpointer
+            app.healthcare_agent.checkpointer = checkpointer
+        logging.debug(f"\n=== {startup.__name__} done! ===")
     return app
 
 app = asyncio.get_event_loop().run_until_complete(create_app())

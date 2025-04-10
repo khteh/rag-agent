@@ -29,6 +29,7 @@ class Config(metaclass=ConfigSingleton):
     GEMINI_API_KEY:str = None
     EMBEDDING_MODEL: str = None
     LLM_RAG_MODEL: str = None
+    connection_kwargs = None
     def __new__(cls, *args, **kwargs):
         return super().__new__(cls)
     def __init__(self, environment="Development"):
@@ -49,6 +50,10 @@ class Config(metaclass=ConfigSingleton):
         self.OLLAMA_URI = config['OLLAMA_URI']
         self.EMBEDDING_MODEL = config["EMBEDDING_MODEL"]
         self.LLM_RAG_MODEL = config["LLM_RAG_MODEL"]
+        self.connection_kwargs = {
+            "autocommit": True,
+            "prepare_threshold": 0,
+        }
         """
         https://docs.python.org/3/library/logging.html
         The level parameter now accepts a string representation of the level such as ‘INFO’ as an alternative to the integer constants such as INFO.

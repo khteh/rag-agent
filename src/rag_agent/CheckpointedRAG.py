@@ -1,4 +1,5 @@
 import asyncio, logging, os, vertexai
+from uuid_extensions import uuid7, uuid7str
 from typing import Annotated, Literal, Sequence
 from datetime import datetime
 from langchain import hub
@@ -16,6 +17,8 @@ from langgraph.graph.graph import (
 )
 from langgraph.prebuilt import ToolNode, tools_condition
 from langgraph.checkpoint.memory import MemorySaver
+from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
+from psycopg_pool import AsyncConnectionPool, ConnectionPool
 from typing_extensions import List, TypedDict
 from langgraph.store.memory import InMemoryStore
 from langchain_core.prompts import PromptTemplate
@@ -34,7 +37,6 @@ from .State import State
 from ..utils.image import show_graph
 #from .State import State
 from src.Infrastructure.VectorStore import VectorStore
-from src.Infrastructure.Checkpointer import GetCheckpointer
 
 class CheckpointedRAG():
     _llm = None
@@ -270,8 +272,8 @@ class CheckpointedRAG():
             )
             graph_builder.add_edge("Generate", END)
             graph_builder.add_edge("Rewrite", "Agent")
-            self._graph = graph_builder.compile(store=self._vectorStore.vector_store, checkpointer=GetCheckpointer(), name="Checkedpoint StateGraph RAG")
-            show_graph(self._graph, "Checkedpoint StateGraph RAG") # This blocks
+            self._graph = graph_builder.compile(store=self._vectorStore.vector_store, name="Checkedpoint StateGraph RAG")
+            #show_graph(self._graph, "Checkedpoint StateGraph RAG") # This blocks
         except ResourceExhausted as e:
             logging.exception(f"google.api_core.exceptions.ResourceExhausted")
         return self._graph
@@ -287,14 +289,25 @@ class CheckpointedRAG():
 
     async def Chat(self, config, messages: List[str]):
         logging.info(f"\n=== {self.Chat.__name__} ===")
-        for message in messages:
-            #input_message = "What is Task Decomposition?"
-            async for step in self._graph.astream(
-                {"messages": [{"role": "user", "content": message}]},
-                stream_mode="values",
-                config = config
-            ):
-                step["messages"][-1].pretty_print()
+        async with AsyncConnectionPool(
+            conninfo = appconfig.POSTGRESQL_DATABASE_URI,
+            max_size = appconfig.DB_MAX_CONNECTIONS,
+            kwargs = appconfig.connection_kwargs,
+        ) as pool:
+            # Create the AsyncPostgresSaver
+            self._agent.checkpointer = AsyncPostgresSaver(pool)
+            # Set up the checkpointer (uncomment this line the first time you run the app)
+            if __name__ == "__main__":
+                print("checkpointer.setup()...")
+                await self._agent.checkpointer.setup()
+            for message in messages:
+                #input_message = "What is Task Decomposition?"
+                async for step in self._graph.astream(
+                    {"messages": [{"role": "user", "content": message}]},
+                    stream_mode="values",
+                    config = config
+                ):
+                    step["messages"][-1].pretty_print()
 
 async def make_graph(config: RunnableConfig) -> CompiledGraph:
     return await CheckpointedRAG(config).CreateGraph(config)
@@ -302,7 +315,7 @@ async def make_graph(config: RunnableConfig) -> CompiledGraph:
 async def main():
     # httpx library is a dependency of LangGraph and is used under the hood to communicate with the AI models.
     #vertexai.init(project=os.environ.get("GOOGLE_CLOUD_PROJECT"), location=os.environ.get("GOOGLE_CLOUD_LOCATION"))
-    config = RunnableConfig(run_name="Checkedpoint StateGraph RAG", thread_id=datetime.now())
+    config = RunnableConfig(run_name="Checkedpoint StateGraph RAG", thread_id=uuid7str())
     graph = CheckpointedRAG(config)
     await graph.CreateGraph(config) # config input parameter is required by langgraph.json to define the graph
     """

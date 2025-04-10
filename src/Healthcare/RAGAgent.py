@@ -1,4 +1,5 @@
-import os, logging, vertexai
+import asyncio, os, logging, vertexai
+from uuid_extensions import uuid7, uuid7str
 from src.config import config as appconfig
 from datetime import datetime
 from typing_extensions import List, TypedDict
@@ -34,7 +35,6 @@ from langgraph.checkpoint.memory import MemorySaver
 from langchain_ollama import OllamaEmbeddings
 from .Tools import TOOLS
 from src.Infrastructure.VectorStore import VectorStore
-from src.Infrastructure.Checkpointer import GetCheckpointer, GetAsyncCheckpointer
 class RAGAgent():
     _llm = None
     _config = None
@@ -59,7 +59,7 @@ class RAGAgent():
         """
         Class RAGAgent Constructor
         """
-        ##vertexai.init(project=os.environ.get("GOOGLE_CLOUD_PROJECT"), location=os.environ.get("GOOGLE_CLOUD_LOCATION"))
+        #vertexai.init(project=os.environ.get("GOOGLE_CLOUD_PROJECT"), location=os.environ.get("GOOGLE_CLOUD_LOCATION"))
         self._config = config
         """
         .bind_tools() gives the agent LLM descriptions of each tool from their docstring and input arguments. 
@@ -101,7 +101,7 @@ async def ChatAgent(agent, config, messages: List[str]):
 async def main():
     # httpx library is a dependency of LangGraph and is used under the hood to communicate with the AI models.
     #vertexai.init(project=os.environ.get("GOOGLE_CLOUD_PROJECT"), location=os.environ.get("GOOGLE_CLOUD_LOCATION"))
-    config = RunnableConfig(run_name="Healthcare ReAct Agent", thread_id=datetime.now())
+    config = RunnableConfig(run_name="Healthcare ReAct Agent", thread_id=uuid7str())
     agent = await make_graph(config)
     #show_graph(agent, "RAG ReAct Agent") # This blocks
     """
