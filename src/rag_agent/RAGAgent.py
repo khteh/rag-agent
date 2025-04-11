@@ -62,7 +62,7 @@ class RAGAgent():
     A list of the names of the variables for placeholder or MessagePlaceholder that are optional. These variables are auto inferred from the prompt and user need not provide them.
     """
     _prompt = ChatPromptTemplate.from_messages([
-                ("system", "You are a helpful AI assistant named Bob."),
+                ("system", "You are a helpful AI assistant named Bob. Always provide accurate answer and save the user session at the end of your task."),
                 ("placeholder", "{messages}")
         ])
     _vectorStore = None

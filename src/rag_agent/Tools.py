@@ -3,6 +3,7 @@ It includes a basic Tavily search function (as an example)
 These tools are intended as free examples to get started. For production use,
 consider implementing more robust and specialized tools tailored to your needs.
 """
+import logging
 from typing import Any, Callable, List, Optional, cast
 from langchain_community.tools.tavily_search import TavilySearchResults
 from langchain_core.runnables import RunnableConfig, ensure_config
@@ -97,8 +98,10 @@ async def save_memory(memory: str, *, config: Annotated[RunnableConfig, Injected
     This should only be used after you have exhausted all other tools to accomplish your task. After saving the memory for the current user, you should return to the user with your answer.
     """
     # This is a **tool** the model can use to save memories to storage
+    print(f"{save_memory.__name__} memory: {memory}")
+    logging.debug(f"{save_memory.__name__} memory: {memory}")
     config = ensure_config(config)
     user_id = config.get("configurable", {}).get("user_id")
     namespace = ("memories", user_id)
-    store.put(namespace, f"memory_{len(await store.asearch(namespace))}", {"data": memory})
+    await store.aput(namespace, f"memory_{len(await store.asearch(namespace))}", {"data": memory})
     return f"Saved memory: {memory}"

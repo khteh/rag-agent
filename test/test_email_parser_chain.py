@@ -15,7 +15,7 @@ async def test_email_parser_chain_email0(EmailRAGFixture):
          "escalate": False,
          "escalation_emails": ["brog@abc.com", "bigceo@company.com"],
     }
-    config = RunnableConfig(run_name="Email RAG Test Email[0]", thread_id=uuid7str())
+    config = RunnableConfig(run_name=test_email_parser_chain_email0.__name__, thread_id=uuid7str())
     result: EmailRAGState = await EmailRAGFixture.ParseEmail(state, config)
     #print(f"extract: {result['extract']}")
     assert result
@@ -49,7 +49,7 @@ async def test_email_parser_chain_email3(EmailRAGFixture):
          "escalate": False,
          "escalation_emails": ["brog@abc.com", "bigceo@company.com"],
     }
-    config = RunnableConfig(run_name="Email RAG Test Email[3]", thread_id=uuid7str())
+    config = RunnableConfig(run_name=test_email_parser_chain_email3.__name__, thread_id=uuid7str())
     result: EmailRAGState = await EmailRAGFixture.ParseEmail(state, config)
     #print(f"extract: {result['extract']}")
     assert result

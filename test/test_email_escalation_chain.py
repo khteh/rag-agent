@@ -15,7 +15,7 @@ async def test_needs_escalation_true(EmailRAGFixture):
          "escalate": False,
          "escalation_emails": ["brog@abc.com", "bigceo@company.com"],
     }
-    config = RunnableConfig(run_name="Email RAG Test", thread_id=uuid7str())
+    config = RunnableConfig(run_name=test_needs_escalation_true.__name__, thread_id=uuid7str())
     result: EmailRAGState = await EmailRAGFixture.NeedsEscalation(state, config)
     assert result
     assert result["escalate"]
@@ -33,7 +33,7 @@ async def test_needs_escalation_false(EmailRAGFixture):
          "escalate": False,
          "escalation_emails": ["brog@abc.com", "bigceo@company.com"],
     }
-    config = RunnableConfig(run_name="Email RAG Test", thread_id=uuid7str())
+    config = RunnableConfig(run_name=test_needs_escalation_false.__name__, thread_id=uuid7str())
     result: EmailRAGState = await EmailRAGFixture.NeedsEscalation(state, config)
     assert result
     assert not result["escalate"]
