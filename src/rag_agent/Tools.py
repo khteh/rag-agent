@@ -98,10 +98,12 @@ async def save_memory(memory: str, *, config: Annotated[RunnableConfig, Injected
     This should only be used after you have exhausted all other tools to accomplish your task. After saving the memory for the current user, you should return to the user with your answer.
     """
     # This is a **tool** the model can use to save memories to storage
-    print(f"{save_memory.__name__} memory: {memory}")
-    logging.debug(f"{save_memory.__name__} memory: {memory}")
+    logging.info(f"{save_memory.__name__} memory: {memory}")
     config = ensure_config(config)
     user_id = config.get("configurable", {}).get("user_id")
+    """
+    Memories are namespaced by a tuple, which in this specific example will be (<user_id>, "memories"). The namespace can be any length and represent anything, does not have to be user specific.
+    """
     namespace = ("memories", user_id)
     await store.aput(namespace, f"memory_{len(await store.asearch(namespace))}", {"data": memory})
     return f"Saved memory: {memory}"

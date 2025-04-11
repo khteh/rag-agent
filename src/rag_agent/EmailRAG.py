@@ -268,7 +268,7 @@ async def main():
     img = Image.open("/tmp/checkpoint_graph.png")
     img.show()
     """
-    config = RunnableConfig(run_name="Email RAG", thread_id=uuid7str())
+    config = RunnableConfig(run_name="Email RAG", thread_id=uuid7str(), user_id=uuid7str())
     rag = EmailRAG(config)
     await rag.CreateGraph()
     #rag.ShowGraph()

@@ -333,7 +333,7 @@ async def main():
 
     # httpx library is a dependency of LangGraph and is used under the hood to communicate with the AI models.
     #vertexai.init(project=os.environ.get("GOOGLE_CLOUD_PROJECT"), location=os.environ.get("GOOGLE_CLOUD_LOCATION"))
-    config = RunnableConfig(run_name="Checkedpoint StateGraph RAG", thread_id=uuid7str())
+    config = RunnableConfig(run_name="Checkedpoint StateGraph RAG", thread_id=uuid7str(), user_id=uuid7str())
     graph = GraphRAG(config)
     print(f"args: {args}")
     if args.load_urls:

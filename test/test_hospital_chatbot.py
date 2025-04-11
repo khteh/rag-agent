@@ -105,12 +105,12 @@ async def test_hospital_specific_patient_review(HealthcareRAGFixture):
     ================================== Ai Message ==================================
     Name: Healthcare ReAct Agent
 
-    Based on the query of the graph database, Patient 7674 wrote a review stating that they received exceptional care from Dr. Sandra Porter at Jones, Brown and Murray hospital, but had a negative experience with the billing process, finding it confusing and frustrating, and wished for clearer communication about costs.
-    test_hospital_specific_patient_review: Based on the query of the graph database, Patient 7674 wrote a review stating that they received exceptional care from Dr. Sandra Porter at Jones, Brown and Murray hospital, but had a negative experience with the billing process, finding it confusing and frustrating, and wished for clearer communication about costs.
+    Based on the query results, patient 7674 wrote a review stating that they received exceptional care from Dr. Sandra Porter at Jones, Brown and Murray hospital, but had a negative experience with the billing process, finding it confusing and frustrating, and wished for clearer communication about costs.
+    test_hospital_specific_patient_review: Based on the query results, patient 7674 wrote a review stating that they received exceptional care from Dr. Sandra Porter at Jones, Brown and Murray hospital, but had a negative experience with the billing process, finding it confusing and frustrating, and wished for clearer communication about costs.
     """
     print(f"test_hospital_specific_patient_review: {ai_message.content}")
     assert ai_message.content
-    assert "Patient 7674 wrote " in ai_message.content
+    assert "Patient 7674 wrote " in ai_message.content.lower()
     assert "confusing and frustrating" in ai_message.content
     assert "clearer communication" in ai_message.content.lower()
     assert "Jones, Brown" in ai_message.content

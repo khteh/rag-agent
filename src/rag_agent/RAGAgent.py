@@ -137,7 +137,8 @@ class RAGAgent():
             https://langchain-ai.github.io/langgraph/concepts/streaming/
             https://langchain-ai.github.io/langgraph/how-tos/#streaming
             """
-            async for step in self._agent.with_config({"user_id": uuid7str()}).astream(
+            #async for step in self._agent.with_config({"user_id": uuid7str()}).astream(
+            async for step in self._agent.astream(
                 #{"messages": [{"role": "user", "content": messages}]}, This works with gemini-2.0-flash
                 {"messages": messages}, # This works with Ollama llama3.3
                 stream_mode="values", # Use this to stream all values in the state after each step.
@@ -161,7 +162,7 @@ async def main():
 
     # httpx library is a dependency of LangGraph and is used under the hood to communicate with the AI models.
     #vertexai.init(project=os.environ.get("GOOGLE_CLOUD_PROJECT"), location=os.environ.get("GOOGLE_CLOUD_LOCATION"))
-    config = RunnableConfig(run_name="RAG ReAct Agent", thread_id=uuid7str())
+    config = RunnableConfig(run_name="RAG ReAct Agent", thread_id=uuid7str(), user_id=uuid7str())
     rag = RAGAgent(config)
     await rag.CreateGraph()
     """

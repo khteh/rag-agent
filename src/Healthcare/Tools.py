@@ -57,9 +57,5 @@ TOOLS = [
         hospital name as the key and the wait time in minutes as the value.
         """,
     ),
-    Tool(
-        name="SaveMemory",
-        func=save_memory,
-        description="""Save the given memory for the current user."""
-    )
+    save_memory
 ]

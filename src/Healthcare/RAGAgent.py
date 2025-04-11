@@ -105,7 +105,8 @@ class RAGAgent():
         ) as pool:
             # Create the AsyncPostgresSaver
             self._agent.checkpointer = await CheckpointerSetup(pool)
-            async for step in self._agent.with_config({"user_id": uuid7str()}).astream(
+            #async for step in self._agent.with_config({"user_id": uuid7str()}).astream(
+            async for step in self._agent.astream(
                 #{"messages": [{"role": "user", "content": messages}]}, This works with gemini-2.0-flash
                 {"messages": messages}, # This works with Ollama llama3.3
                 stream_mode="values", # Use this to stream all values in the state after each step.
@@ -121,7 +122,7 @@ async def make_graph(config: RunnableConfig) -> CompiledGraph:
 async def main():
     # httpx library is a dependency of LangGraph and is used under the hood to communicate with the AI models.
     #vertexai.init(project=os.environ.get("GOOGLE_CLOUD_PROJECT"), location=os.environ.get("GOOGLE_CLOUD_LOCATION"))
-    config = RunnableConfig(run_name="Healthcare ReAct Agent", thread_id=uuid7str())
+    config = RunnableConfig(run_name="Healthcare ReAct Agent", thread_id=uuid7str(), user_id=uuid7str())
     rag = RAGAgent(config)
     await rag.CreateGraph()
     """
@@ -132,7 +133,7 @@ async def main():
     img = Image.open("/tmp/agent_graph.png")
     img.show()
     """
-    input_message = [("human", "What is the wait time at Wallace-Hamilton?"), ("human", "Which hospital has the shortest wait time?")]
+    input_message = [("human", "Which hospital has the shortest wait time?"), ("human", "What have patients said about their quality of rest during their stay?")]
     await rag.ChatAgent(config, input_message)
 
 if __name__ == "__main__":
