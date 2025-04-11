@@ -107,13 +107,13 @@ $ k create secret generic gcloud-service-account --from-file=service-account.jso
 ### Home controller endpoints:
 
 ```
-$ c3 -v https://localhost:4433/invoke -X POST -d '{"message": "What is task decomposition?"}'
+$ c3 -v https://localhost:4433/invoke -m 300 -X POST -d '{"message": "What is task decomposition?"}'
 ```
 
 ### Hospital controller endpoints:
 
 ```
-$ c3 -v https://localhost:4433/healthcare/invoke -X POST -d '{"message": "Which hospital has the shortest wait time?"}'
+$ c3 -v https://localhost:4433/healthcare/invoke -m 300 -X POST -d '{"message": "Which hospital has the shortest wait time?"}'
 ```
 
 ## Launch LangGraph Server

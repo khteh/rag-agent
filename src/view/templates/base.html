@@ -4,10 +4,19 @@
   {% if title %}
   <title>{{ title }}</title>
   {% else %}
-  <title>Welcome to Python Flask with RESTful API</title>
+  <title>Welcome to LLM RAG 💬</title>
   {% endif %}
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' data: gap: https://ssl.gstatic.com 'unsafe-eval'; style-src 'self' 'unsafe-inline'; media-src *;**script-src 'self' http://onlineerp.solution.quebec 'unsafe-inline' 'unsafe-eval';** ">
+  <meta http-equiv="Content-Security-Policy"
+  content="default-src 'self' data:gap: http://www.visitsingapore.com 
+  https://ssl.gstatic.com 'unsafe-eval';
+  style-src 'self' 'unsafe-inline';
+  media-src *;
+  script-src 'sha256-8oNYgMXalkkCmtcsZGqRDW6hTsqrgjhl1mV9wmKUf08='
+  ">
+  <link type="image/png", href="/images/favicon.png", rel="icon"/>
   <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
   <script src="https://code.jquery.com/ui/1.14.1/jquery-ui.min.js" integrity="sha256-AlTido85uXPlSyyaZNsjJXeCs07eSv3r43kyCVc8ChI=" crossorigin="anonymous"></script>
   <!-- Bootstrap CSS -->
@@ -33,27 +42,37 @@
 </head>
 <body>
 <!-- https://www.w3schools.com/howto/tryit.asp?filename=tryhow_js_sidenav_push -->
-<div id="mySidenav" class="sidenav">
-  <a id="closeLeftNav" href="javascript:void(0)" class="closebtn" style="position: relative; top: 100%; transform: translateY(-100%); text-align: right;">&lt;&lt;</a>
+ <div class="container">
+  <h1>Hello World!</h1>
+  <div class="row">
+    <div class="col-sm-6" style="background-color:yellow;">
+      <p>Lorem ipsum...</p>
+    </div>
+    <div class="col-sm-6" style="background-color:pink;">
+      <p>Sed ut perspiciatis...</p>
+    </div>
+  </div>
 </div>
 <div id="main" class="container-fluid text-center">
-  <nav role="navigation" class="navbar navbar-fixed-top navbar-expand-sm bg-light">
-    <div class="container-fluid">
-      <a class="navbar-brand" href="{{url_for('home.index')}}">Logo</a>  
-      <div class="navbar-header">
-        <button type="button" class="navbar-toggler" data-toggle="collapse" data-target="#myNavbar">
-          <span class="navbar-toggler-icon"></span>
-        </button>
-      </div>
-      <div class="collapse navbar-collapse" id="myNavbar">
-        <ul class="navbar-nav mr-auto">
-        </ul>
-        <ul class="nav navbar-nav ms-auto">
-        </ul>
-      </div>
+  <div class="container">
+  <div class="row">
+          <div class="col-md-3">Column 1</div>
+          <div class="col-md-6">Column 2</div>
+          <div class="col-md-3">Column 3</div>
+  </div>  
+  </div>
+  <div class="row">
+    <div class="col-md-2 col-form-label d-flex text-left justify-content-start">
+      <a class="navbar-brand" href="{{url_for('home.index')}}"><img src= "{{ url_for('static', filename='images/logo.png')}}" alt="Logo" width="100" ,height="100"></a>
     </div>
-  </nav>
-<!--<div id="main" class="container-fluid text-center">-->
+    <div class="col-md-10 col-form-label d-flex text-center justify-content-center">
+          {% if title %}
+          <h1 id="home-header">{{ title }}</h1>
+          {% else %}
+          <h1 id="home-header">Welcome to LLM RAG 💬</h1>
+          {% endif %}
+    </div>
+  </div>
   <div class="content" style="margin-top: 10px">
     {% block content %}
     {% endblock %}
@@ -63,7 +82,7 @@
 		  <hr>			
 		  {% for category, message in messages %}
 		  <div class="alert alert-{{ category }} alert-dismissable fade show" role="alert">
-		    {{ message }}			
+		    {{ message }}
 		    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
 		  </div>
 		  {% endfor %}
