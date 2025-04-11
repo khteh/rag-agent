@@ -32,6 +32,7 @@ https://python.langchain.com/api_reference/langchain/chat_models/langchain.chat_
 https://cloud.google.com/vertex-ai/generative-ai/docs/embeddings/get-text-embeddings
 https://langchain-ai.github.io/langgraph/how-tos/streaming/#values
 https://python.langchain.com/docs/how_to/configure/
+https://langchain-ai.github.io/langgraph/how-tos/
 """
 from src.config import config as appconfig
 from src.Infrastructure.VectorStore import VectorStore
@@ -55,10 +56,14 @@ class RAGAgent():
         "https://mlflow.org/docs/latest/python_api/mlflow.deployments.html",        
     ]
     # https://langchain-ai.github.io/langgraph/reference/prebuilt/#langgraph.prebuilt.chat_agent_executor.create_react_agent
+    """
+    placeholder:
+    Means the template will receive an optional list of messages under the "messages" key.
+    A list of the names of the variables for placeholder or MessagePlaceholder that are optional. These variables are auto inferred from the prompt and user need not provide them.
+    """
     _prompt = ChatPromptTemplate.from_messages([
                 ("system", "You are a helpful AI assistant named Bob."),
-                ("placeholder", "{messages}"),
-                ("human", "Remember, always provide accurate answer!"),
+                ("placeholder", "{messages}")
         ])
     _vectorStore = None
     _in_memory_store: InMemoryStore = None
@@ -104,7 +109,11 @@ class RAGAgent():
     async def CreateGraph(self) -> CompiledGraph:
         logging.debug(f"\n=== {self.CreateGraph.__name__} ===")
         try:
-            # https://langchain-ai.github.io/langgraph/reference/prebuilt/#langgraph.prebuilt.chat_agent_executor.create_react_agent
+            """
+            https://langchain-ai.github.io/langgraph/reference/prebuilt/#langgraph.prebuilt.chat_agent_executor.create_react_agent
+            https://github.com/langchain-ai/langchain/issues/30723
+            https://langchain-ai.github.io/langgraph/how-tos/cross-thread-persistence/
+            """
             self._agent = create_react_agent(self._llm, self._tools, store = self._in_memory_store, config_schema = Configuration, state_schema = CustomAgentState, name = self._name, prompt = self._prompt)
             #self.ShowGraph() # This blocks
         except Exception as e:
@@ -116,6 +125,7 @@ class RAGAgent():
 
     async def ChatAgent(self, config: RunnableConfig, messages: List[tuple]): #messages: List[str]):
         logging.info(f"\n=== {self.ChatAgent.__name__} ===")
+        result: List[str] = []
         async with AsyncConnectionPool(
             conninfo = appconfig.POSTGRESQL_DATABASE_URI,
             max_size = appconfig.DB_MAX_CONNECTIONS,
@@ -123,14 +133,20 @@ class RAGAgent():
         ) as pool:
             # Create the AsyncPostgresSaver
             self._agent.checkpointer = await CheckpointerSetup(pool)
-            async for event in self._agent.with_config({"user_id": uuid7str()}).astream(
+            """
+            https://langchain-ai.github.io/langgraph/concepts/streaming/
+            https://langchain-ai.github.io/langgraph/how-tos/#streaming
+            """
+            async for step in self._agent.with_config({"user_id": uuid7str()}).astream(
                 #{"messages": [{"role": "user", "content": messages}]}, This works with gemini-2.0-flash
                 {"messages": messages}, # This works with Ollama llama3.3
                 stream_mode="values", # Use this to stream all values in the state after each step.
                 config=config, # This is needed by Checkpointer
             ):
-                event["messages"][-1].pretty_print()
-
+                result.append(step["messages"][-1])
+                step["messages"][-1].pretty_print()
+            return result[-1]
+        
 async def make_graph(config: RunnableConfig) -> CompiledGraph:
     return await RAGAgent(config).CreateGraph()
 

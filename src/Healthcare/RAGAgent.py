@@ -41,17 +41,17 @@ from src.utils.image import show_graph
 from src.Infrastructure.VectorStore import VectorStore
 from src.Infrastructure.Checkpointer import CheckpointerSetup
 class RAGAgent():
+    _name:str = "Healthcare ReAct Agent"
     _llm = None
     _config = None
-    _urls = [
-        "https://lilianweng.github.io/posts/2023-06-23-agent/",
-        "https://lilianweng.github.io/posts/2023-03-15-prompt-engineering/",
-        "https://lilianweng.github.io/posts/2023-10-25-adv-attack-llm/",
-    ]    
+    """
+    placeholder:
+    Means the template will receive an optional list of messages under the "messages" key.
+    A list of the names of the variables for placeholder or MessagePlaceholder that are optional. These variables are auto inferred from the prompt and user need not provide them.
+    """
     _prompt = ChatPromptTemplate.from_messages([
                 ("system", "You are a helpful healthcare AI assistant named Bob."),
-                ("placeholder", "{messages}"),
-                ("user", "Remember, always provide accurate answer!"),
+                ("placeholder", "{messages}")
         ])
     _vectorStore = None
     _in_memory_store: InMemoryStore = None
@@ -79,8 +79,12 @@ class RAGAgent():
     async def CreateGraph(self) -> CompiledGraph:
         logging.debug(f"\n=== {self.CreateGraph.__name__} ===")
         try:
-            # https://langchain-ai.github.io/langgraph/reference/prebuilt/#langgraph.prebuilt.chat_agent_executor.create_react_agent
-            self._agent = create_react_agent(self._llm, TOOLS, store = self._in_memory_store, config_schema = Configuration, state_schema=AgentState, name="Healthcare ReAct Agent", prompt=self._prompt)
+            """
+            https://langchain-ai.github.io/langgraph/reference/prebuilt/#langgraph.prebuilt.chat_agent_executor.create_react_agent
+            https://github.com/langchain-ai/langchain/issues/30723
+            https://langchain-ai.github.io/langgraph/how-tos/cross-thread-persistence/
+            """
+            self._agent = create_react_agent(self._llm, TOOLS, store = self._in_memory_store, config_schema = Configuration, state_schema=AgentState, name=self._name, prompt=self._prompt)
             #self.ShowGraph() # This blocks
         except ResourceExhausted as e:
             logging.exception(f"google.api_core.exceptions.ResourceExhausted")
@@ -93,6 +97,7 @@ class RAGAgent():
 
     async def ChatAgent(self, config, messages: List[str]):
         logging.info(f"\n=== {self.ChatAgent.__name__} ===")
+        result: List[str] = []
         async with AsyncConnectionPool(
             conninfo = appconfig.POSTGRESQL_DATABASE_URI,
             max_size = appconfig.DB_MAX_CONNECTIONS,
@@ -100,13 +105,15 @@ class RAGAgent():
         ) as pool:
             # Create the AsyncPostgresSaver
             self._agent.checkpointer = await CheckpointerSetup(pool)
-            async for event in self._agent.with_config({"user_id": uuid7str()}).astream(
+            async for step in self._agent.with_config({"user_id": uuid7str()}).astream(
                 #{"messages": [{"role": "user", "content": messages}]}, This works with gemini-2.0-flash
                 {"messages": messages}, # This works with Ollama llama3.3
                 stream_mode="values", # Use this to stream all values in the state after each step.
                 config=config, # This is needed by Checkpointer
             ):
-                event["messages"][-1].pretty_print()
+                result.append(step["messages"][-1])
+                step["messages"][-1].pretty_print()
+            return result[-1]
 
 async def make_graph(config: RunnableConfig) -> CompiledGraph:
     return await RAGAgent(config).CreateGraph()
@@ -125,7 +132,7 @@ async def main():
     img = Image.open("/tmp/agent_graph.png")
     img.show()
     """
-    input_message = ["What is the wait time at Wallace-Hamilton?", "Which hospital has the shortest wait time?"]
+    input_message = [("human", "What is the wait time at Wallace-Hamilton?"), ("human", "Which hospital has the shortest wait time?")]
     await rag.ChatAgent(config, input_message)
 
 if __name__ == "__main__":

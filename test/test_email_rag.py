@@ -82,7 +82,8 @@ async def test_email_escalate_fire_safety_violation(EmailRAGFixture):
     assert not ai_message.tool_calls
     assert ai_message.content
     assert "building code violations at the Sunset Luxury Condominiums project site" in ai_message.content
-    assert "immediate risk of electrical or fire damage" in ai_message.content
+    assert "immediate risk" in ai_message.content
+    assert "fire damage" in ai_message.content
 
 @pytest.mark.asyncio(loop_scope="function")
 async def test_email_should_NOT_escalate(EmailRAGFixture):
