@@ -116,6 +116,7 @@ $ fingerprint=`openssl x509 -pubkey -noout -in /tmp/server.crt |
 ```
 
 - Start Chrome browser with QUIC protocol for HTTP/3:
+- `$1` is URL. For example: `https://localhost:4433`
 
 ```
 $  /opt/google/chrome/chrome --disable-setuid-sandbox --enable-quic --ignore-certificate-errors-spki-list=$fingerprint --origin-to-force-quic-on=${1#*//} $1
