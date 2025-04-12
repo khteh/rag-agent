@@ -95,6 +95,7 @@ class GraphRAG():
         self._llm = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider="ollama", base_url=appconfig.OLLAMA_URI, streaming=True).bind_tools([self._vectorStore.retriever_tool])
         # https://python.langchain.com/docs/integrations/chat/google_vertex_ai_palm/
 
+    # https://langchain-ai.github.io/langgraph/tutorials/rag/langgraph_agentic_rag/
     async def Agent(self, state: CustomAgentState, config: RunnableConfig):
         """
         Invokes the agent model to generate a response based on the current state. Given
@@ -112,6 +113,7 @@ class GraphRAG():
         # MessageState appends messages to state instead of overwriting
         return {"messages": [response]}
 
+    # https://langchain-ai.github.io/langgraph/tutorials/rag/langgraph_agentic_rag/
     async def GradeDocuments(self, state: CustomAgentState, config: RunnableConfig) -> Literal["Generate", "Rewrite"]:
         """
         Determines whether the retrieved documents are relevant to the question.
@@ -154,6 +156,7 @@ class GraphRAG():
             logging.debug(f"---DECISION: DOCS NOT RELEVANT (score: {score})---")
             return "Rewrite"
         
+    # https://langchain-ai.github.io/langgraph/tutorials/rag/langgraph_agentic_rag/
     async def Rewrite(self, state: CustomAgentState, config: RunnableConfig):
         """
         Transform the query to produce a better question.
@@ -182,6 +185,7 @@ class GraphRAG():
         response = await self._llm.with_config(config).ainvoke(msg)
         return {"messages": [response]}
 
+    # https://langchain-ai.github.io/langgraph/tutorials/rag/langgraph_agentic_rag/
     async def Generate(self, state: CustomAgentState, config: RunnableConfig):
         """
         Generate answer
@@ -252,6 +256,7 @@ class GraphRAG():
 
     async def CreateGraph(self) -> CompiledGraph:
         # Compile application and test
+        # https://langchain-ai.github.io/langgraph/tutorials/rag/langgraph_agentic_rag/
         logging.info(f"\n=== {self.CreateGraph.__name__} ===")
         try:
             graph_builder = StateGraph(CustomAgentState)

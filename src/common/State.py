@@ -22,6 +22,7 @@ from pydantic import EmailStr
 
 """
 Define state for application - The information each node in StateGraph updates and passes to the next node.
+https://python.langchain.com/docs/tutorials/rag/
 """
 @dataclass
 class State(TypedDict):
