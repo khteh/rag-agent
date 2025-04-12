@@ -37,11 +37,11 @@
 </head>
 <body>
 <div class="header">
-  <a id="header-title" href="{{url_for('home.index')}}"><img src= "{{ url_for('static', filename='images/logo.png')}}" alt="logo" width="100" height="100"/></a>
+  <a class="header-title" href="{{url_for('home.index')}}"><img src= "{{ url_for('static', filename='images/logo.png')}}" alt="logo" width="100" height="100"/></a>
   {% if title %}
-    <h1 class="align-middle">{{ title }}</h1>
+    <h1 class="header-title">{{ title }}</h1>
   {% else %}
-    <h1 class="align-middle">Welcome to LLM RAG 💬</h1>
+    <h1 class="header-title">Welcome to LLM RAG 💬</h1>
   {% endif %}
 </div>
 <!-- https://www.w3schools.com/howto/tryit.asp?filename=tryhow_js_sidenav_push -->
