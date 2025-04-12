@@ -1,6 +1,6 @@
 # LangChain, LangGraph, LangSmith
 
-Python RAG using LangChain, LangGraph and LangSmith with local memory checkpoints. It runs on Quart HTTP/3 ASGI framework.
+Python RAG using LangChain, LangGraph and LangSmith with local memory checkpoints. It runs on Quart/Hypercorn HTTP/3 ASGI framework.
 
 ## Environment
 
