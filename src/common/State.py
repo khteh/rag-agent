@@ -33,10 +33,10 @@ class State(TypedDict):
     messages: Annotated[Sequence[BaseMessage], add_messages]    
     is_last_step: IsLastStep
 
+# https://github.com/langchain-ai/langgraph/blob/62b2580ad5101cf55da0b6bebcd09913d2512022/libs/prebuilt/langgraph/prebuilt/chat_agent_executor.py#L57
 @dataclass
 class CustomAgentState(AgentState):
     context: List[Document]
-    is_last_step: IsLastStep
 
 @dataclass
 class EmailRAGState(TypedDict):

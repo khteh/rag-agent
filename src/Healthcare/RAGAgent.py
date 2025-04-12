@@ -40,6 +40,7 @@ from src.common.configuration import Configuration
 from src.utils.image import show_graph
 from src.Infrastructure.VectorStore import VectorStore
 from src.Infrastructure.Checkpointer import CheckpointerSetup
+from src.common.State import CustomAgentState
 class RAGAgent():
     _name:str = "Healthcare ReAct Agent"
     _llm = None
@@ -84,7 +85,7 @@ class RAGAgent():
             https://github.com/langchain-ai/langchain/issues/30723
             https://langchain-ai.github.io/langgraph/how-tos/cross-thread-persistence/
             """
-            self._agent = create_react_agent(self._llm, TOOLS, store = self._in_memory_store, config_schema = Configuration, state_schema=AgentState, name=self._name, prompt=self._prompt)
+            self._agent = create_react_agent(self._llm, TOOLS, store = self._in_memory_store, config_schema = Configuration, state_schema=CustomAgentState, name=self._name, prompt=self._prompt)
             #self.ShowGraph() # This blocks
         except ResourceExhausted as e:
             logging.exception(f"google.api_core.exceptions.ResourceExhausted")
@@ -95,7 +96,7 @@ class RAGAgent():
     def ShowGraph(self):
         show_graph(self._agent, self._name) # This blocks
 
-    async def ChatAgent(self, config, messages: List[str]):
+    async def ChatAgent(self, config, message: str):
         logging.info(f"\n=== {self.ChatAgent.__name__} ===")
         result: List[str] = []
         async with AsyncConnectionPool(
@@ -105,10 +106,8 @@ class RAGAgent():
         ) as pool:
             # Create the AsyncPostgresSaver
             self._agent.checkpointer = await CheckpointerSetup(pool)
-            #async for step in self._agent.with_config({"user_id": uuid7str()}).astream(
             async for step in self._agent.astream(
-                #{"messages": [{"role": "user", "content": messages}]}, This works with gemini-2.0-flash
-                {"messages": messages}, # This works with Ollama llama3.3
+                {"messages": [{"role": "user", "content": message}]},
                 stream_mode="values", # Use this to stream all values in the state after each step.
                 config=config, # This is needed by Checkpointer
             ):
@@ -133,8 +132,8 @@ async def main():
     img = Image.open("/tmp/agent_graph.png")
     img.show()
     """
-    input_message = [("human", "Which hospital has the shortest wait time?"), ("human", "What have patients said about their quality of rest during their stay?")]
-    await rag.ChatAgent(config, input_message)
+    await rag.ChatAgent(config, "Which hospital has the shortest wait time?")
+    await rag.ChatAgent(config, "What have patients said about their quality of rest during their stay?")
 
 if __name__ == "__main__":
     asyncio.run(main())

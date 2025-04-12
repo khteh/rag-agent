@@ -87,24 +87,16 @@ class GraphRAG():
             }
         )
         self._vectorStore = VectorStore(model=appconfig.EMBEDDING_MODEL, chunk_size=1000, chunk_overlap=0)
-        self._retriever_tool = create_retriever_tool(
-            self._vectorStore.retriever_tool,
-            "retrieve_blog_posts",
-            "Search and return information LLM agents, prompt engineering, adversarial attacks on LLMs and MLFlow",
-        )        
         """
         .bind_tools() gives the agent LLM descriptions of each tool from their docstring and input arguments. 
         If the agent LLM determines that its input requires a tool call, it’ll return a JSON tool message with the name of the tool it wants to use, along with the input arguments.
         For VertexAI, use VertexAIEmbeddings, model="text-embedding-005"; "gemini-2.0-flash" model_provider="google_genai"
         """
-        self._llm = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider="ollama", base_url=appconfig.OLLAMA_URI, streaming=True).bind_tools([self._retriever_tool])
+        self._llm = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider="ollama", base_url=appconfig.OLLAMA_URI, streaming=True).bind_tools([self._vectorStore.retriever_tool])
         # https://python.langchain.com/docs/integrations/chat/google_vertex_ai_palm/
 
     async def Agent(self, state: CustomAgentState, config: RunnableConfig):
         """
-        # Step 1: Generate an AIMessage that may include a tool-call to be sent.
-        Generate tool call for retrieval or respond
-
         Invokes the agent model to generate a response based on the current state. Given
         the question, it will decide to retrieve using the retriever tool, or simply end.
 
@@ -116,7 +108,7 @@ class GraphRAG():
         """
         logging.info(f"\n=== {self.Agent.__name__} ===")
         logging.debug(f"state: {state}")
-        response = await self._llm.with_config(config).ainvoke(state["messages"])#, config)
+        response = await self._llm.with_config(config).ainvoke(state["messages"])
         # MessageState appends messages to state instead of overwriting
         return {"messages": [response]}
 
@@ -258,7 +250,7 @@ class GraphRAG():
         #logging.debug(f"\nGenerate() response: {response}")
         return {"messages": [response]}
 
-    async def CreateGraph(self, config: RunnableConfig) -> CompiledGraph:
+    async def CreateGraph(self) -> CompiledGraph:
         # Compile application and test
         logging.info(f"\n=== {self.CreateGraph.__name__} ===")
         try:
@@ -291,12 +283,15 @@ class GraphRAG():
             graph_builder.add_edge("Generate", END)
             graph_builder.add_edge("Rewrite", "Agent")
             self._graph = graph_builder.compile(store=self._in_memory_store, name=self._name)
-            #show_graph(self._graph, "Checkedpoint StateGraph RAG") # This blocks
+            #self.ShowGraph(self._graph, self._name) # This blocks
         except ResourceExhausted as e:
             logging.exception(f"google.api_core.exceptions.ResourceExhausted")
         return self._graph
 
-    async def TestDirectResponseWithoutRetrieval(self, config, message):
+    def ShowGraph(self):
+        show_graph(self._agent, self._name) # This blocks
+
+    async def TestDirectResponseWithoutRetrieval(self, config, message: str):
         logging.info(f"\n=== {self.TestDirectResponseWithoutRetrieval.__name__} ===")
         async for step in self._graph.astream(
             {"messages": [{"role": "user", "content": message}]},
@@ -305,7 +300,11 @@ class GraphRAG():
         ):
             step["messages"][-1].pretty_print()
 
-    async def Chat(self, config, messages: List[str]):
+    async def Chat(self, config, message: str):
+        """
+        message is a single string. It can contain multiple questions:
+        input_message: str = ("What is task decomposition?\n" "What is the standard method for Task Decomposition?\n" "Once you get the answer, look up common extensions of that method.")
+        """
         logging.info(f"\n=== {self.Chat.__name__} ===")
         async with AsyncConnectionPool(
             conninfo = appconfig.POSTGRESQL_DATABASE_URI,
@@ -313,32 +312,28 @@ class GraphRAG():
             kwargs = appconfig.connection_kwargs,
         ) as pool:
             # Create the AsyncPostgresSaver
-            self._agent.checkpointer = await CheckpointerSetup(pool)
-            for message in messages:
-                #input_message = "What is Task Decomposition?"
-                async for step in self._graph.astream(
-                    {"messages": [{"role": "user", "content": message}]},
-                    stream_mode="values",
-                    config = config
-                ):
-                    step["messages"][-1].pretty_print()
+            self._graph.checkpointer = await CheckpointerSetup(pool)
+            async for step in self._graph.astream(
+                {"messages": [{"role": "user", "content": message}]},
+                stream_mode="values",
+                config = config
+            ):
+                step["messages"][-1].pretty_print()
 
 async def make_graph(config: RunnableConfig) -> CompiledGraph:
-    return await GraphRAG(config).CreateGraph(config)
+    return await GraphRAG(config).CreateGraph()
 
 async def main():
-    parser = argparse.ArgumentParser(description='Start this LLM-RAG Agent')
-    parser.add_argument('--load-urls', action='store_true', help='Load documents from URLs')
+    parser = argparse.ArgumentParser(description='Start this LLM-RAG Agent by loading blog content from predefined URLs')
+    parser.add_argument('-l', '--load-urls', action='store_true', help='Load documents from URLs')
     args = parser.parse_args()
-
-    # httpx library is a dependency of LangGraph and is used under the hood to communicate with the AI models.
     #vertexai.init(project=os.environ.get("GOOGLE_CLOUD_PROJECT"), location=os.environ.get("GOOGLE_CLOUD_LOCATION"))
     config = RunnableConfig(run_name="Checkedpoint StateGraph RAG", thread_id=uuid7str(), user_id=uuid7str())
     graph = GraphRAG(config)
     print(f"args: {args}")
     if args.load_urls:
         await graph.LoadDocuments()
-    await graph.CreateGraph(config) # config input parameter is required by langgraph.json to define the graph
+    await graph.CreateGraph() # config input parameter is required by langgraph.json to define the graph
     """
     graph = checkpoint_graph.get_graph().draw_mermaid_png()
     # Save the PNG data to a file
@@ -348,7 +343,7 @@ async def main():
     img.show()
     """
     await graph.TestDirectResponseWithoutRetrieval(config, "Hello, who are you?")
-    await graph.Chat(config, ["What is Task Decomposition?", "Can you look up some common ways of doing it?"])
+    await graph.Chat(config, ("What is task decomposition?\n" "What is the standard method for Task Decomposition?\n" "Once you get the answer, look up common extensions of that method."))
 
 if __name__ == "__main__":
     asyncio.run(main())

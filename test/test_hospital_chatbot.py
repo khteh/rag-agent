@@ -7,7 +7,7 @@ pytest_plugins = ('pytest_asyncio',)
 @pytest.mark.asyncio(loop_scope="function")
 async def test_hospital_waiting_time(HealthcareRAGFixture):
     config = RunnableConfig(run_name=test_hospital_waiting_time.__name__, thread_id=uuid7str())
-    lc_ai_message = await HealthcareRAGFixture.ChatAgent(config, [("human", "What is the wait time at Wallace-Hamilton?")])
+    lc_ai_message = await HealthcareRAGFixture.ChatAgent(config, "What is the wait time at Wallace-Hamilton?")
     assert lc_ai_message
     ai_message = ChatMessage.from_langchain(lc_ai_message)
     #print(f"ai_message: {ai_message}")
@@ -24,7 +24,7 @@ async def test_hospital_waiting_time(HealthcareRAGFixture):
 @pytest.mark.asyncio(loop_scope="function")
 async def test_hospital_shortest_wait_time(HealthcareRAGFixture):
     config = RunnableConfig(run_name=test_hospital_shortest_wait_time.__name__, thread_id=uuid7str())
-    lc_ai_message = await HealthcareRAGFixture.ChatAgent(config, [("human", "Which hospital has the shortest wait time?")])
+    lc_ai_message = await HealthcareRAGFixture.ChatAgent(config, "Which hospital has the shortest wait time?")
     assert lc_ai_message
     ai_message = ChatMessage.from_langchain(lc_ai_message)
     #print(f"ai_message: {ai_message}")
@@ -41,7 +41,7 @@ async def test_hospital_shortest_wait_time(HealthcareRAGFixture):
 @pytest.mark.asyncio(loop_scope="function")
 async def test_hospital_patient_reviews(HealthcareRAGFixture):
     config = RunnableConfig(run_name=test_hospital_patient_reviews.__name__, thread_id=uuid7str())
-    lc_ai_message = await HealthcareRAGFixture.ChatAgent(config, [("human", "What have patients said about their quality of rest during their stay?")])
+    lc_ai_message = await HealthcareRAGFixture.ChatAgent(config, "What have patients said about their quality of rest during their stay?")
     assert lc_ai_message
     ai_message = ChatMessage.from_langchain(lc_ai_message)
     #print(f"ai_message: {ai_message}")
@@ -71,7 +71,7 @@ async def test_hospital_patient_reviews(HealthcareRAGFixture):
 @pytest.mark.asyncio(loop_scope="function")
 async def test_hospital_cypher_query(HealthcareRAGFixture):
     config = RunnableConfig(run_name=test_hospital_cypher_query.__name__, thread_id=uuid7str())
-    lc_ai_message = await HealthcareRAGFixture.ChatAgent(config, [("human","Which physician has treated the most patients covered by Cigna?")])
+    lc_ai_message = await HealthcareRAGFixture.ChatAgent(config, "Which physician has treated the most patients covered by Cigna?")
     assert lc_ai_message
     ai_message = ChatMessage.from_langchain(lc_ai_message)
     #print(f"ai_message: {ai_message}")
@@ -95,7 +95,7 @@ async def test_hospital_cypher_query(HealthcareRAGFixture):
 @pytest.mark.asyncio(loop_scope="function")
 async def test_hospital_specific_patient_review(HealthcareRAGFixture):
     config = RunnableConfig(run_name=test_hospital_specific_patient_review.__name__, thread_id=uuid7str())
-    lc_ai_message = await HealthcareRAGFixture.ChatAgent(config, [("human","Query the graph database to show me the reviews written by patient 7674")])
+    lc_ai_message = await HealthcareRAGFixture.ChatAgent(config, "Query the graph database to show me the reviews written by patient 7674")
     assert lc_ai_message
     ai_message = ChatMessage.from_langchain(lc_ai_message)
     #print(f"ai_message: {ai_message}")

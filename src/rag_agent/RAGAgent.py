@@ -123,7 +123,11 @@ class RAGAgent():
     def ShowGraph(self):
         show_graph(self._agent, self._name) # This blocks
 
-    async def ChatAgent(self, config: RunnableConfig, messages: List[tuple]): #messages: List[str]):
+    async def ChatAgent(self, config: RunnableConfig, message: str):
+        """
+        message is a single string. It can contain multiple questions:
+        input_message: str = ("What is task decomposition?\n" "What is the standard method for Task Decomposition?\n" "Once you get the answer, look up common extensions of that method.")
+        """
         logging.info(f"\n=== {self.ChatAgent.__name__} ===")
         result: List[str] = []
         async with AsyncConnectionPool(
@@ -139,8 +143,7 @@ class RAGAgent():
             """
             #async for step in self._agent.with_config({"user_id": uuid7str()}).astream(
             async for step in self._agent.astream(
-                #{"messages": [{"role": "user", "content": messages}]}, This works with gemini-2.0-flash
-                {"messages": messages}, # This works with Ollama llama3.3
+                {"messages": [{"role": "user", "content": message}]},
                 stream_mode="values", # Use this to stream all values in the state after each step.
                 config=config, # This is needed by Checkpointer
             ):
@@ -156,8 +159,8 @@ async def main():
     https://docs.python.org/3/library/argparse.html
     'store_true' and 'store_false' - These are special cases of 'store_const' used for storing the values True and False respectively. In addition, they create default values of False and True respectively:
     """
-    parser = argparse.ArgumentParser(description='Start this LLM-RAG Agent')
-    parser.add_argument('--load-urls', action='store_true', help='Load documents from URLs')
+    parser = argparse.ArgumentParser(description='Start this LLM-RAG Agent by loading blog content from predefined URLs')
+    parser.add_argument('-l', '--load-urls', action='store_true', help='Load documents from URLs')
     args = parser.parse_args()
 
     # httpx library is a dependency of LangGraph and is used under the hood to communicate with the AI models.
@@ -176,7 +179,8 @@ async def main():
     print(f"args: {args}")
     if args.load_urls:
         await rag.LoadDocuments()
-    input_message = [("human", "What is the standard method for Task Decomposition?"), ("human", "Once you get the answer, look up common extensions of that method.")]
+    input_message: str = ("What is task decomposition?\n" "What is the standard method for Task Decomposition?\n" "Once you get the answer, look up common extensions of that method.")
+    print(f"typeof input_message: {type(input_message)}")
     await rag.ChatAgent(config, input_message)
 
 if __name__ == "__main__":
