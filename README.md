@@ -104,6 +104,23 @@ $ k create secret generic gcloud-service-account --from-file=service-account.jso
 
 - Add `Host` header which is defined as `server_names` in `hypercorn.toml`
 
+## Chrome browser
+
+- Close ALL chrome browser (both tabs and windows)
+- Generate TLS certificate and it's fingerprint:
+
+```
+$ fingerprint=`openssl x509 -pubkey -noout -in /tmp/server.crt |
+        openssl rsa -pubin -outform der |
+        openssl dgst -sha256 -binary | base64`
+```
+
+- Start Chrome browser with QUIC protocol for HTTP/3:
+
+```
+$  /opt/google/chrome/chrome --disable-setuid-sandbox --enable-quic --ignore-certificate-errors-spki-list=$fingerprint --origin-to-force-quic-on=${1#*//} $1
+```
+
 ### Home controller endpoints:
 
 ```

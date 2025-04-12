@@ -5,62 +5,65 @@
     <div id="msgs-container">
       <ul id="messages"></ul>
     </div>
-    <div id="message-box">
-      <input type="text" placeholder="Enter your message" id="prompt" name="message" placeholder='How can I help?', onkeyup="stoppedTyping()"/>
-      <input id='image', name="image", type='file', accept="image/*"/>
-      <button type="submit" id="send-btn" disabled>Submit</button>
-    </div>
-    </div>
+    <form id="chatForm" action="{{url_for('home.invoke')}}" method="post">
+      <div id="message-box">
+        <input type="text" placeholder="Enter your message" id="prompt" name="message" placeholder='How can I help?', onkeyup="stoppedTyping()"/>
+        <input id='image', name="image", type='file', accept="image/*"/>
+        <button type="submit" id="btn-submit" disabled>Submit</button>
+      </div>
+    </form>
+  </div>
   <script type="text/javascript">
     <!-- https://thepythoncode.com/article/how-to-build-a-chat-app-in-python-using-flask-and-flasksocketio -->
     function stoppedTyping() {
-            if(document.querySelector("#prompt").value.length > 0) { 
-                document.querySelector('#send-btn').disabled = false; 
-            } else { 
-                document.querySelector('#send-btn').disabled = true;
-            }
+        if(document.querySelector("#prompt").value.length > 0) { 
+            document.querySelector('#btn-submit').disabled = false; 
+        } else { 
+            document.querySelector('#btn-submit').disabled = true;
+        }
     }
-        document.querySelector("#prompt").onblur = stoppedTyping();
-        // Select your input type file and store it in a variable
-        document.querySelector("#chat-room-widget").addEventListener("send-btn", async (e) => {
-          e.preventDefault();
-          const prompt = document.querySelector("#prompt").value;
-          const image = document.querySelector("#image");
-          if (prompt.trim()) {
-            var form = new FormData();
-            form.append("prompt", prompt);
-            if (image && image.files.length && image.files[0]) {
-              //console.log(`Image name: ${image.files[0].name}, size: ${image.files[0].size}, type: ${image.files[0].type}`);
-              form.append("image", image.files[0]);
-            }// else 
-              //console.log("No file selected!");
-            // Display the key/value pairs
-            /*for (var pair of form.entries()) {
-                console.log(pair[0]+ ', ' + pair[1]); 
-            }*/
-            document.querySelector('#submit').disabled = true;
-            document.querySelector("#submit").value = 'Processing...';
-            const response = await fetch('/invoke', {
-              method: 'POST',
-              //headers: { 'Content-Type': 'multipart/form-data' }, Do NOT declare Content-Type: multipart/form-data in request header
-              body: form
-            });
-            const data = await response.json();
-            const queryContainer = document.createElement('div');
-            queryContainer.innerHTML = `<div><strong>You:</strong> ${prompt}</div>`;
-            document.querySelector("#messages").appendChild(queryContainer);
-            //document.querySelector("#messages").innerHTML += `<div><strong>You:</strong> ${prompt}</div>`;
-            var converter = new showdown.Converter();
-            const responseContainer = document.createElement('div');
-            responseContainer.innerHTML = `<strong>Gemini:</strong><div>${converter.makeHtml(data.response)}</div><br>`;
-            document.querySelector("#messages").appendChild(responseContainer);
-            //document.querySelector("#messages").innerHTML += `<div><strong>Gemini:</strong></div>${converter.makeHtml(data.message)}<br>`;
-            document.querySelector("#prompt").value = '';
-            document.querySelector("#image").value = '';
-            document.querySelector("#submit").value = 'Submit';
-          } else 
-            console.error(`Invalid prompt!`);
+    document.querySelector("#prompt").onblur = stoppedTyping();
+    // Select your input type file and store it in a variable
+    document.querySelector("#chatForm").addEventListener("btn-submit", async (e) => {
+      e.preventDefault();
+      const prompt = document.querySelector("#prompt").value;
+      const image = document.querySelector("#image");
+      if (prompt.trim()) {
+        var form = new FormData();
+        form.append("prompt", prompt);
+        if (image && image.files.length && image.files[0]) {
+          //console.log(`Image name: ${image.files[0].name}, size: ${image.files[0].size}, type: ${image.files[0].type}`);
+          form.append("image", image.files[0]);
+        }// else 
+          //console.log("No file selected!");
+        // Display the key/value pairs
+        /*for (var pair of form.entries()) {
+            console.log(pair[0]+ ', ' + pair[1]); 
+        }*/
+        document.querySelector('#submit').disabled = true;
+        document.querySelector("#submit").value = 'Processing...';
+        const response = await fetch('/invoke', {
+          method: 'POST',
+          //headers: { 'Content-Type': 'multipart/form-data' }, Do NOT declare Content-Type: multipart/form-data in request header
+          body: form
         });
+        const data = await response.json();
+        console.log(JSON.stringify(data, null, 2))
+        const queryContainer = document.createElement('div');
+        queryContainer.innerHTML = `<div><strong>You:</strong> ${prompt}</div>`;
+        document.querySelector("#messages").appendChild(queryContainer);
+        //document.querySelector("#messages").innerHTML += `<div><strong>You:</strong> ${prompt}</div>`;
+        var converter = new showdown.Converter();
+        const responseContainer = document.createElement('div');
+        responseContainer.innerHTML = `<strong>LLM-RAG-Agent:</strong><div>${converter.makeHtml(data.response)}</div><br>`;
+        document.querySelector("#messages").appendChild(responseContainer);
+        //document.querySelector("#messages").innerHTML += `<div><strong>Gemini:</strong></div>${converter.makeHtml(data.message)}<br>`;
+        document.querySelector("#prompt").value = '';
+        document.querySelector("#image").value = '';
+        document.querySelector("#submit").value = 'Submit';
+      } else 
+        console.error(`Invalid prompt!`);
+    });
   </script>
 </div>
 {% endblock %}

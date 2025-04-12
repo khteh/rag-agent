@@ -40,4 +40,5 @@ async def Respond(*args, **kwargs):
     body = await render_template(*args, **kwargs)
     body = body.replace('type="module"', f'type="module" nonce="{nonce}"')
     response = cast(Response, await make_response(body))
-    return _apply_security_headers(response, nonce)
+    #return _apply_security_headers(response, nonce)
+    return response
