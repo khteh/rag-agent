@@ -143,7 +143,7 @@ async def invoke(): #user_input: UserInput) -> ChatMessage:
         if len(result):
             ai_message = ChatMessage.from_langchain(result[-1])
             #print(f"ai_message: {ai_message}")``
-            if ai_message and len(ai_message) and not ai_message.tool_calls and ai_message.content and len(ai_message.content):
+            if ai_message and not ai_message.tool_calls and ai_message.content and len(ai_message.content):
                 #output.run_id = str(run_id)
                 #return output
                 #return await Respond("index.html", title="Welcome to LLM-RAG 💬", greeting=greeting)

@@ -472,6 +472,8 @@ If you have any questions or need to schedule a re-inspection, please contact th
 $ docker run --rm ymuski/curl-http3 curl --http3 --verbose https://<nodeport service>:<nodeport>/healthz/ready
 ```
 
+- To build your own HTTP/3 curl: https://curl.se/docs/http3.html
+
 ## Neo4J
 
 ### To import CSV into the database:
