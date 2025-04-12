@@ -41,21 +41,21 @@ async def index() -> ResponseReturnValue:
     if "user" not in session or not session["user"]:
         greeting = "Friend! It's " + formatted_now
         #print(f"homeController hello greeting: {greeting}")
-        return await Respond("index.html", title="Welcome to Python LLM-RAG", greeting=greeting)
+        return await Respond("index.html", title="Welcome to LLM-RAG 💬", greeting=greeting)
     user = jsonpickle.decode(session['user'])
     if not user or not hasattr(user, 'token'):
         greeting = "Friend! It's " + formatted_now
         #print(f"homeController hello greeting: {greeting}")
-        return await Respond("index.html", title="Welcome to Python LLM-RAG", greeting=greeting)
+        return await Respond("index.html", title="Welcome to LLM-RAG 💬", greeting=greeting)
     data = Authentication.decode_token(user.token)
     if data["error"]:
-        return await Respond("login.html", title="Welcome to Python LLM-RAG", error=data["error"])
+        return await Respond("login.html", title="Welcome to LLM-RAG 💬", error=data["error"])
     user_id = data["data"]["user_id"]
     logging.debug(f"User: {user_id}")
     """
     user = UserModel.get_user(user_id)
     if not user:
-        return await Respond("login.html", title="Welcome to Python LLM-RAG", error="Invalid user!")
+        return await Respond("login.html", title="Welcome to LLM-RAG 💬", error="Invalid user!")
     try:
         logging.debug(f"Firstname: {user.firstname}, Lastname: {user.lastname}")
         name = user.firstname + ", " + user.lastname
@@ -73,7 +73,7 @@ async def index() -> ResponseReturnValue:
     if not greeting:
         greeting = "Friend! It's " + formatted_now
         #print(f"homeController hello greeting: {greeting}")
-    return await Respond("index.html", title="Welcome to Python LLM-RAG", greeting=greeting)
+    return await Respond("index.html", title="Welcome to LLM-RAG 💬", greeting=greeting)
 
 class TokenQueueStreamingHandler(AsyncCallbackHandler):
     """LangChain callback handler for streaming LLM tokens to an asyncio queue."""
@@ -103,7 +103,7 @@ async def invoke(): #user_input: UserInput) -> ChatMessage:
         output = ChatMessage.from_langchain(response["messages"][-1])
         output.run_id = str(run_id)
         #return output
-        #return await Respond("index.html", title="Welcome to Python LLM-RAG", greeting=greeting)
+        #return await Respond("index.html", title="Welcome to LLM-RAG 💬", greeting=greeting)
         # res.json({ 'message': this.presenter.Message, "errors": this.presenter.Errors });
         logging.debug(f"/invoke respose: {output}")
         return custom_response(output, 200)

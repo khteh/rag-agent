@@ -3,6 +3,22 @@
   padding: 0;
   box-sizing: border-box;
 }
+.header {
+  height: 100px;
+}
+.header img {
+  float: left;
+  width: 100px;
+  height: 100px;
+  background: #555;
+}
+
+.header h1 {
+  position: relative;
+  height: 100px;
+  text-align: center;
+  color: rgb(0, 73, 101);
+}
 
 body {
   font-family: Arial, Helvetica, sans-serif;
@@ -28,8 +44,16 @@ hr {
   grid-template-rows: auto auto 1fr;
 }
 
-#home-header {
+#header-image {
+  float: left;
+  width: 100px;
+  height: 100px;
+  background: #555;
+}
+#header-title {
+  position: relative;
   text-align: center;
+  display: inline;
   margin: 10px 0;
   color: rgb(0, 73, 101);
 }
