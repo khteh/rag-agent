@@ -1,6 +1,15 @@
 # LLM-RAG using LangChain, LangGraph, LangSmith
 
-Python RAG using LangChain, LangGraph and LangSmith with local memory checkpoints. It runs on Quart/Hypercorn HTTP/3 ASGI framework.
+Python RAG using LangChain, LangGraph and LangSmith built on Quart web microframework and served using Hypercorn ASGI and WSGI web server.
+
+## Infrastructure components:
+
+- All of the following components run on k8s cluster:
+
+1. PostgreSQL for checkpoints
+2. Chroma for vector DB
+3. Neo4J for graph query
+4. Ollama as LLM model server
 
 ## Environment
 
