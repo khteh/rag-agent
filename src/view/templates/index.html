@@ -12,6 +12,12 @@
         <button type="submit" id="btn-submit" class="btn btn-primary">Submit</button>
       </div>
     </form>
+    <!--<form id="chatFormHuman" name="chatFormHuman" action="" method="post" enctype="multipart/form-data">
+        <button type="submit" id="btn-human" class="btn btn-secondary">Human</button>
+    </form>
+    <form id="chatFormAI" name="chatFormAI" action="" method="post" enctype="multipart/form-data">
+        <button type="submit" id="btn-ai" class="btn btn-secondary">AI</button>
+    </form>-->
   </div>
   <script type="text/javascript">
     <!-- https://thepythoncode.com/article/how-to-build-a-chat-app-in-python-using-flask-and-flasksocketio -->
@@ -25,6 +31,18 @@
         }
     }
     document.querySelector("#prompt").onblur = stoppedTyping();
+    /*document.querySelector("#chatFormHuman").addEventListener("submit", async (e) => {
+      console.log('btn-human submit')
+        const queryContainer = document.createElement('div');
+        queryContainer.innerHTML = `<div class="d-flex justify-content-end"><strong>You:</strong>Human question</div>`;
+        document.querySelector("#messages").appendChild(queryContainer);
+    });
+    document.querySelector("#chatFormAI").addEventListener("submit", async (e) => {
+      console.log('btn-ai submit')
+        const queryContainer = document.createElement('div');
+        queryContainer.innerHTML = `<div class="d-flex justify-content-start"><strong>AI:</strong>AI answer</div>`;
+        document.querySelector("#messages").appendChild(queryContainer);
+    });*/
     // Select your input type file and store it in a variable
     document.querySelector("#chatForm").addEventListener("submit", async (e) => {
       e.preventDefault();
@@ -54,14 +72,38 @@
           body: form
         });
         const data = await response.json();
+        /*const data = {
+          "message": 'Task decomposition is the process of breaking down a complex task or problem into smaller, more manageable steps or subtasks. This technique is used to simplify the solution process, making it easier to understand and tackle the original task.\n\nIn the context of artificial intelligence and machine learning, task decomposition can be achieved through various methods, including:\n\n1. **Chain of thought (CoT)**: A prompting technique that involves instructing a model to think step by step, decomposing a hard task into smaller and simpler steps.\n2. **Tree of Thoughts**: An extension of CoT that explores multiple reasoning possibilities at each step, creating a tree structure.\n3. **Task-specific instructions**: Using specific instructions or prompts to guide the decomposition process.\n4. **Human inputs**: Allowing humans to provide input and guidance on how to decompose a task.\n\nTask decomposition can be represented as a series of tasks, where each task has attributes such as:\n\n* Task type\n* ID\n* Dependencies (i.e., which previous tasks it relies on)\n* Arguments (e.g., text, image, audio, or video inputs)\n\nBy breaking down complex tasks into smaller subtasks, task decomposition can help make the solution process more efficient, effective, and easier to understand.\n\nI will now save this user session for future reference. \n\nSession Saved: \nUser Question: What is task decomposition?\nResponse: Task decomposition is the process of breaking down a complex task or problem into smaller, more manageable steps or subtasks.\nTimestamp: {Current Timestamp}'
+        }*/
         console.log(JSON.stringify(data, null, 2))
         const queryContainer = document.createElement('div');
-        queryContainer.innerHTML = `<div><strong>You:</strong> ${prompt}</div>`;
+        queryContainer.innerHTML = `<div class="row">
+                                      <div class="col-md-1">
+                                      </div>
+                                      <div class="col-md-11 d-flex justify-content-end">
+                                        <strong>You: </strong><br>
+                                        ${prompt}
+                                      </div>
+                                    </div>`;
         document.querySelector("#messages").appendChild(queryContainer);
         //$("#messages").innerHTML += `<div><strong>You:</strong> ${prompt}</div>`;
         var converter = new showdown.Converter();
+        console.log(converter.makeHtml(data.message))
         const responseContainer = document.createElement('div');
-        responseContainer.innerHTML = `<strong>LLM-RAG-Agent:</strong><div>${converter.makeHtml(data.message)}</div><br>`;
+        responseContainer.innerHTML = `<div class="row">
+                                          <div class="col-md-1 justify-content-start">
+                                            <strong>Agent: </strong>
+                                          </div>
+                                          <div clalss="col-md-11">
+                                          </div>
+                                      </div>
+                                      <div class="row">
+                                          <div class="col-md-11 justify-content-start">
+                                              ${converter.makeHtml(data.message)}
+                                          </div>
+                                          <div clalss="col-md-1">
+                                          </div>
+                                       </div>`;
         document.querySelector("#messages").appendChild(responseContainer);
         //$("#messages").innerHTML += `<div><strong>Gemini:</strong></div>${converter.makeHtml(data.message)}<br>`;
         $("#prompt").value = '';

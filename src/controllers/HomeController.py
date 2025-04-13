@@ -89,23 +89,11 @@ class TokenQueueStreamingHandler(AsyncCallbackHandler):
         if token:
             await self.queue.put(token)
 
-@home_api.post("/invoke")
-async def invoke(): #user_input: UserInput) -> ChatMessage:
-    """
-    Invoke the agent with user input to retrieve a final response.
-
-    Use thread_id to persist and continue a multi-turn conversation. run_id kwarg
-    is also attached to messages for recording feedback.
-    """
-    #data = await request.get_data()
-    form = await request.form
-    #params = parse_qs(data.decode('utf-8'))
-    #logging.debug(f"data: {data}, form: {form}, params: {params}, type(params): {type(params)}")
-    logging.debug(f"form: {form}")
+async def ProcessCurlInput() -> UserInput:
+    data = await request.get_data()
+    params = parse_qs(data.decode('utf-8'))
+    logging.debug(f"data: {data}, params: {params}, type(params): {type(params)}")
     user_input: UserInput = None
-    if "prompt" in form and form["prompt"] and len(form["prompt"]):
-        user_input = {"message": form["prompt"]}
-    """
     if is_json(data):
         user_input = json.loads(data)
         logging.debug(f"user_input from data: {user_input}")
@@ -115,7 +103,22 @@ async def invoke(): #user_input: UserInput) -> ChatMessage:
         if str_params and len(str_params) and is_json(str_params):
             user_input = json.loads(str_params)
             logging.debug(f"user_input from params: {user_input}")
+    return user_input
+
+@home_api.post("/invoke")
+async def invoke(): #user_input: UserInput) -> ChatMessage:
     """
+    Invoke the agent with user input to retrieve a final response.
+
+    Use thread_id to persist and continue a multi-turn conversation. run_id kwarg
+    is also attached to messages for recording feedback.
+    """
+    user_input: UserInput = await ProcessCurlInput()
+    if not user_input or "message" not in user_input:
+        form = await request.form
+        logging.debug(f"form: {form}")
+        if "prompt" in form and form["prompt"] and len(form["prompt"]):
+            user_input = {"message": form["prompt"]}
     if not user_input:
         await flash("Please input your query!", "danger")
         return await Respond("index.html", title="Welcome to LLM-RAG 💬", error="Invalid input!")
@@ -147,7 +150,7 @@ async def invoke(): #user_input: UserInput) -> ChatMessage:
         response_metadata={'model': 'llama3.3', 'created_at': '2025-04-12T12:23:19.47198126Z', 'done': True, 'done_reason': 'stop', 'total_duration': 428800185880, 'load_duration': 23447133, 'prompt_eval_count': 674, 'prompt_eval_duration': 19170396674, 'eval_count': 265, 'eval_duration': 409602973053, 'message': 
         Message(role='assistant', content='Task decomposition is a process of breaking down complex tasks or problems into smaller, more manageable steps or subtasks. This technique is used to simplify complicated tasks, making them easier to understand, plan, and execute. It involves identifying the individual components or steps required to complete a task, and then organizing these steps in a logical order.\n\nTask decomposition can be applied in various contexts, including project management, problem-solving, and decision-making. It helps individuals or teams to:\n\n1. Clarify complex tasks: By breaking down complex tasks into smaller steps, individuals can better understand what needs to be done.\n2. Identify priorities: Task decomposition helps to identify the most critical steps that need to be completed first.\n3. Allocate resources: With a clear understanding of the individual steps, resources can be allocated more effectively.\n4. Monitor progress: Decomposing tasks into smaller steps makes it easier to track progress and identify potential bottlenecks.\n\nIn the context of artificial intelligence and machine learning, task decomposition is used in techniques such as Chain of Thought (CoT) and Tree of Thoughts. These methods involve breaking down complex tasks into smaller steps, allowing models to utilize more test-time computation and provide insights into their thinking processes.\n\nOverall, task decomposition is a powerful technique for simplifying complex tasks, improving productivity, and enhancing decision-making.', images=None, tool_calls=None), 'model_name': 'llama3.3'} name='RAG ReAct Agent' id='run-fc59fe44-18ea-44d5-b806-4c8454401703-0' usage_metadata={'input_tokens': 674, 'output_tokens': 265, 'total_tokens': 939} run_id='067fa594-8524-7060-8000-1a4f10981e63'
         """
-        ai_message: str = None
+        ai_message: ChatMessage = None
         if len(result):
             ai_message = ChatMessage.from_langchain(result[-1])
             #print(f"ai_message: {ai_message}")``
@@ -160,6 +163,7 @@ async def invoke(): #user_input: UserInput) -> ChatMessage:
                 #response = await Respond("index.html", title="Welcome to LLM-RAG 💬", message=ai_message.content)
                 #logging.debug(f"response: {response}")
                 return custom_response({"message": ai_message.content}, 200)
+        return custom_response({"message": ""}, 503)
     except Exception as e:
         raise HTTPException(description = str(e))
 
