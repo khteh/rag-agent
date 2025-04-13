@@ -16,6 +16,8 @@ from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
 from langgraph.graph.graph import CompiledGraph
 from src.config import config as appconfig
 from src.Infrastructure.Checkpointer import CheckpointerSetup
+import warnings
+warnings.filterwarnings('always', stacklevel=2)
 # Make the WSGI interface available at the top level so wfastcgi can get it.
 #print(f"GEMINI_API_KEY: {os.environ.get("GEMINI_API_KEY")}")
 config = Config()

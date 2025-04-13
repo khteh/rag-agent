@@ -149,7 +149,9 @@ async def invoke(): #user_input: UserInput) -> ChatMessage:
                 #return await Respond("index.html", title="Welcome to LLM-RAG 💬", greeting=greeting)
                 # res.json({ 'message': this.presenter.Message, "errors": this.presenter.Errors });
                 logging.debug(f"/invoke respose: {ai_message.content}")
-                return await Respond("index.html", title="Welcome to LLM-RAG 💬", message=ai_message.content)
+                response = await Respond("index.html", title="Welcome to LLM-RAG 💬", message=ai_message.content)
+                logging.debug(f"response: {response}")
+                return response
     except Exception as e:
         raise HTTPException(description = str(e))
 
