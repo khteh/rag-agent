@@ -19,6 +19,7 @@ async def _healthcheck() -> ResponseReturnValue:
             "autocommit": True,
             "prepare_threshold": 0,
         }
+        logging.debug(f"POSTGRESQL_DATABASE_URI: {current_app.config["POSTGRESQL_DATABASE_URI"]}")
         async with AsyncConnectionPool(
             conninfo = current_app.config["POSTGRESQL_DATABASE_URI"],
             max_size = current_app.config["DB_MAX_CONNECTIONS"],
@@ -38,6 +39,7 @@ async def _healthcheck() -> ResponseReturnValue:
                     except Exception as e:
                         logging.exception(f"Error checking for checkpoints table: Exception: {e}")
                         raise e
+        logging.debug(f"config.CHROMA_URI: {config.CHROMA_URI}")
         client = chromadb.HttpClient(host=config.CHROMA_URI,
                                 settings=Settings(
                                     chroma_client_auth_provider = "chromadb.auth.token_authn.TokenAuthenticationServerProvider",
