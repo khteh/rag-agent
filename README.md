@@ -1,4 +1,4 @@
-# LangChain, LangGraph, LangSmith
+# LLM-RAG using LangChain, LangGraph, LangSmith
 
 Python RAG using LangChain, LangGraph and LangSmith with local memory checkpoints. It runs on Quart/Hypercorn HTTP/3 ASGI framework.
 
