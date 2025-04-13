@@ -47,17 +47,13 @@ hr {
   grid-template-rows: auto auto 1fr;
 }
 
-#header-image {
-  float: left;
-  width: 100px;
-  height: 100px;
-  background: #555;
-}
-#header-title {
+.header-title {
   position: relative;
   text-align: center;
-  display: inline;
-  margin: 10px 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  vertical-align: middle;
   color: rgb(0, 73, 101);
 }
 

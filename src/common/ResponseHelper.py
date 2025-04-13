@@ -1,3 +1,4 @@
+import logging
 from typing import Optional
 from werkzeug.http import COOP
 from secrets import token_urlsafe
@@ -39,6 +40,9 @@ async def Respond(*args, **kwargs):
     nonce = token_urlsafe(12)
     body = await render_template(*args, **kwargs)
     body = body.replace('type="module"', f'type="module" nonce="{nonce}"')
+    logging.debug(f"Response body: {body}")
+    response = await make_response(body)
+    logging.debug(f"Response response: {response}")
     response = cast(Response, await make_response(body))
     #return _apply_security_headers(response, nonce)
     return response

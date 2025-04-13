@@ -5,30 +5,32 @@
     <div id="msgs-container">
       <ul id="messages"></ul>
     </div>
-    <form id="chatForm" action="{{url_for('home.invoke')}}" method="post">
+    <form id="chatForm" name="chatForm" action="{{url_for('home.invoke')}}" method="post" enctype="multipart/form-data">
       <div id="message-box">
-        <input type="text" id="prompt" name="message" placeholder='How can I help?', onkeyup="stoppedTyping()"/>
+        <input type="text" id="prompt" name="message" placeholder='How can I help?' class="form-control" required onkeyup="stoppedTyping()"/>
         <input id='image', name="image", type='file', accept="image/*"/>
-        <button type="submit" id="btn-submit" disabled>Submit</button>
+        <button type="submit" id="btn-submit" class="btn btn-primary">Submit</button>
       </div>
     </form>
   </div>
   <script type="text/javascript">
     <!-- https://thepythoncode.com/article/how-to-build-a-chat-app-in-python-using-flask-and-flasksocketio -->
     function stoppedTyping() {
-      console.log('stoppedTyping')
-        if(document.querySelector("#prompt").value.length > 0) { 
-            document.querySelector('#btn-submit').disabled = false; 
+        var value = document.forms["chatForm"]["message"].value;
+        //console.log(`stoppedTyping value: ${value}, length: ${value.length}`)
+        if(value.length > 0) { 
+            $('#btn-submit').removeClass('disabled');
         } else { 
-            document.querySelector('#btn-submit').disabled = true;
+            $('#btn-submit').addClass('disabled');
         }
     }
     document.querySelector("#prompt").onblur = stoppedTyping();
     // Select your input type file and store it in a variable
-    document.querySelector("#chatForm").addEventListener("btn-submit", async (e) => {
+    document.querySelector("#chatForm").addEventListener("submit", async (e) => {
       e.preventDefault();
       const prompt = document.querySelector("#prompt").value;
       const image = document.querySelector("#image");
+      //console.log(`btn-submit clicked. prompt: ${prompt}`)
       if (prompt.trim()) {
         var form = new FormData();
         form.append("prompt", prompt);
@@ -41,8 +43,11 @@
         /*for (var pair of form.entries()) {
             console.log(pair[0]+ ', ' + pair[1]); 
         }*/
-        document.querySelector('#submit').disabled = true;
-        document.querySelector("#submit").value = 'Processing...';
+        $("prompt").prop('disabled', true);
+        $("image").prop('disabled', true);
+        $('#btn-submit').addClass('disabled');
+        $("#btn-submit").text('Processing...');
+        //$(this).text('Read More');
         const response = await fetch('/invoke', {
           method: 'POST',
           //headers: { 'Content-Type': 'multipart/form-data' }, Do NOT declare Content-Type: multipart/form-data in request header
@@ -53,15 +58,17 @@
         const queryContainer = document.createElement('div');
         queryContainer.innerHTML = `<div><strong>You:</strong> ${prompt}</div>`;
         document.querySelector("#messages").appendChild(queryContainer);
-        //document.querySelector("#messages").innerHTML += `<div><strong>You:</strong> ${prompt}</div>`;
+        //$("#messages").innerHTML += `<div><strong>You:</strong> ${prompt}</div>`;
         var converter = new showdown.Converter();
         const responseContainer = document.createElement('div');
         responseContainer.innerHTML = `<strong>LLM-RAG-Agent:</strong><div>${converter.makeHtml(data.message)}</div><br>`;
         document.querySelector("#messages").appendChild(responseContainer);
-        //document.querySelector("#messages").innerHTML += `<div><strong>Gemini:</strong></div>${converter.makeHtml(data.message)}<br>`;
-        document.querySelector("#prompt").value = '';
-        document.querySelector("#image").value = '';
-        document.querySelector("#submit").value = 'Submit';
+        //$("#messages").innerHTML += `<div><strong>Gemini:</strong></div>${converter.makeHtml(data.message)}<br>`;
+        $("#prompt").value = '';
+        $("#image").value = '';
+        $("#submit").text('Submit');
+        $("prompt").prop('disabled', false);
+        $("image").prop('disabled', false);
       } else 
         console.error(`Invalid prompt!`);
     });

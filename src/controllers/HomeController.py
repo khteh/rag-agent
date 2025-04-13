@@ -4,6 +4,7 @@ from typing import AsyncGenerator, Dict, Any, Tuple
 from quart import (
     Blueprint,
     flash,
+    formparser,
     request,
     Response,
     ResponseReturnValue,
@@ -12,6 +13,7 @@ from quart import (
     render_template,
     session
 )
+from quart.formparser import FormDataParser
 from datetime import datetime, timezone
 from werkzeug.exceptions import HTTPException
 from contextlib import asynccontextmanager
@@ -95,10 +97,15 @@ async def invoke(): #user_input: UserInput) -> ChatMessage:
     Use thread_id to persist and continue a multi-turn conversation. run_id kwarg
     is also attached to messages for recording feedback.
     """
-    data = await request.get_data()
-    params = parse_qs(data.decode('utf-8'))
-    logging.debug(f"data: {data}, params: {params}, type(params): {type(params)}")
+    #data = await request.get_data()
+    form = await request.form
+    #params = parse_qs(data.decode('utf-8'))
+    #logging.debug(f"data: {data}, form: {form}, params: {params}, type(params): {type(params)}")
+    logging.debug(f"form: {form}")
     user_input: UserInput = None
+    if "prompt" in form and form["prompt"] and len(form["prompt"]):
+        user_input = {"message": form["prompt"]}
+    """
     if is_json(data):
         user_input = json.loads(data)
         logging.debug(f"user_input from data: {user_input}")
@@ -108,12 +115,13 @@ async def invoke(): #user_input: UserInput) -> ChatMessage:
         if str_params and len(str_params) and is_json(str_params):
             user_input = json.loads(str_params)
             logging.debug(f"user_input from params: {user_input}")
+    """
     if not user_input:
         await flash("Please input your query!", "danger")
         return await Respond("index.html", title="Welcome to LLM-RAG 💬", error="Invalid input!")
     # Expect a single string.
-    if isinstance(user_input['message'], (list, tuple)):
-        user_input['message'] = user_input['message'][-1]
+    if isinstance(user_input["message"], (list, tuple)):
+        user_input["message"] = user_input["message"][-1]
     kwargs, run_id = parse_input(user_input)
     logging.debug(f"kwargs: {kwargs}, run_id: {run_id}")
     """
@@ -149,9 +157,9 @@ async def invoke(): #user_input: UserInput) -> ChatMessage:
                 #return await Respond("index.html", title="Welcome to LLM-RAG 💬", greeting=greeting)
                 # res.json({ 'message': this.presenter.Message, "errors": this.presenter.Errors });
                 logging.debug(f"/invoke respose: {ai_message.content}")
-                response = await Respond("index.html", title="Welcome to LLM-RAG 💬", message=ai_message.content)
-                logging.debug(f"response: {response}")
-                return response
+                #response = await Respond("index.html", title="Welcome to LLM-RAG 💬", message=ai_message.content)
+                #logging.debug(f"response: {response}")
+                return custom_response({"message": ai_message.content}, 200)
     except Exception as e:
         raise HTTPException(description = str(e))
 
