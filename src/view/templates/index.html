@@ -7,7 +7,7 @@
     </div>
     <form id="chatForm" action="{{url_for('home.invoke')}}" method="post">
       <div id="message-box">
-        <input type="text" placeholder="Enter your message" id="prompt" name="message" placeholder='How can I help?', onkeyup="stoppedTyping()"/>
+        <input type="text" id="prompt" name="message" placeholder='How can I help?', onkeyup="stoppedTyping()"/>
         <input id='image', name="image", type='file', accept="image/*"/>
         <button type="submit" id="btn-submit" disabled>Submit</button>
       </div>
@@ -16,6 +16,7 @@
   <script type="text/javascript">
     <!-- https://thepythoncode.com/article/how-to-build-a-chat-app-in-python-using-flask-and-flasksocketio -->
     function stoppedTyping() {
+      console.log('stoppedTyping')
         if(document.querySelector("#prompt").value.length > 0) { 
             document.querySelector('#btn-submit').disabled = false; 
         } else { 
