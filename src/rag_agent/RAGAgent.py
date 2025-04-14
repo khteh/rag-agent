@@ -64,7 +64,7 @@ class RAGAgent():
     A list of the names of the variables for placeholder or MessagePlaceholder that are optional. These variables are auto inferred from the prompt and user need not provide them.
     """
     _prompt = ChatPromptTemplate.from_messages([
-                ("system", "You are a helpful AI assistant named Bob. Always provide accurate answer and save the user session at the end of your task."),
+                ("system", "You are a helpful AI assistant named Bob. Always provide accurate answer."),
                 ("placeholder", "{messages}")
         ])
     _vectorStore = None
@@ -90,7 +90,7 @@ class RAGAgent():
             }
         )
         self._vectorStore = VectorStore(model=appconfig.EMBEDDING_MODEL, chunk_size=1000, chunk_overlap=0)
-        self._tools = [self._vectorStore.retriever_tool, HealthcareReview, HealthcareCypher, get_current_wait_times, get_most_available_hospital, ground_search, save_memory]
+        self._tools = [self._vectorStore.retriever_tool, HealthcareReview, HealthcareCypher, get_current_wait_times, get_most_available_hospital, ground_search]
         self._llm = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider="ollama", base_url=appconfig.OLLAMA_URI, streaming=True).bind_tools(self._tools)
         # https://python.langchain.com/docs/integrations/chat/google_vertex_ai_palm/
 
