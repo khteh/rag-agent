@@ -39,6 +39,8 @@ from src.Infrastructure.VectorStore import VectorStore
 from src.common.State import CustomAgentState
 from src.utils.image import show_graph
 from .Tools import ground_search, save_memory
+from src.Healthcare.Tools import HealthcareReview, HealthcareCypher
+from src.Healthcare.HospitalWaitingTime import get_current_wait_times, get_most_available_hospital
 from src.common.configuration import Configuration
 from src.Infrastructure.Checkpointer import CheckpointerSetup
 
@@ -88,7 +90,7 @@ class RAGAgent():
             }
         )
         self._vectorStore = VectorStore(model=appconfig.EMBEDDING_MODEL, chunk_size=1000, chunk_overlap=0)
-        self._tools = [self._vectorStore.retriever_tool, ground_search, save_memory]
+        self._tools = [self._vectorStore.retriever_tool, HealthcareReview, HealthcareCypher, get_current_wait_times, get_most_available_hospital, ground_search, save_memory]
         self._llm = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider="ollama", base_url=appconfig.OLLAMA_URI, streaming=True).bind_tools(self._tools)
         # https://python.langchain.com/docs/integrations/chat/google_vertex_ai_palm/
 

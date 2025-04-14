@@ -1,6 +1,8 @@
 import os
 from typing import Any
 import numpy as np
+from typing_extensions import Annotated
+from langchain_core.runnables import RunnableConfig, ensure_config
 from langchain_core.tools import InjectedToolArg, tool, Tool
 from langchain_neo4j import Neo4jGraph
 from src.config import config
@@ -35,18 +37,24 @@ def _get_current_wait_time_minutes(hospital: str) -> int:
         is "What is the current wait time at Jordan Inc Hospital?", the
         input should be "Jordan Inc".
         """)
-def get_current_wait_times(hospital: str) -> str:
+def get_current_wait_times(query: str, *, config: Annotated[RunnableConfig, InjectedToolArg]) -> str:
     """Get the current wait time at a hospital formatted as a string."""
-    wait_time_in_minutes = _get_current_wait_time_minutes(hospital)
+    wait_time_in_minutes = _get_current_wait_time_minutes(query)
     if wait_time_in_minutes == -1:
-        return f"Hospital '{hospital}' does not exist."
+        return f"Hospital '{query}' does not exist."
     hours, minutes = divmod(wait_time_in_minutes, 60)
     if hours > 0:
         return f"{hours} hours {minutes} minutes"
     else:
         return f"{minutes} minutes"
-    
-def get_most_available_hospital(_: Any) -> dict[str, float]:
+
+@tool(description="""
+        Use when you need to find out which hospital has the shortest
+        wait time. This tool does not have any information about aggregate
+        or historical wait times. This tool returns a dictionary with the
+        hospital name as the key and the wait time in minutes as the value.
+        """)
+def get_most_available_hospital(query: str, *, config: Annotated[RunnableConfig, InjectedToolArg]) -> dict[str, float]:
     """Find the hospital with the shortest wait time."""
     current_hospitals = _get_current_hospitals()
     current_wait_times = [

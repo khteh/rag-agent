@@ -5,6 +5,7 @@ class AuthHeaderMiddleware:
     _auth_secret = os.getenv("AUTH_SECRET")
     def __init__(self, app):
         self.app = app
+        
     async def __call__(self, scope, receive, send):
         if "headers" not in scope:
             return await self.app(scope, receive, send)

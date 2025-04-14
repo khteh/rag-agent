@@ -90,19 +90,19 @@ class TokenQueueStreamingHandler(AsyncCallbackHandler):
             await self.queue.put(token)
 
 async def ProcessCurlInput() -> UserInput:
+    """
+    This process curl post body:
+    c3 -v https://10.152.183.176/invoke -XPOST -d '{"message": "What is task decomposition?"}'
+    """
     data = await request.get_data()
     params = parse_qs(data.decode('utf-8'))
-    logging.debug(f"data: {data}, params: {params}, type(params): {type(params)}")
     user_input: UserInput = None
     if is_json(data):
         user_input = json.loads(data)
-        logging.debug(f"user_input from data: {user_input}")
     elif isinstance(params, dict):
         str_params: str = json.dumps(params)
-        logging.debug(f"str_params: {str_params}")
         if str_params and len(str_params) and is_json(str_params):
             user_input = json.loads(str_params)
-            logging.debug(f"user_input from params: {user_input}")
     return user_input
 
 @home_api.post("/invoke")
@@ -114,9 +114,12 @@ async def invoke(): #user_input: UserInput) -> ChatMessage:
     is also attached to messages for recording feedback.
     """
     user_input: UserInput = await ProcessCurlInput()
+    """
+    If it is not curl, then the request must have come from the browser with form data. The following processes it.
+    """
     if not user_input or "message" not in user_input:
         form = await request.form
-        logging.debug(f"form: {form}")
+        #logging.debug(f"form: {form}")
         if "prompt" in form and form["prompt"] and len(form["prompt"]):
             user_input = {"message": form["prompt"]}
     if not user_input:
@@ -126,7 +129,7 @@ async def invoke(): #user_input: UserInput) -> ChatMessage:
     if isinstance(user_input["message"], (list, tuple)):
         user_input["message"] = user_input["message"][-1]
     kwargs, run_id = parse_input(user_input)
-    logging.debug(f"kwargs: {kwargs}, run_id: {run_id}")
+    logging.debug(f"/invoke kwargs: {kwargs}, run_id: {run_id}")
     """
     kwargs: {'input': {'messages': [HumanMessage(content='What is task decomposition?', additional_kwargs={}, response_metadata={})]}, 'config': {'configurable': {'thread_id': '067fa565-02ef-7d89-8000-15cd9d193962'}, 'run_id': UUID('067fa565-02ef-7a08-8000-28b0a62db0e7')}}, run_id: 067fa565-02ef-7a08-8000-28b0a62db0e7
     """
@@ -155,10 +158,6 @@ async def invoke(): #user_input: UserInput) -> ChatMessage:
             ai_message = ChatMessage.from_langchain(result[-1])
             #print(f"ai_message: {ai_message}")``
             if ai_message and not ai_message.tool_calls and ai_message.content and len(ai_message.content):
-                #output.run_id = str(run_id)
-                #return output
-                #return await Respond("index.html", title="Welcome to LLM-RAG 💬", greeting=greeting)
-                # res.json({ 'message': this.presenter.Message, "errors": this.presenter.Errors });
                 logging.debug(f"/invoke respose: {ai_message.content}")
                 #response = await Respond("index.html", title="Welcome to LLM-RAG 💬", message=ai_message.content)
                 #logging.debug(f"response: {response}")

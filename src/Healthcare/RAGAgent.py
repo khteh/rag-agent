@@ -36,6 +36,7 @@ from langgraph.checkpoint.memory import MemorySaver
 from langchain_ollama import OllamaEmbeddings
 from psycopg_pool import AsyncConnectionPool, ConnectionPool
 from .Tools import TOOLS
+from src.rag_agent.Tools import save_memory
 from src.common.configuration import Configuration
 from src.utils.image import show_graph
 from src.Infrastructure.VectorStore import VectorStore
@@ -56,6 +57,7 @@ class RAGAgent():
         ])
     _vectorStore = None
     _in_memory_store: InMemoryStore = None
+    _tools: List[Callable[..., Any]] = None #[vector_store.retriever_tool, ground_search, save_memory]
     # Class constructor
     def __init__(self, config: RunnableConfig={}):
         """
@@ -74,8 +76,10 @@ class RAGAgent():
                 #"dims": 1536,
             }
         )
+        self._tools = TOOLS
+        self._tools.append(save_memory)
         self._vectorStore = VectorStore(model=appconfig.EMBEDDING_MODEL, chunk_size=1000, chunk_overlap=0)
-        self._llm = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider="ollama", base_url=appconfig.OLLAMA_URI, streaming=True).bind_tools(TOOLS)
+        self._llm = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider="ollama", base_url=appconfig.OLLAMA_URI, streaming=True).bind_tools(self._tools)
         # https://python.langchain.com/docs/integrations/chat/google_vertex_ai_palm/
     async def CreateGraph(self) -> CompiledGraph:
         logging.debug(f"\n=== {self.CreateGraph.__name__} ===")
@@ -85,7 +89,7 @@ class RAGAgent():
             https://github.com/langchain-ai/langchain/issues/30723
             https://langchain-ai.github.io/langgraph/how-tos/cross-thread-persistence/
             """
-            self._agent = create_react_agent(self._llm, TOOLS, store = self._in_memory_store, config_schema = Configuration, state_schema=CustomAgentState, name=self._name, prompt=self._prompt)
+            self._agent = create_react_agent(self._llm, self._tools, store = self._in_memory_store, config_schema = Configuration, state_schema=CustomAgentState, name=self._name, prompt=self._prompt)
             #self.ShowGraph() # This blocks
         except ResourceExhausted as e:
             logging.exception(f"google.api_core.exceptions.ResourceExhausted")

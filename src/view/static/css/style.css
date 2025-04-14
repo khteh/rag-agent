@@ -3,6 +3,9 @@
   padding: 0;
   box-sizing: border-box;
 }
+.loading {
+  cursor: wait;
+}
 .header {
   height: 100px;
   vertical-align: middle;

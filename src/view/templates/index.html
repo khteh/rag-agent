@@ -9,7 +9,7 @@
       <div id="message-box">
         <input type="text" id="prompt" name="message" placeholder='How can I help?' class="form-control" required onkeyup="stoppedTyping()"/>
         <input id='image', name="image", type='file', accept="image/*"/>
-        <button type="submit" id="btn-submit" class="btn btn-primary">Submit</button>
+        <button type="submit" id="btn-submit" class="btn btn-primary loading">Submit</button>
       </div>
     </form>
     <!--<form id="chatFormHuman" name="chatFormHuman" action="" method="post" enctype="multipart/form-data">
@@ -61,11 +61,11 @@
         /*for (var pair of form.entries()) {
             console.log(pair[0]+ ', ' + pair[1]); 
         }*/
-        $("prompt").prop('disabled', true);
-        $("image").prop('disabled', true);
+        $("#prompt").prop('disabled', true);
+        $("#image").prop('disabled', true);
         $('#btn-submit').addClass('disabled');
         $("#btn-submit").text('Processing...');
-        //$(this).text('Read More');
+        $('#btn-submit').classList.add('loading');
         const response = await fetch('/invoke', {
           method: 'POST',
           //headers: { 'Content-Type': 'multipart/form-data' }, Do NOT declare Content-Type: multipart/form-data in request header
@@ -75,7 +75,12 @@
         /*const data = {
           "message": 'Task decomposition is the process of breaking down a complex task or problem into smaller, more manageable steps or subtasks. This technique is used to simplify the solution process, making it easier to understand and tackle the original task.\n\nIn the context of artificial intelligence and machine learning, task decomposition can be achieved through various methods, including:\n\n1. **Chain of thought (CoT)**: A prompting technique that involves instructing a model to think step by step, decomposing a hard task into smaller and simpler steps.\n2. **Tree of Thoughts**: An extension of CoT that explores multiple reasoning possibilities at each step, creating a tree structure.\n3. **Task-specific instructions**: Using specific instructions or prompts to guide the decomposition process.\n4. **Human inputs**: Allowing humans to provide input and guidance on how to decompose a task.\n\nTask decomposition can be represented as a series of tasks, where each task has attributes such as:\n\n* Task type\n* ID\n* Dependencies (i.e., which previous tasks it relies on)\n* Arguments (e.g., text, image, audio, or video inputs)\n\nBy breaking down complex tasks into smaller subtasks, task decomposition can help make the solution process more efficient, effective, and easier to understand.\n\nI will now save this user session for future reference. \n\nSession Saved: \nUser Question: What is task decomposition?\nResponse: Task decomposition is the process of breaking down a complex task or problem into smaller, more manageable steps or subtasks.\nTimestamp: {Current Timestamp}'
         }*/
-        console.log(JSON.stringify(data, null, 2))
+       /*
+       const data = {
+          "message": "The hospital with the shortest wait time is Cunningham and Sons with a wait time of 15 minutes. \n\nI will now save this user session for future reference."
+        }
+       */
+        //console.log(JSON.stringify(data, null, 2))
         const queryContainer = document.createElement('div');
         queryContainer.innerHTML = `<div class="row">
                                       <div class="col-md-1">
@@ -86,12 +91,11 @@
                                       </div>
                                     </div>`;
         document.querySelector("#messages").appendChild(queryContainer);
-        //$("#messages").innerHTML += `<div><strong>You:</strong> ${prompt}</div>`;
         var converter = new showdown.Converter();
-        console.log(converter.makeHtml(data.message))
+        //console.log(converter.makeHtml(data.message))
         const responseContainer = document.createElement('div');
         responseContainer.innerHTML = `<div class="row">
-                                          <div class="col-md-1 justify-content-start">
+                                          <div class="col-md-1 d-flex justify-content-start">
                                             <strong>Agent: </strong>
                                           </div>
                                           <div clalss="col-md-11">
@@ -105,12 +109,11 @@
                                           </div>
                                        </div>`;
         document.querySelector("#messages").appendChild(responseContainer);
-        //$("#messages").innerHTML += `<div><strong>Gemini:</strong></div>${converter.makeHtml(data.message)}<br>`;
-        $("#prompt").value = '';
-        $("#image").value = '';
-        $("#submit").text('Submit');
-        $("prompt").prop('disabled', false);
-        $("image").prop('disabled', false);
+        $(':input').val('');
+        $("#btn-submit").text('Submit');
+        $('#btn-submit').classList.remove('loading');
+        $("#prompt").removeAttr('disabled');
+        $("#image").removeAttr('disabled');
       } else 
         console.error(`Invalid prompt!`);
     });
