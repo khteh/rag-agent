@@ -123,10 +123,16 @@ $ k create secret generic gcloud-service-account --from-file=service-account.jso
 
 - Add `Host` header which is defined as `server_names` in `hypercorn.toml`
 
+## TLS certificates
+
+- If run locally, `./hypercorn.sh` would have generated the TLS cert into `/tmp` folder
+- If trying to access the application running in k8s cluster, copy the cert out of the pod into `/tmp` folder.
+
 ## Chrome browser
 
 - Close ALL chrome browser (both tabs and windows)
-- Generate TLS certificate and it's fingerprint:
+
+- Generate TLS certificate fingerprint:
 
 ```
 $ fingerprint=`openssl x509 -pubkey -noout -in /tmp/server.crt |
