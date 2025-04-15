@@ -53,7 +53,7 @@
   </div>
 </div>
 <!-- https://www.w3schools.com/howto/tryit.asp?filename=tryhow_js_sidenav_push -->
-<div id="main" class="container-fluid text-center" style="margin-top: 10px">
+<div id="main" class="content" style="margin-top: 10px">
   <div class="content" style="margin-top: 10px">
     {% block content %}
     {% endblock %}
@@ -70,10 +70,10 @@
 		  {% endif %}
 		  {% endwith %}
     </div>
+    <footer class="container-fluid text-center">
+      <p>Copyright &#169 {{ now.year }} Teh Kok How</p>
+    </footer>	
   </div>
 </div>
 </body>
-<footer class="container-fluid text-center">
-  <p>Copyright &#169 {{ now.year }} Teh Kok How</p>
-</footer>	
 </html>

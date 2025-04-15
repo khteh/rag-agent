@@ -1,4 +1,4 @@
-import argparse, bs4, vertexai, asyncio, logging
+import argparse, atexit, bs4, vertexai, asyncio, logging
 from datetime import datetime
 from uuid_extensions import uuid7, uuid7str
 from typing import Annotated
@@ -25,6 +25,8 @@ from langgraph.store.base import BaseStore
 from langgraph.store.memory import InMemoryStore
 from langchain_ollama import OllamaEmbeddings
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
+from langchain_neo4j import Neo4jGraph, GraphCypherQAChain
+from langchain.prompts import PromptTemplate
 from psycopg_pool import AsyncConnectionPool, ConnectionPool
 """
 https://python.langchain.com/docs/tutorials/qa_chat_history/
@@ -43,7 +45,7 @@ from src.Healthcare.Tools import HealthcareReview, HealthcareCypher
 from src.Healthcare.HospitalWaitingTime import get_current_wait_times, get_most_available_hospital
 from src.common.configuration import Configuration
 from src.Infrastructure.Checkpointer import CheckpointerSetup
-
+from src.Healthcare.prompts import cypher_generation_template, qa_generation_template
 class RAGAgent():
     _name:str = "RAG ReAct Agent"
     _llm = None
@@ -71,11 +73,16 @@ class RAGAgent():
     _in_memory_store: InMemoryStore = None
     _tools: List[Callable[..., Any]] = None #[vector_store.retriever_tool, ground_search, save_memory]
     _agent: CompiledGraph = None
+    #_neo4jGraph: Neo4jGraph = None
+    #_cypher_generation_prompt: PromptTemplate = None
+    #_qa_generation_prompt: PromptTemplate = None
+    #_hospital_cypher_chain: GraphCypherQAChain = None
     # Class constructor
     def __init__(self, config: RunnableConfig={}):
         """
         Class RAGAgent Constructor
         """
+        atexit.register(self.Cleanup)
         #vertexai.init(project=os.environ.get("GOOGLE_CLOUD_PROJECT"), location=os.environ.get("GOOGLE_CLOUD_LOCATION"))
         self._config = config
         """
@@ -90,9 +97,37 @@ class RAGAgent():
             }
         )
         self._vectorStore = VectorStore(model=appconfig.EMBEDDING_MODEL, chunk_size=1000, chunk_overlap=0)
-        self._tools = [self._vectorStore.retriever_tool, HealthcareReview, HealthcareCypher, get_current_wait_times, get_most_available_hospital, ground_search]
-        self._llm = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider="ollama", base_url=appconfig.OLLAMA_URI, streaming=True).bind_tools(self._tools)
+        self._tools = [self._vectorStore.retriever_tool, HealthcareReview, HealthcareCypher, get_current_wait_times, get_most_available_hospital, save_memory]
+        self._llm = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider="ollama", base_url = appconfig.OLLAMA_URI, configurable_fields=("user_id", "cypher"), streaming = True).bind_tools(self._tools)
+        """
+        self._neo4jGraph = Neo4jGraph(
+                url = appconfig.NEO4J_URI,
+                username = appconfig.NEO4J_USERNAME,
+                password = appconfig.NEO4J_PASSWORD,
+            )
+        self._cypher_generation_prompt = PromptTemplate(
+            input_variables=["schema", "question"], template=cypher_generation_template
+        )
+        self._qa_generation_prompt = PromptTemplate(
+            input_variables=["context", "question"], template=qa_generation_template
+        )
+        self._hospital_cypher_chain = GraphCypherQAChain.from_llm(
+            cypher_llm = self._llm,
+            qa_llm = self._llm,
+            graph = self._neo4jGraph,
+            verbose = True, # Whether intermediate steps your chain performs should be printed.
+            qa_prompt = self._qa_generation_prompt,
+            cypher_prompt = self._cypher_generation_prompt,
+            validate_cypher = True,
+            top_k = 100,
+            allow_dangerous_requests = True # https://python.langchain.com/docs/security/
+        )
+        """
         # https://python.langchain.com/docs/integrations/chat/google_vertex_ai_palm/
+    
+    def Cleanup(self):
+        logging.info(f"\n=== {self.Cleanup.__name__} ===")
+        #self._in_memory_store.close()
 
     async def prepare_model_inputs(self, state: CustomAgentState, config: RunnableConfig, store: BaseStore):
         # Retrieve user memories and add them to the system message

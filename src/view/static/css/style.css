@@ -272,7 +272,7 @@ hr {
   margin: 10px 0;
   color: grey;
 }
-#content {
+.content {
 	padding-bottom: 50px; /* Height of the footer */
 }
 /* Set black background color, white text and some padding */

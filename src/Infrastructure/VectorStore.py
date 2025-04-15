@@ -1,4 +1,4 @@
-import asyncio, bs4, chromadb, hashlib, logging
+import asyncio, atexit, bs4, chromadb, hashlib, logging
 from chromadb.config import Settings
 from typing_extensions import List, TypedDict, Optional, Any
 from langchain.tools.retriever import create_retriever_tool
@@ -24,7 +24,7 @@ class VectorStoreSingleton(type): # Inherit from "type" in order to gain access 
         elif registry[cls][1] != args or registry[cls][2] != kwargs:
               raise TypeError(f"Class already initialized with different arguments!")
         return registry[cls][0]
-class VectorStore(metaclass=VectorStoreSingleton):
+class VectorStore(): #metaclass=VectorStoreSingleton):
     """
     Class constructor
     https://python.langchain.com/api_reference/_modules/langchain_core/vectorstores/in_memory.html#InMemoryVectorStore
@@ -41,8 +41,8 @@ class VectorStore(metaclass=VectorStoreSingleton):
     _tenant: str = None
     _database: str = None
     _docs = set()
-    def __new__(cls, *args, **kwargs):
-        return super().__new__(cls)
+    #def __new__(cls, *args, **kwargs):
+    #    return super().__new__(cls)
     def __init__(self, model, chunk_size, chunk_overlap, tenant="khteh", database="LLM-RAG-Agent", collection="LLM-RAG-Agent"):
         self._model = model
         self._chunk_size = chunk_size
@@ -87,6 +87,14 @@ class VectorStore(metaclass=VectorStoreSingleton):
             "Retrieve information related to a query",
             "Search and return information about the query from the documents available in the store",
         )
+        atexit.register(self.Cleanup)
+
+    def Cleanup(self):
+        logging.info(f"\n=== {self.Cleanup.__name__} ===")
+        # self._embeddings.close() 'OllamaEmbeddings' object has no attribute 'close'
+        self._client.close()
+        self.vector_store.close()
+        self.retriever_tool = None
 
     def CreateTenantDatabase(self):
         #tenant_id = f"tenant_user:{user_id}"
@@ -100,7 +108,7 @@ class VectorStore(metaclass=VectorStoreSingleton):
         """
         logging.info(f"{self.CreateTenantDatabase.__name__} tenant: {self._tenant}, database: {self._database}")
         # For Remote Chroma server:
-        adminClient= chromadb.AdminClient(Settings(
+        adminClient = chromadb.AdminClient(Settings( # Does NOT support context manager protocol
            chroma_api_impl="chromadb.api.fastapi.FastAPI",
            chroma_server_host=config.CHROMA_URI,
            chroma_server_http_port=80,
