@@ -225,10 +225,21 @@ async def stream_agent(): #user_input: StreamInput):
     Use thread_id to persist and continue a multi-turn conversation. run_id kwarg
     is also attached to all messages for recording feedback.
     """
-    data = await request.get_data()
-    params = parse_qs(data.decode('utf-8'))
-    logging.debug(f"data: {data}, params: {params}")
-    user_input: UserInput = jsonpickle.decode(data)
+    user_input: UserInput = await ProcessCurlInput()
+    """
+    If it is not curl, then the request must have come from the browser with form data. The following processes it.
+    """
+    if not user_input or "message" not in user_input:
+        form = await request.form
+        #logging.debug(f"form: {form}")
+        if "prompt" in form and form["prompt"] and len(form["prompt"]):
+            user_input = {"message": form["prompt"]}
+    if not user_input:
+        await flash("Please input your query!", "danger")
+        return await Respond("index.html", title="Welcome to LLM-RAG 💬", error="Invalid input!")
+    # Expect a single string.
+    if isinstance(user_input["message"], (list, tuple)):
+        user_input["message"] = user_input["message"][-1]
     @stream_with_context
     async def async_generator():
         message = message_generator(user_input)

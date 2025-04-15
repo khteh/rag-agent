@@ -13,8 +13,8 @@ class ConfigSingleton(type): # Inherit from "type" in order to gain access to me
         return registry[cls][0]
 
 class Config(metaclass=ConfigSingleton):
-    DEBUG = False
     TESTING = False
+    LOGLEVEL:str = None
     SECRET_KEY:str = None
     SQLALCHEMY_DATABASE_URI:str = None
     POSTGRESQL_DATABASE_URI:str = None
@@ -35,6 +35,7 @@ class Config(metaclass=ConfigSingleton):
     def __init__(self, environment="Development"):
         with open('/etc/ragagent_config.json', 'r') as f:
             config = json.load(f)
+        self.LOGLEVEL = config['LOGLEVEL']
         self.SECRET_KEY = config["SECRET_KEY"] or "you-will-never-guess"
         self.SQLALCHEMY_DATABASE_URI = f"postgresql+psycopg://{os.environ.get('DB_USERNAME')}:{parse.quote(os.environ.get('DB_PASSWORD'))}@{config['DB_HOST']}/LangchainCheckpoint"
         self.POSTGRESQL_DATABASE_URI = f"postgresql://{os.environ.get('DB_USERNAME')}:{parse.quote(os.environ.get('DB_PASSWORD'))}@{config['DB_HOST']}/LangchainCheckpoint"
@@ -60,6 +61,6 @@ class Config(metaclass=ConfigSingleton):
         httpx library is a dependency of LangGraph and is used under the hood to communicate with the AI models.
         """
         logging.getLogger("httpx").setLevel(logging.WARNING)
-        logging.basicConfig(filename='/var/log/ragagent/log', filemode='w', format='%(asctime)s %(levelname)-8s %(message)s', level=config['LOGLEVEL'], datefmt='%Y-%m-%d %H:%M:%S')	
+        logging.basicConfig(filename='/var/log/ragagent/log', filemode='w', format='%(asctime)s %(levelname)-8s %(message)s', level=self.LOGLEVEL, datefmt='%Y-%m-%d %H:%M:%S')
 
 config = Config()
