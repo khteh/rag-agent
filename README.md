@@ -1,6 +1,6 @@
-# LLM-RAG using LangChain, LangGraph, LangSmith
+# LLM-RAG ReAct agent using LangChain, LangGraph, LangSmith
 
-Python LLM-RAG using LangChain, LangGraph and LangSmith built on Quart web microframework and served using Hypercorn ASGI and WSGI web server.
+Python LLM-RAG ReAct agent using LangChain, LangGraph and LangSmith built on Quart web microframework and served using Hypercorn ASGI and WSGI web server.
 
 ## Infrastructure components:
 
