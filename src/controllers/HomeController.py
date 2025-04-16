@@ -125,7 +125,7 @@ async def invoke():
         #logging.debug(f"form: {form}")
         if "prompt" in form and form["prompt"] and len(form["prompt"]):
             user_input = {"message": form["prompt"]}
-    if not user_input:
+    if not user_input or "message" not in user_input or not len(user_input["message"]):
         await flash("Please input your query!", "danger")
         return await Respond("index.html", title="Welcome to LLM-RAG 💬", error="Invalid input!")
     # Expect a single string.
@@ -134,6 +134,7 @@ async def invoke():
     config = RunnableConfig(run_name="RAG ReAct Agent /invoke", thread_id = session["thread_id"], user_id =  session["user_id"])
     try:
         result: List[str] = []
+        logging.debug(f"/invoke message: {user_input['message']}")
         async for step in current_app.agent.astream(
             {"messages": [{"role": "user", "content": user_input['message']}]},
             stream_mode="values", # Use this to stream all values in the state after each step.
@@ -163,6 +164,7 @@ async def invoke():
                 return custom_response({"message": ai_message.content}, 200)
         return custom_response({"message": ""}, 503)
     except Exception as e:
+        logging.exception(f"/invoke exception! {str(e)}")
         raise HTTPException(description = str(e))
 
 async def message_generator(user_input: StreamInput, config: RunnableConfig) -> AsyncGenerator[str, None]:

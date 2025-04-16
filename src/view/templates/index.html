@@ -4,7 +4,7 @@
   <div id="chat-room-widget" style="margin-top: 10px">
     <div id="messages">
     </div>
-    <form id="chatForm" name="chatForm" class="loading" action="{{url_for('home.invoke')}}" method="post" enctype="multipart/form-data">
+    <form id="chatForm" name="chatForm" action="{{url_for('home.invoke')}}" method="post" enctype="multipart/form-data">
       <div id="message-box">
         <input type="text" id="prompt" name="message" placeholder="How can I help?" class="form-control" required onkeyup="stoppedTyping()"/>
         <input id='image' name="image" type='file' class="form-control" accept="image/*" placeholder="Upload an image for your question"/>
@@ -57,52 +57,57 @@
                                       </div>
                                     </div>`;
         document.querySelector("#messages").appendChild(queryContainer);
-        const response = await fetch('/invoke', {
-          method: 'POST',
-          //headers: { 'Content-Type': 'multipart/form-data' }, Do NOT declare Content-Type: multipart/form-data in request header
-          body: form
-        });
-        const data = await response.json();
-        /*
-        From Chroma vector
-        const data = {
-          "message": 'Task decomposition is the process of breaking down a complex task or problem into smaller, more manageable steps or subtasks. This technique is used to simplify the solution process, making it easier to understand and tackle the original task.\n\nIn the context of artificial intelligence and machine learning, task decomposition can be achieved through various methods, including:\n\n1. **Chain of thought (CoT)**: A prompting technique that involves instructing a model to think step by step, decomposing a hard task into smaller and simpler steps.\n2. **Tree of Thoughts**: An extension of CoT that explores multiple reasoning possibilities at each step, creating a tree structure.\n3. **Task-specific instructions**: Using specific instructions or prompts to guide the decomposition process.\n4. **Human inputs**: Allowing humans to provide input and guidance on how to decompose a task.\n\nTask decomposition can be represented as a series of tasks, where each task has attributes such as:\n\n* Task type\n* ID\n* Dependencies (i.e., which previous tasks it relies on)\n* Arguments (e.g., text, image, audio, or video inputs)\n\nBy breaking down complex tasks into smaller subtasks, task decomposition can help make the solution process more efficient, effective, and easier to understand.\n\nI will now save this user session for future reference. \n\nSession Saved: \nUser Question: What is task decomposition?\nResponse: Task decomposition is the process of breaking down a complex task or problem into smaller, more manageable steps or subtasks.\nTimestamp: {Current Timestamp}'
-        }*/
-       /*
-       const data = {
-          "message": "The hospital with the shortest wait time is Cunningham and Sons with a wait time of 15 minutes."
+        try {
+          const response = await fetch('/invoke', {
+            method: 'POST',
+            //headers: { 'Content-Type': 'multipart/form-data' }, Do NOT declare Content-Type: multipart/form-data in request header
+            body: form
+          });
+          const data = await response.json();
+          /*
+          From Chroma vector
+          const data = {
+            "message": 'Task decomposition is the process of breaking down a complex task or problem into smaller, more manageable steps or subtasks. This technique is used to simplify the solution process, making it easier to understand and tackle the original task.\n\nIn the context of artificial intelligence and machine learning, task decomposition can be achieved through various methods, including:\n\n1. **Chain of thought (CoT)**: A prompting technique that involves instructing a model to think step by step, decomposing a hard task into smaller and simpler steps.\n2. **Tree of Thoughts**: An extension of CoT that explores multiple reasoning possibilities at each step, creating a tree structure.\n3. **Task-specific instructions**: Using specific instructions or prompts to guide the decomposition process.\n4. **Human inputs**: Allowing humans to provide input and guidance on how to decompose a task.\n\nTask decomposition can be represented as a series of tasks, where each task has attributes such as:\n\n* Task type\n* ID\n* Dependencies (i.e., which previous tasks it relies on)\n* Arguments (e.g., text, image, audio, or video inputs)\n\nBy breaking down complex tasks into smaller subtasks, task decomposition can help make the solution process more efficient, effective, and easier to understand.\n\nI will now save this user session for future reference. \n\nSession Saved: \nUser Question: What is task decomposition?\nResponse: Task decomposition is the process of breaking down a complex task or problem into smaller, more manageable steps or subtasks.\nTimestamp: {Current Timestamp}'
+          }*/
+          /*
+          const data = {
+              "message": "The hospital with the shortest wait time is Cunningham and Sons with a wait time of 15 minutes."
+            }
+          */
+          //From ground_search tool
+          /*const data = {
+            "message": "Task decomposition is a process used in various fields such as project management, software development, and problem-solving. It involves breaking down complex tasks or projects into smaller, more manageable components or subtasks.\n\nThe goal of task decomposition is to make it easier to understand, plan, and execute the task by dividing it into smaller pieces that can be worked on individually. This approach helps to:\n\n1. Reduce complexity: By breaking down a large task into smaller parts, it becomes less overwhelming and more manageable.\n2. Improve clarity: Task decomposition helps to identify specific requirements, dependencies, and potential roadblocks.\n3. Enhance planning: With smaller tasks, it's easier to create a detailed plan, allocate resources, and set realistic deadlines.\n4. Increase productivity: Focusing on one subtask at a time can improve concentration and efficiency.\n\nCommon methods for task decomposition include:\n\n1. Top-down approach: Starting with the overall goal and breaking it down into smaller tasks.\n2. Bottom-up approach: Identifying individual tasks and combining them to achieve the overall goal.\n3. Functional decomposition: Breaking down tasks based on functional areas or departments.\n4. Hierarchical decomposition: Organizing tasks in a hierarchical structure, with higher-level tasks broken down into smaller subtasks.\n\nExamples of task decomposition can be seen in various industries, such as:\n\n1. Software development: Breaking down a large software project into smaller modules or features.\n2. Construction: Dividing a building project into individual tasks, such as foundation work, framing, and electrical installation.\n3. Event planning: Decomposing an event into smaller tasks, like venue selection, catering, and decorations.\n\nThe benefits of task decomposition include:\n\n1. Improved project management\n2. Enhanced team collaboration\n3. Increased productivity\n4. Better risk management\n5. More accurate estimating and scheduling\n\nBy applying task decomposition techniques, individuals and teams can tackle complex tasks with greater ease, efficiency, and effectiveness."
+          }*/
+          //console.log(JSON.stringify(data, null, 2))
+          var converter = new showdown.Converter();
+          //console.log(converter.makeHtml(data.message))
+          const responseContainer = document.createElement('div');
+          // https://getbootstrap.com/docs/5.0/utilities/flex/
+          responseContainer.innerHTML = `<div class="row d-flex justify-content-start">
+                                            <div class="col-md-1 d-flex justify-content-start">
+                                              <strong>Agent: </strong>
+                                            </div>
+                                            <div clalss="col-md-11">
+                                            </div>
+                                        </div>
+                                        <div class="row flex d-flex justify-content-start">
+                                            <div class="col-md-11 justify-content-start">
+                                                ${converter.makeHtml(data.message)}
+                                            </div>
+                                            <div clalss="col-md-1">
+                                            </div>
+                                        </div>`;
+          document.querySelector("#messages").appendChild(responseContainer);
+        } catch (err) {
+          console.error(err)
+        } finally {
+          $(':input').val('');
+          $("#btn-submit").text('Submit');
+          $('#chatForm').removeClass('loading');
+          $("#prompt").removeAttr('disabled');
+          $("#image").removeAttr('disabled');
         }
-       */
-      //From ground_search tool
-      /*const data = {
-        "message": "Task decomposition is a process used in various fields such as project management, software development, and problem-solving. It involves breaking down complex tasks or projects into smaller, more manageable components or subtasks.\n\nThe goal of task decomposition is to make it easier to understand, plan, and execute the task by dividing it into smaller pieces that can be worked on individually. This approach helps to:\n\n1. Reduce complexity: By breaking down a large task into smaller parts, it becomes less overwhelming and more manageable.\n2. Improve clarity: Task decomposition helps to identify specific requirements, dependencies, and potential roadblocks.\n3. Enhance planning: With smaller tasks, it's easier to create a detailed plan, allocate resources, and set realistic deadlines.\n4. Increase productivity: Focusing on one subtask at a time can improve concentration and efficiency.\n\nCommon methods for task decomposition include:\n\n1. Top-down approach: Starting with the overall goal and breaking it down into smaller tasks.\n2. Bottom-up approach: Identifying individual tasks and combining them to achieve the overall goal.\n3. Functional decomposition: Breaking down tasks based on functional areas or departments.\n4. Hierarchical decomposition: Organizing tasks in a hierarchical structure, with higher-level tasks broken down into smaller subtasks.\n\nExamples of task decomposition can be seen in various industries, such as:\n\n1. Software development: Breaking down a large software project into smaller modules or features.\n2. Construction: Dividing a building project into individual tasks, such as foundation work, framing, and electrical installation.\n3. Event planning: Decomposing an event into smaller tasks, like venue selection, catering, and decorations.\n\nThe benefits of task decomposition include:\n\n1. Improved project management\n2. Enhanced team collaboration\n3. Increased productivity\n4. Better risk management\n5. More accurate estimating and scheduling\n\nBy applying task decomposition techniques, individuals and teams can tackle complex tasks with greater ease, efficiency, and effectiveness."
-      }*/
-        //console.log(JSON.stringify(data, null, 2))
-        var converter = new showdown.Converter();
-        //console.log(converter.makeHtml(data.message))
-        const responseContainer = document.createElement('div');
-        // https://getbootstrap.com/docs/5.0/utilities/flex/
-        responseContainer.innerHTML = `<div class="row d-flex justify-content-start">
-                                          <div class="col-md-1 d-flex justify-content-start">
-                                            <strong>Agent: </strong>
-                                          </div>
-                                          <div clalss="col-md-11">
-                                          </div>
-                                      </div>
-                                      <div class="row flex d-flex justify-content-start">
-                                          <div class="col-md-11 justify-content-start">
-                                              ${converter.makeHtml(data.message)}
-                                          </div>
-                                          <div clalss="col-md-1">
-                                          </div>
-                                       </div>`;
-        document.querySelector("#messages").appendChild(responseContainer);
-        $(':input').val('');
-        $("#btn-submit").text('Submit');
-        $('#chatForm').removeClass('loading');
-        $("#prompt").removeAttr('disabled');
-        $("#image").removeAttr('disabled');
-      } else 
+      } else
         console.error(`Invalid prompt!`);
     });
   </script>

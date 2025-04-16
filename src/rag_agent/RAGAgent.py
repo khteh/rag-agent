@@ -71,7 +71,7 @@ class RAGAgent():
         ])
     _vectorStore = None
     _in_memory_store: InMemoryStore = None
-    _tools: List[Callable[..., Any]] = None #[vector_store.retriever_tool, ground_search, save_memory]
+    _tools: List[Callable[..., Any]] = None
     _agent: CompiledGraph = None
     #_neo4jGraph: Neo4jGraph = None
     #_cypher_generation_prompt: PromptTemplate = None
@@ -97,6 +97,9 @@ class RAGAgent():
             }
         )
         self._vectorStore = VectorStore(model=appconfig.EMBEDDING_MODEL, chunk_size=1000, chunk_overlap=0)
+        """
+        GoogleSearch ground_search works well but it will sometimes take precedence and overwrite the ingested data into Chhroma and Neo4J. So, exclude it for now until it is really needed.
+        """
         self._tools = [self._vectorStore.retriever_tool, HealthcareReview, HealthcareCypher, get_current_wait_times, get_most_available_hospital, save_memory]
         self._llm = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider="ollama", base_url = appconfig.OLLAMA_URI, configurable_fields=("user_id", "cypher"), streaming = True).bind_tools(self._tools)
         """
