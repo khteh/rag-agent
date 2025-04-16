@@ -11,12 +11,6 @@
         <button type="submit" id="btn-submit" class="btn btn-primary">Submit</button>
       </div>
     </form>
-    <!--<form id="chatFormHuman" name="chatFormHuman" action="" method="post" enctype="multipart/form-data">
-        <button type="submit" id="btn-human" class="btn btn-secondary">Human</button>
-    </form>
-    <form id="chatFormAI" name="chatFormAI" action="" method="post" enctype="multipart/form-data">
-        <button type="submit" id="btn-ai" class="btn btn-secondary">AI</button>
-    </form>-->
   </div>
   <script type="text/javascript">
     <!-- https://thepythoncode.com/article/how-to-build-a-chat-app-in-python-using-flask-and-flasksocketio -->
@@ -30,18 +24,6 @@
         }
     }
     document.querySelector("#prompt").onblur = stoppedTyping();
-    /*document.querySelector("#chatFormHuman").addEventListener("submit", async (e) => {
-      console.log('btn-human submit')
-        const queryContainer = document.createElement('div');
-        queryContainer.innerHTML = `<div class="d-flex justify-content-end"><strong>You:</strong>Human question</div>`;
-        document.querySelector("#messages").appendChild(queryContainer);
-    });
-    document.querySelector("#chatFormAI").addEventListener("submit", async (e) => {
-      console.log('btn-ai submit')
-        const queryContainer = document.createElement('div');
-        queryContainer.innerHTML = `<div class="d-flex justify-content-start"><strong>AI:</strong>AI answer</div>`;
-        document.querySelector("#messages").appendChild(queryContainer);
-    });*/
     // Select your input type file and store it in a variable
     document.querySelector("#chatForm").addEventListener("submit", async (e) => {
       e.preventDefault();

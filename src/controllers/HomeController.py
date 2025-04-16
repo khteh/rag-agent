@@ -27,7 +27,6 @@ from urllib.parse import urlparse, parse_qs
 from typing_extensions import List, TypedDict
 from src.common.ResponseHelper import Respond
 from src.common.Response import custom_response
-from src.utils.InputParser import parse_input
 from src.utils.JsonString import is_json
 home_api = Blueprint("home", __name__)
 @home_api.context_processor
@@ -106,13 +105,17 @@ async def ProcessCurlInput() -> UserInput:
     return user_input
 
 @home_api.post("/invoke")
-async def invoke(): #user_input: UserInput) -> ChatMessage:
+async def invoke():
     """
     Invoke the agent with user input to retrieve a final response.
 
-    Use thread_id to persist and continue a multi-turn conversation. run_id kwarg
-    is also attached to messages for recording feedback.
+    Use thread_id to persist and continue a multi-turn conversation.
     """
+    if "user_id" not in session or not session["user_id"]:
+        session["user_id"] = uuid7str()
+    if "thread_id" not in session or not session["thread_id"]:
+        session["thread_id"] = uuid7str()
+    logging.info(f"/invoke session {session['thread_id']} {session['user_id']}")
     user_input: UserInput = await ProcessCurlInput()
     """
     If it is not curl, then the request must have come from the browser with form data. The following processes it.
@@ -128,17 +131,13 @@ async def invoke(): #user_input: UserInput) -> ChatMessage:
     # Expect a single string.
     if isinstance(user_input["message"], (list, tuple)):
         user_input["message"] = user_input["message"][-1]
-    kwargs, run_id = parse_input(user_input)
-    logging.debug(f"/invoke kwargs: {kwargs}, run_id: {run_id}")
-    """
-    kwargs: {'input': {'messages': [HumanMessage(content='What is task decomposition?', additional_kwargs={}, response_metadata={})]}, 'config': {'configurable': {'thread_id': '067fa565-02ef-7d89-8000-15cd9d193962'}, 'run_id': UUID('067fa565-02ef-7a08-8000-28b0a62db0e7')}}, run_id: 067fa565-02ef-7a08-8000-28b0a62db0e7
-    """
+    config = RunnableConfig(run_name="RAG ReAct Agent /invoke", thread_id = session["thread_id"], user_id =  session["user_id"])
     try:
         result: List[str] = []
         async for step in current_app.agent.astream(
             {"messages": [{"role": "user", "content": user_input['message']}]},
             stream_mode="values", # Use this to stream all values in the state after each step.
-            config=kwargs['config'], # This is needed by Checkpointer
+            config = config, # This is needed by Checkpointer
         ):
             result.append(step["messages"][-1])
             step["messages"][-1].pretty_print()
@@ -151,7 +150,7 @@ async def invoke(): #user_input: UserInput) -> ChatMessage:
                     Overall, task decomposition is a powerful technique for simplifying complex tasks, improving productivity, and enhancing decision-making.' 
         additional_kwargs={} 
         response_metadata={'model': 'llama3.3', 'created_at': '2025-04-12T12:23:19.47198126Z', 'done': True, 'done_reason': 'stop', 'total_duration': 428800185880, 'load_duration': 23447133, 'prompt_eval_count': 674, 'prompt_eval_duration': 19170396674, 'eval_count': 265, 'eval_duration': 409602973053, 'message': 
-        Message(role='assistant', content='Task decomposition is a process of breaking down complex tasks or problems into smaller, more manageable steps or subtasks. This technique is used to simplify complicated tasks, making them easier to understand, plan, and execute. It involves identifying the individual components or steps required to complete a task, and then organizing these steps in a logical order.\n\nTask decomposition can be applied in various contexts, including project management, problem-solving, and decision-making. It helps individuals or teams to:\n\n1. Clarify complex tasks: By breaking down complex tasks into smaller steps, individuals can better understand what needs to be done.\n2. Identify priorities: Task decomposition helps to identify the most critical steps that need to be completed first.\n3. Allocate resources: With a clear understanding of the individual steps, resources can be allocated more effectively.\n4. Monitor progress: Decomposing tasks into smaller steps makes it easier to track progress and identify potential bottlenecks.\n\nIn the context of artificial intelligence and machine learning, task decomposition is used in techniques such as Chain of Thought (CoT) and Tree of Thoughts. These methods involve breaking down complex tasks into smaller steps, allowing models to utilize more test-time computation and provide insights into their thinking processes.\n\nOverall, task decomposition is a powerful technique for simplifying complex tasks, improving productivity, and enhancing decision-making.', images=None, tool_calls=None), 'model_name': 'llama3.3'} name='RAG ReAct Agent' id='run-fc59fe44-18ea-44d5-b806-4c8454401703-0' usage_metadata={'input_tokens': 674, 'output_tokens': 265, 'total_tokens': 939} run_id='067fa594-8524-7060-8000-1a4f10981e63'
+        Message(role='assistant', content='Task decomposition is a process of breaking down complex tasks or problems into smaller, more manageable steps or subtasks. This technique is used to simplify complicated tasks, making them easier to understand, plan, and execute. It involves identifying the individual components or steps required to complete a task, and then organizing these steps in a logical order.\n\nTask decomposition can be applied in various contexts, including project management, problem-solving, and decision-making. It helps individuals or teams to:\n\n1. Clarify complex tasks: By breaking down complex tasks into smaller steps, individuals can better understand what needs to be done.\n2. Identify priorities: Task decomposition helps to identify the most critical steps that need to be completed first.\n3. Allocate resources: With a clear understanding of the individual steps, resources can be allocated more effectively.\n4. Monitor progress: Decomposing tasks into smaller steps makes it easier to track progress and identify potential bottlenecks.\n\nIn the context of artificial intelligence and machine learning, task decomposition is used in techniques such as Chain of Thought (CoT) and Tree of Thoughts. These methods involve breaking down complex tasks into smaller steps, allowing models to utilize more test-time computation and provide insights into their thinking processes.\n\nOverall, task decomposition is a powerful technique for simplifying complex tasks, improving productivity, and enhancing decision-making.', images=None, tool_calls=None), 'model_name': 'llama3.3'} name='RAG ReAct Agent' id='run-fc59fe44-18ea-44d5-b806-4c8454401703-0' usage_metadata={'input_tokens': 674, 'output_tokens': 265, 'total_tokens': 939}
         """
         ai_message: ChatMessage = None
         if len(result):
@@ -166,24 +165,26 @@ async def invoke(): #user_input: UserInput) -> ChatMessage:
     except Exception as e:
         raise HTTPException(description = str(e))
 
-async def message_generator(user_input: StreamInput) -> AsyncGenerator[str, None]:
+async def message_generator(user_input: StreamInput, config: RunnableConfig) -> AsyncGenerator[str, None]:
     """
     Generate a stream of messages from the agent.
 
     This is the workhorse method for the /stream endpoint.
     """
-    kwargs, run_id = parse_input(user_input)
-
     # Use an asyncio queue to process both messages and tokens in
     # chronological order, so we can easily yield them to the client.
     output_queue = asyncio.Queue(maxsize=10)
     if user_input.stream_tokens:
-        kwargs["config"]["callbacks"] = [TokenQueueStreamingHandler(queue=output_queue)]
+        config["callbacks"] = [TokenQueueStreamingHandler(queue=output_queue)]
 
     # Pass the agent's stream of messages to the queue in a separate task, so
     # we can yield the messages to the client in the main thread.
     async def run_agent_stream():
-        async for s in current_app.agent.astream(**kwargs, stream_mode="updates"):
+        async for s in current_app.agent.astream(
+            {"messages": [{"role": "user", "content": user_input['message']}]},
+            stream_mode="updates",
+            config = config, # This is needed by Checkpointer
+        ):
             await output_queue.put(s)
         await output_queue.put(None)
 
@@ -205,7 +206,8 @@ async def message_generator(user_input: StreamInput) -> AsyncGenerator[str, None
         for message in new_messages:
             try:
                 chat_message = ChatMessage.from_langchain(message)
-                chat_message.run_id = str(run_id)
+                chat_message.thread_id = config["thread_id"]
+                chat_message.user_id = config["user_id"]
             except Exception as e:
                 yield f"data: {json.dumps({'type': 'error', 'content': f'Error parsing message: {e}'})}\n\n"
                 continue
@@ -222,9 +224,14 @@ async def stream_agent(): #user_input: StreamInput):
     """
     Stream the agent's response to a user input, including intermediate messages and tokens.
 
-    Use thread_id to persist and continue a multi-turn conversation. run_id kwarg
-    is also attached to all messages for recording feedback.
+    Use thread_id to persist and continue a multi-turn conversation.
     """
+    if "user_id" not in session or not session["user_id"]:
+        session["user_id"] = uuid7str()
+    if "thread_id" not in session or not session["thread_id"]:
+        session["thread_id"] = uuid7str()
+    config = RunnableConfig(run_name="RAG ReAct Agent /invoke", thread_id = session["thread_id"], user_id =  session["user_id"])
+    logging.info(f"/stream session {session['thread_id']} {session['user_id']}")
     user_input: UserInput = await ProcessCurlInput()
     """
     If it is not curl, then the request must have come from the browser with form data. The following processes it.
@@ -242,7 +249,7 @@ async def stream_agent(): #user_input: StreamInput):
         user_input["message"] = user_input["message"][-1]
     @stream_with_context
     async def async_generator():
-        message = message_generator(user_input)
+        message = message_generator(user_input, config)
         yield message.encode()
     return async_generator(), 200
     #return StreamingResponse(message_generator(user_input), media_type="text/event-stream")

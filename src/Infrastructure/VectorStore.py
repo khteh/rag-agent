@@ -92,8 +92,8 @@ class VectorStore(): #metaclass=VectorStoreSingleton):
     def Cleanup(self):
         logging.info(f"\n=== {self.Cleanup.__name__} ===")
         # self._embeddings.close() 'OllamaEmbeddings' object has no attribute 'close'
-        self._client.close()
-        self.vector_store.close()
+        # self._client.close() 'Client' object has no attribute 'close'
+        # self.vector_store.close()
         self.retriever_tool = None
 
     def CreateTenantDatabase(self):

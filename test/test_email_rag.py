@@ -24,7 +24,7 @@ async def test_email_escalate_safety_protocol(EmailRAGFixture):
                         Install guardrails and fall arrest systems on all scaffolding over 10 feet.\n2. Conduct an inspection of all scaffolding structures and reinforce unstable sections.\n3. 
                         Ensure all workers on-site are provided with necessary PPE and conduct safety training on proper usage.\n\nThe deadline for compliance is November 10, 2025. Failure to comply may result in fines of up to $25,000 per violation. \n\n
                         This situation meets the escalation criteria because workers are explicitly violating safety protocols by not using required harnesses or other fall protection equipment, and not wearing proper PPE.' 
-                tool_calls=[] tool_call_id=None run_id=None 
+                tool_calls=[] tool_call_id=None
                 original={'type': 'ai', 'data': {'content': 'The email from OSHA to Blue Ridge Construction indicates that there are several safety violations at the construction site in Dallas, TX. The violations include:\n\n1. Lack of fall protection: 
                         Workers on scaffolding above 10 feet were without required harnesses or other fall protection equipment.\n2. Unsafe scaffolding setup: Several scaffolding structures were noted as lacking secure base plates and bracing, creating potential collapse risks.\n3. Inadequate personal protective equipment (PPE): 
                         Multiple workers were found without proper PPE, including hard hats and safety glasses.\n\nTo rectify these violations, OSHA requires the following corrective actions:\n\n1. Install guardrails and fall arrest systems on all scaffolding over 10 feet.\n2. 
@@ -61,7 +61,7 @@ async def test_email_escalate_fire_safety_violation(EmailRAGFixture):
                         According to the escalation criteria, these issues pose an immediate risk of electrical or fire damage, which meets the criteria for escalation. Therefore, it is recommended that the necessary corrective actions be taken as soon as possible to address these violations and ensure the safety of the site.\n\n
                         The required changes include replacing or properly securing exposed wiring, installing additional fire extinguishers, and reinforcing or replacing temporary support beams. The deadline for compliance is October 31, 2025, and failure to comply may result in a stop-work order and additional fines.\n\n
                         It is recommended that the project team contact the Building and Safety Department at (555) 456-7890 or email inspections@lacity.gov to schedule a re-inspection and ensure that all necessary corrections are made.' 
-                tool_calls=[] tool_call_id=None run_id=None 
+                tool_calls=[] tool_call_id=None
                 original={'type': 'ai', 'data': {'content': 'The email from the City of Los Angeles Building and Safety Department indicates that there are building code violations at the Sunset Luxury Condominiums project site. The violations include exposed electrical wiring, insufficient fire extinguishers, and temporary support beams that do not meet load-bearing standards.\n\n
                         According to the escalation criteria, these issues pose an immediate risk of electrical or fire damage, which meets the criteria for escalation. Therefore, it is recommended that the necessary corrective actions be taken as soon as possible to address these violations and ensure the safety of the site.\n\n
                         The required changes include replacing or properly securing exposed wiring, installing additional fire extinguishers, and reinforcing or replacing temporary support beams. The deadline for compliance is October 31, 2025, and failure to comply may result in a stop-work order and additional fines.\n\n
@@ -97,7 +97,7 @@ async def test_email_should_NOT_escalate(EmailRAGFixture):
     ai_message: type='ai' 
                 content='The email from OSHA does not mention a risk of fire or water damage at the site. The identified safety violations are related to lack of fall protection, unsafe scaffolding setup, and inadequate personal protective equipment (PPE). 
                             Therefore, based on the provided escalation criteria, this issue does not require immediate escalation. However, it is crucial for Blue Ridge Construction to address these violations by the deadline of November 10, 2025, to avoid potential fines of up to $25,000 per violation.' 
-                tool_calls=[] tool_call_id=None run_id=None 
+                tool_calls=[] tool_call_id=None
                 original={'type': 'ai', 'data': {'content': 'The email from OSHA does not mention a risk of fire or water damage at the site. The identified safety violations are related to lack of fall protection, unsafe scaffolding setup, and inadequate personal protective equipment (PPE). 
                             Therefore, based on the provided escalation criteria, this issue does not require immediate escalation. However, it is crucial for Blue Ridge Construction to address these violations by the deadline of November 10, 2025, to avoid potential fines of up to $25,000 per violation.', 
                         'additional_kwargs': {}, 

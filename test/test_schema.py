@@ -34,14 +34,6 @@ def test_messages_from_langchain():
     except ValueError as e:
         assert str(e) == "Unsupported message type: SystemMessage"
 
-
-def test_message_run_id_usage():
-    run_id = "847c6285-8fc9-4560-a83f-4e6285809254"
-    lc_message = AIMessage(content="Hello, world!")
-    ai_message = ChatMessage.from_langchain(lc_message)
-    ai_message.run_id = run_id
-    assert ai_message.run_id == run_id
-
 def test_messages_tool_calls():
     tool_call = ToolCall(name="test_tool", args={"x": 1, "y": 2}, id="call_Jja7")
     lc_ai_message = AIMessage(content="", tool_calls=[tool_call])
