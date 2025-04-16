@@ -7,6 +7,7 @@ Use only the provided relationship types and properties in the schema.
 Do not use any other relationship types or properties that are not provided.
 Only perform the read of the CRUD operations on the schema and database.
 Do not modify the schema and the database. At the end of your task, the schema and the database should remain intact.
+If you encounter any error, CypherSyntaxError for instance, please try again. You can retry for a maximum of 3 times.
 
 Schema:
 {schema}
@@ -37,8 +38,7 @@ RETURN phy.name AS physician_name, SUM(c.billing_amount) AS total_billed
 ORDER BY total_billed
 LIMIT 1
 
-# Which state had the largest percent increase in Cigna visits
-# from 2022 to 2023?
+# Which state had the largest percent increase in Cigna visits from 2022 to 2023?
 MATCH (h:Hospital)<-[:AT]-(v:Visit)-[:COVERED_BY]->(p:Payer)
 WHERE p.name = 'Cigna' AND v.admission_date >= '2022-01-01' AND
 v.admission_date < '2024-01-01'
