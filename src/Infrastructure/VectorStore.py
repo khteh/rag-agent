@@ -89,6 +89,7 @@ class VectorStore(): #metaclass=VectorStoreSingleton):
             collection_name = self._collection,
             connection = config.SQLALCHEMY_DATABASE_URI,
             use_jsonb = True,
+            async_mode = True
         )
         # https://api.python.langchain.com/en/latest/tools/langchain.tools.retriever.create_retriever_tool.html
         self.retriever_tool = create_retriever_tool(
@@ -178,8 +179,7 @@ class VectorStore(): #metaclass=VectorStoreSingleton):
         unique_docs = [doc for doc, id in zip(subdocs, ids) if id not in seen_ids and (seen_ids.add(id) or True)]
         ids = []
         if len(unique_docs) and len(unique_ids) and len(unique_docs) == len(unique_ids):
-            #ids = await self.vector_store.aadd_documents(documents = unique_docs, ids = unique_ids)
-            ids = self.vector_store.add_documents(documents = unique_docs, ids = unique_ids) # https://github.com/langchain-ai/langchain/issues/30974
+            ids = await self.vector_store.aadd_documents(documents = unique_docs, ids = unique_ids)
             logging.debug(f"{len(ids)} documents added successfully!")
         return len(ids)
     

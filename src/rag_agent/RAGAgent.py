@@ -220,7 +220,7 @@ async def main():
     if args.load_urls:
         await rag.LoadDocuments()
     input_message: str = ("What is task decomposition?\n" "What is the standard method for Task Decomposition?\n" "Once you get the answer, look up common extensions of that method.")
-    print(f"typeof input_message: {type(input_message)}")
+    #print(f"typeof input_message: {type(input_message)}")
     await rag.ChatAgent(config, input_message)
 
 if __name__ == "__main__":
