@@ -18,10 +18,9 @@ async def _healthcheck() -> ResponseReturnValue:
             "autocommit": True,
             "prepare_threshold": 0,
         }
-        logging.debug(f"POSTGRESQL_DATABASE_URI: {current_app.config["POSTGRESQL_DATABASE_URI"]}")
         async with AsyncConnectionPool(
-            conninfo = current_app.config["POSTGRESQL_DATABASE_URI"],
-            max_size = current_app.config["DB_MAX_CONNECTIONS"],
+            conninfo = config.POSTGRESQL_DATABASE_URI,
+            max_size = config.DB_MAX_CONNECTIONS,
             kwargs = connection_kwargs,
         ) as pool:
             # Check if the checkpoints table exists
