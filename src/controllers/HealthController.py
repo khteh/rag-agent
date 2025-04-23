@@ -38,7 +38,7 @@ async def _healthcheck() -> ResponseReturnValue:
                     except Exception as e:
                         logging.exception(f"Error checking for checkpoints table: Exception: {e}")
                         raise e
-        logging.debug(f"config.CHROMA_URI: {config.CHROMA_URI}")
+        #logging.debug(f"config.CHROMA_URI: {config.CHROMA_URI}")
         #client = chromadb.HttpClient(host=config.CHROMA_URI, port=80, headers={"X-Chroma-Token": config.CHROMA_TOKEN})
         #client.heartbeat()  # this should work with or without authentication - it is a public endpoint
         logging.debug("Healthcheck OK!")
