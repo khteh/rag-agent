@@ -2,7 +2,6 @@ import logging
 from psycopg import Error
 from psycopg_pool import AsyncConnectionPool
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
-
 async def CheckpointerSetup(pool: AsyncConnectionPool) -> AsyncPostgresSaver:
     # Set up the checkpointer (uncomment this line the first time you run the app)
     # Check if the checkpoints table exists

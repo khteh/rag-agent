@@ -40,6 +40,7 @@ chromadb = "*"
 langchain-chroma = "*"
 langchain-nomic = "*"
 hypercorn = {extras = ["h3", "trio"], version = "*"}
+langchain-postgres = "*"
 
 [dev-packages]
 pytest-flask = "*"

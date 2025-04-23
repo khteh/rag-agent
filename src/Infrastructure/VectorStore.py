@@ -1,11 +1,13 @@
 import asyncio, atexit, bs4, chromadb, hashlib, logging
 from chromadb.config import Settings
+from psycopg_pool import AsyncConnectionPool
 from typing_extensions import List, TypedDict, Optional, Any
 from langchain.tools.retriever import create_retriever_tool
 #from langchain_google_vertexai import VertexAIEmbeddings
+from langchain_postgres.vectorstores import PGVector
 from langchain_ollama import OllamaEmbeddings
 from langchain_core.vectorstores import InMemoryVectorStore
-from langchain_chroma import Chroma
+#from langchain_chroma import Chroma
 from langchain_core.documents import Document
 from langchain_community.document_loaders import WebBaseLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
@@ -34,9 +36,10 @@ class VectorStore(): #metaclass=VectorStoreSingleton):
     _embeddings: OllamaEmbeddings = None
     _chunk_size: int = None
     _chunk_overlap: int = None
-    vector_store: Chroma = None
+    #vector_store: Chroma = None
+    vector_store: PGVector = None
     retriever_tool = None
-    _client: chromadb.HttpClient = None
+    #_client: chromadb.HttpClient = None
     _collection: str = None
     _tenant: str = None
     _database: str = None
@@ -76,11 +79,17 @@ class VectorStore(): #metaclass=VectorStoreSingleton):
         client.set_tenant(tenant="test_tenant2", database="test_db")
         coll_tenant2 = client.create_collection("collection")
         """
-        self.CreateTenantDatabase()
-        self._client = chromadb.HttpClient(host=config.CHROMA_URI, port=80, headers={"X-Chroma-Token": config.CHROMA_TOKEN}, tenant=self._tenant, database=self._database)
+        #self.CreateTenantDatabase()
+        #self._client = chromadb.HttpClient(host=config.CHROMA_URI, port=80, headers={"X-Chroma-Token": config.CHROMA_TOKEN}, tenant=self._tenant, database=self._database)
         #self._client.reset()  # resets the database - delete all data. Must be enabled with ALLOW_RESET env in chroma server
         #self._vector_store = InMemoryVectorStore(self._embeddings)
-        self.vector_store = Chroma(client = self._client, collection_name = self._collection, embedding_function = self._embeddings)
+        #self.vector_store = Chroma(client = self._client, collection_name = self._collection, embedding_function = self._embeddings)
+        self.vector_store = PGVector( # This will execute "CREATE EXTENSION vector;" in the database. So, it needs to have the right permission.
+            embeddings = self._embeddings,
+            collection_name = self._collection,
+            connection = config.SQLALCHEMY_DATABASE_URI,
+            use_jsonb = True,
+        )
         # https://api.python.langchain.com/en/latest/tools/langchain.tools.retriever.create_retriever_tool.html
         self.retriever_tool = create_retriever_tool(
             self.vector_store.as_retriever(),
@@ -169,7 +178,8 @@ class VectorStore(): #metaclass=VectorStoreSingleton):
         unique_docs = [doc for doc, id in zip(subdocs, ids) if id not in seen_ids and (seen_ids.add(id) or True)]
         ids = []
         if len(unique_docs) and len(unique_ids) and len(unique_docs) == len(unique_ids):
-            ids = await self.vector_store.aadd_documents(documents = unique_docs, ids = unique_ids)
+            #ids = await self.vector_store.aadd_documents(documents = unique_docs, ids = unique_ids)
+            ids = self.vector_store.add_documents(documents = unique_docs, ids = unique_ids) # https://github.com/langchain-ai/langchain/issues/30974
             logging.debug(f"{len(ids)} documents added successfully!")
         return len(ids)
     

@@ -43,15 +43,13 @@ async def create_app() -> Quart:
     app = Quart(__name__, template_folder='view/templates', static_url_path='', static_folder='view/static')
     app.config.from_file("/etc/ragagent_config.json", json.load)
     app.config["SEND_FILE_MAX_AGE_DEFAULT"] = timedelta(days=90)
-    app.config["SQLALCHEMY_DATABASE_URI"] = f"postgresql+psycopg://{os.environ.get('DB_USERNAME')}:{parse.quote(os.environ.get('DB_PASSWORD'))}@{app.config['DB_HOST']}/LangchainCheckpoint"
-    app.config["POSTGRESQL_DATABASE_URI"] = f"postgresql://{os.environ.get('DB_USERNAME')}:{parse.quote(os.environ.get('DB_PASSWORD'))}@{app.config['DB_HOST']}/LangchainCheckpoint"
     app.config["TEMPLATES_AUTO_RELOAD"] = True
     app = cors(app, allow_credentials=True, allow_origin="https://localhost:4433")
     @app.before_serving
     async def before_serving() -> None:
         logging.debug(f"\n=== {before_serving.__name__} ===")
         app.db_pool = AsyncConnectionPool(
-            conninfo = app.config["POSTGRESQL_DATABASE_URI"],
+            conninfo = appconfig.POSTGRESQL_DATABASE_URI,
             max_size = appconfig.DB_MAX_CONNECTIONS,
             kwargs = appconfig.connection_kwargs,
         )
