@@ -6,8 +6,8 @@ Python LLM-RAG ReAct agent using LangChain, LangGraph and LangSmith built on Qua
 
 - All of the following components run on k8s cluster:
 
-1. PostgreSQL for checkpoints
-2. Chroma for vector DB
+1. PostgreSQL for checkpoints and vector DB
+2. (Optional) Chroma for vector DB
 3. Neo4J for graph query
 4. Ollama as LLM model server
 
@@ -15,7 +15,7 @@ Python LLM-RAG ReAct agent using LangChain, LangGraph and LangSmith built on Qua
 
 ### Unstructured
 
-- Online blog posts ingested into Chroma vector database
+- Online blog posts ingested into vector database
 - Text strings extracted from SQL database ingested into Neo4J vector database
 - Google ground search
 
@@ -187,7 +187,7 @@ $ c3 -v https://localhost:4433/healthcare/invoke -m 300 -X POST -d '{"message": 
 
 - `langgraph dev`
 
-## ReAct Agent answers question using Google Search and Chroma Vector Database
+## ReAct Agent answers question using Google Search and Vector Database
 
 ![ReAct Agent with Checkpoint](./agent_graph.png?raw=true "ReAct Agent with Checkpoint")
 ![ReAct Agent UI](./rag-agent.png?raw=true "ReAct Agent UI")
