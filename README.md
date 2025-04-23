@@ -422,6 +422,42 @@ Christopher Day's review of Pearson LLC also doesn't mention any efficiency-rela
 Overall, while patients haven't explicitly discussed hospital efficiency, some comments hint at potential issues with scheduling or workflow, particularly at Jordan Inc. However, more information would be needed to make a definitive assessment of hospital efficiency.
 ```
 
+```
+================================ Human Message =================================
+
+Classify all the reviews in the database into "Positive", "Neutral", and "Negative". Provide totals and percentage for these categories.
+================================== Ai Message ==================================
+Name: RAG ReAct Agent
+Tool Calls:
+  HealthcareReview (2d493f20-d69f-40a1-bef7-86950659328c)
+ Call ID: 2d493f20-d69f-40a1-bef7-86950659328c
+  Args:
+    query: Classify all the reviews in the database into "Positive", "Neutral", and "Negative". Provide totals and percentage for these categories.
+================================= Tool Message =================================
+Name: HealthcareReview
+
+{"query": "Classify all the reviews in the database into \"Positive\", \"Neutral\", and \"Negative\". Provide totals and percentage for these categories.", "result": "After analyzing the reviews, I classified them as follows:\n\n* Scott Morrison's review at Smith, Edwards and Obrien: Positive\n* Monica Romero's review at Garcia Ltd: Positive (although she mentioned a point of frustration, her overall experience was positive)\n* Victoria Mathews' review at Boyd PLC: Positive\n* Jessica Ross' review at Boyd PLC: Positive\n\nThere are no Neutral or Negative reviews in the database.\n\nHere are the totals and percentages:\n\n* Positive: 4 (100%)\n* Neutral: 0 (0%)\n* Negative: 0 (0%)\n\nAll reviews express a positive overall experience, with some mentioning specific strengths such as thorough medical teams, caring staff, modern facilities, and effective rehabilitation services. However, one review mentions a point of frustration regarding billing transparency, but it does not outweigh the overall positive sentiment."}
+================================== Ai Message ==================================
+Name: RAG ReAct Agent
+
+After analyzing the reviews, I classified them as follows:
+
+* Scott Morrison's review at Smith, Edwards and Obrien: Positive
+* Monica Romero's review at Garcia Ltd: Positive (although she mentioned a point of frustration, her overall experience was positive)
+* Victoria Mathews' review at Boyd PLC: Positive
+* Jessica Ross' review at Boyd PLC: Positive
+
+There are no Neutral or Negative reviews in the database.
+
+Here are the totals and percentages:
+
+* Positive: 4 (100%)
+* Neutral: 0 (0%)
+* Negative: 0 (0%)
+
+All reviews express a positive overall experience, with some mentioning specific strengths such as thorough medical teams, caring staff, modern facilities, and effective rehabilitation services. However, one review mentions a point of frustration regarding billing transparency, but it does not outweigh the overall positive sentiment.
+```
+
 ## StateGraph with Checkpoint
 
 ![StateGraph with Checkpoint](./checkpoint_graph.png?raw=true "StateGraph with Checkpoint")
