@@ -1,4 +1,4 @@
-import os, json, logging
+import os, json, logging, sys
 from dotenv import load_dotenv
 from urllib import parse
 load_dotenv()
@@ -61,6 +61,18 @@ class Config(metaclass=ConfigSingleton):
         httpx library is a dependency of LangGraph and is used under the hood to communicate with the AI models.
         """
         logging.getLogger("httpx").setLevel(logging.WARNING)
-        logging.basicConfig(filename='/var/log/ragagent/log', filemode='w', format='%(asctime)s %(levelname)-8s %(message)s', level=self.LOGLEVEL, datefmt='%Y-%m-%d %H:%M:%S')
+        """
+        https://realpython.com/python-modulo-string-formatting/#fine-tune-your-output-with-conversion-flags
+        -	Justification of values that are shorter than the specified field width
+        The Hyphen-Minus Flag (-)
+        When a formatted value is shorter than the specified field width, it’s usually right-justified in the field. The hyphen-minus (-) flag causes the value to be left-justified in the specified field instead.
+        """
+        if config["ENVIRONMENT"] == "production":
+            logging.basicConfig(handlers=[
+                logging.FileHandler(filename='/var/log/ragagent/log', mode='w'),
+                logging.StreamHandler(sys.stdout)
+            ], format='%(asctime)s %(levelname)-8s %(message)s', level=self.LOGLEVEL, datefmt='%Y-%m-%d %H:%M:%S')
+        else:
+            logging.basicConfig(filename='/var/log/ragagent/log', filemode='w', format='%(asctime)s %(levelname)-8s %(message)s', level=self.LOGLEVEL, datefmt='%Y-%m-%d %H:%M:%S')
 
 config = Config()
