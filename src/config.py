@@ -72,7 +72,7 @@ class Config(metaclass=ConfigSingleton):
             logging.basicConfig(filename='/var/log/ragagent/log', filemode='w', format='%(asctime)s %(levelname)-8s %(message)s', level=self.LOGLEVEL, datefmt='%Y-%m-%d %H:%M:%S')
         else:
             logging.basicConfig(handlers=[
-                TimedRotatingFileHandler(filename='/var/log/ragagent/log', when='d', interval=1, backupbackupCount=3),
+                TimedRotatingFileHandler(filename='/var/log/ragagent/log', when='d', interval=1, backupCount=3),
                 logging.StreamHandler(sys.stdout)
             ], format='%(asctime)s %(levelname)-8s %(message)s', level=self.LOGLEVEL, datefmt='%Y-%m-%d %H:%M:%S')
 
