@@ -40,8 +40,7 @@ LIMIT 1
 
 # Which state had the largest percent increase in Cigna visits from 2022 to 2023?
 MATCH (h:Hospital)<-[:AT]-(v:Visit)-[:COVERED_BY]->(p:Payer)
-WHERE p.name = 'Cigna' AND v.admission_date >= '2022-01-01' AND
-v.admission_date < '2024-01-01'
+WHERE p.name = 'Cigna' AND v.admission_date >= '2022-01-01' AND v.admission_date < '2024-01-01'
 WITH h.state_name AS state, COUNT(v) AS visit_count,
      SUM(CASE WHEN v.admission_date >= '2022-01-01' AND
      v.admission_date < '2023-01-01' THEN 1 ELSE 0 END) AS count_2022,

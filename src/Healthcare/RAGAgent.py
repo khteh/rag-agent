@@ -35,7 +35,8 @@ from langgraph.prebuilt import ToolNode, tools_condition, create_react_agent, In
 from langgraph.checkpoint.memory import MemorySaver
 from langchain_ollama import OllamaEmbeddings
 from psycopg_pool import AsyncConnectionPool, ConnectionPool
-from .Tools import TOOLS
+from .Tools import HealthcareReview, HealthcareCypher
+from src.rag_agent.Tools import save_memory
 from src.common.configuration import Configuration
 from src.utils.image import show_graph
 from src.Infrastructure.VectorStore import VectorStore
@@ -56,7 +57,7 @@ class RAGAgent():
         ])
     _vectorStore = None
     _in_memory_store: InMemoryStore = None
-    _tools: List[Callable[..., Any]] = None #[vector_store.retriever_tool, ground_search, save_memory]
+    _tools: List[Callable[..., Any]] = None
     # Class constructor
     def __init__(self, config: RunnableConfig={}):
         """
@@ -75,8 +76,8 @@ class RAGAgent():
                 #"dims": 1536,
             }
         )
-        self._tools = TOOLS
         self._vectorStore = VectorStore(model=appconfig.EMBEDDING_MODEL, chunk_size=1000, chunk_overlap=0)
+        self._tools = [self._vectorStore.retriever_tool, HealthcareReview, HealthcareCypher, get_current_wait_times, get_most_available_hospital, save_memory]
         self._llm = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider="ollama", base_url=appconfig.OLLAMA_URI, streaming=True).bind_tools(self._tools)
         # https://python.langchain.com/docs/integrations/chat/google_vertex_ai_palm/
     async def CreateGraph(self) -> CompiledGraph:

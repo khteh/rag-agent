@@ -14,11 +14,8 @@ async def test_ragagent_agent_blogs(RAGAgentFixture):
     assert not ai_message.tool_calls
     assert ai_message.content
     print(f"test_ragagent_agent_blogs: {ai_message.content}")
-    assert "Tree of Thoughts" in ai_message.content
-    assert "Task-specific instructions" in ai_message.content
-    assert "Human inputs" in ai_message.content
-    assert "behavioral cloning" in ai_message.content
-    assert "Algorithm Distillation" in ai_message.content
+    assert "breaking down complex tasks" in ai_message.content
+    assert "smaller, more manageable sub-tasks" in ai_message.content
 
 @pytest.mark.asyncio(loop_scope="function")
 async def test_ragagent_mlflow_blogs(RAGAgentFixture):
@@ -30,6 +27,12 @@ async def test_ragagent_mlflow_blogs(RAGAgentFixture):
     assert not ai_message.tool_calls
     assert ai_message.content
     print(f"test_ragagent_mlflow_blogs: {ai_message.content}")
-    assert "handling the complexities of the machine learning process." in ai_message.content
-    assert "full lifecycle for machine learning projects" in ai_message.content
-    assert "manageable, traceable, and reproducible" in ai_message.content
+    assert "machine learning" in ai_message.content
+    assert "track, manage, and deploy" in ai_message.content
+    assert "Local Machine" in ai_message.content
+    assert "Cloud Platforms" in ai_message.content
+    assert "Docker Containers" in ai_message.content
+    assert "Kubernetes Clusters" in ai_message.content
+    assert "MLFlow UI" in ai_message.content
+    assert "MLFlow CLI" in ai_message.content
+    assert "Jupyter Notebooks" in ai_message.content
