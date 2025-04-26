@@ -73,6 +73,18 @@ async def test_email_escalate_fire_safety_violation(EmailRAGFixture):
                                     Therefore, it is recommended that the necessary corrective actions be taken as soon as possible to address these violations and ensure the safety of the site.\n\nThe required changes include replacing or properly securing exposed wiring, installing additional fire extinguishers, and reinforcing or replacing temporary support beams. 
                                     The deadline for compliance is October 31, 2025, and failure to comply may result in a stop-work order and additional fines.\n\nIt is recommended that the project team contact the Building and Safety Department at (555) 456-7890 or email inspections@lacity.gov to schedule a re-inspection and ensure that all necessary corrections are made.', 'images': None, 'tool_calls': None}}, 
                     'type': 'ai', 'name': None, 'id': 'run-3aee0280-0793-4aa9-83ba-af73565a0e46-0', 'example': False, 'tool_calls': [], 'invalid_tool_calls': [], 'usage_metadata': {'input_tokens': 1135, 'output_tokens': 207, 'total_tokens': 1342}}}
+    ---
+    The email from the City of Los Angeles Building and Safety Department indicates that there are building code violations at the Sunset Luxury Condominiums project site. The violations include exposed electrical wiring, insufficient fire extinguishers, and temporary support beams that do not meet load-bearing standards.
+
+    According to the escalation criteria, these issues pose an immediate risk of electrical or fire damage. Therefore, it is recommended to escalate this matter and address the required corrective actions as soon as possible to ensure compliance with building codes and avoid potential fines or a stop-work order.
+
+    The required changes include:
+
+    1. Replacing or properly securing exposed wiring to meet electrical safety standards.
+    2. Installing additional fire extinguishers in compliance with fire code requirements.
+    3. Reinforcing or replacing temporary support beams to ensure structural stability.
+
+    The deadline for compliance is October 31, 2025. It is essential to contact the Building and Safety Department at (555) 456-7890 or email inspections@lacity.gov to schedule a re-inspection and confirm that the necessary changes have been made.
     """
     lc_ai_message = await EmailRAGFixture.Chat("There's an immediate risk of electrical, water, or fire damage", EMAILS[3], email_state, config)
     #print(f"lc_ai_message: {lc_ai_message}")
@@ -82,8 +94,8 @@ async def test_email_escalate_fire_safety_violation(EmailRAGFixture):
     assert not ai_message.tool_calls
     assert ai_message.content
     assert "building code violations at the Sunset Luxury Condominiums project site" in ai_message.content
-    assert "installing additional fire extinguishers" in ai_message.content
-    assert "reinforcing or replacing temporary support beams" in ai_message.content
+    assert "installing additional fire extinguishers" in ai_message.content.lower()
+    assert "reinforcing or replacing temporary support beams" in ai_message.content.lower()
 
 @pytest.mark.asyncio(loop_scope="function")
 async def test_email_should_NOT_escalate(EmailRAGFixture):
