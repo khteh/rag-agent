@@ -6,9 +6,16 @@
     </div>
     <form id="chatForm" name="chatForm" action="{{url_for('home.invoke')}}" method="post" enctype="multipart/form-data">
       <div id="message-box">
-        <input type="text" id="prompt" name="message" placeholder="How can I help?" class="form-control" required onkeyup="stoppedTyping()"/>
-        <input id='image' name="image" type='file' class="form-control" accept="image/*" placeholder="Upload an image for your question"/>
-        <button type="submit" id="btn-submit" class="btn btn-primary">Submit</button>
+        <div class="col-md-9">
+          <textarea id="prompt" name="message" placeholder="How can I help?" class="form-control" rows="1" required onkeyup="stoppedTyping()"></textarea>
+        </div>
+        <div class="col-md-1 d-flex justify-content-center">
+          <label id="lbl-upload" class="btn btn-outline-secondary" for="image" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Upload an image for your question">Upload</label>
+          <input id='image' name="image" type='file' class="form-control" accept="image/*" style='width:0;' placeholder="Upload an image for your question" aria-describedby="btn-upload" aria-label="Upload" hidden/>
+        </div>
+        <div class="col-md-2 d-flex justify-content-center">
+          <button type="submit" id="btn-submit" class="btn btn-primary">Submit</button>
+        </div>
       </div>
     </form>
   </div>
@@ -45,6 +52,7 @@
         $("#prompt").prop('disabled', true);
         $("#image").prop('disabled', true);
         $('#btn-submit').addClass('disabled');
+        $('#lbl-upload').addClass('disabled');
         $("#btn-submit").text('Processing...');
         $('#chatForm').addClass('loading');
         const queryContainer = document.createElement('div');
@@ -57,13 +65,13 @@
                                     </div>`;
         document.querySelector("#messages").appendChild(queryContainer);
         try {
-          const response = await fetch('/invoke', {
+          /*const response = await fetch('/invoke', {
             method: 'POST',
             //headers: { 'Content-Type': 'multipart/form-data' }, Do NOT declare Content-Type: multipart/form-data in request header
             body: form
           });
           const data = await response.json();
-          /*
+          */
           const data = {
             "message": 'Task decomposition is the process of breaking down a complex task or problem into smaller, more manageable steps or subtasks. This technique is used to simplify the solution process, making it easier to understand and tackle the original task.\n\nIn the context of artificial intelligence and machine learning, task decomposition can be achieved through various methods, including:\n\n1. **Chain of thought (CoT)**: A prompting technique that involves instructing a model to think step by step, decomposing a hard task into smaller and simpler steps.\n2. **Tree of Thoughts**: An extension of CoT that explores multiple reasoning possibilities at each step, creating a tree structure.\n3. **Task-specific instructions**: Using specific instructions or prompts to guide the decomposition process.\n4. **Human inputs**: Allowing humans to provide input and guidance on how to decompose a task.\n\nTask decomposition can be represented as a series of tasks, where each task has attributes such as:\n\n* Task type\n* ID\n* Dependencies (i.e., which previous tasks it relies on)\n* Arguments (e.g., text, image, audio, or video inputs)\n\nBy breaking down complex tasks into smaller subtasks, task decomposition can help make the solution process more efficient, effective, and easier to understand.\n\nI will now save this user session for future reference. \n\nSession Saved: \nUser Question: What is task decomposition?\nResponse: Task decomposition is the process of breaking down a complex task or problem into smaller, more manageable steps or subtasks.\n'
           }
@@ -95,6 +103,7 @@
           $('#chatForm').removeClass('loading');
           $("#prompt").removeAttr('disabled');
           $("#image").removeAttr('disabled');
+          $('#lbl-upload').removeClass('disabled');
         }
       } else
         console.error(`Invalid prompt!`);
