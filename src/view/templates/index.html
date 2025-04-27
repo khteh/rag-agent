@@ -15,7 +15,7 @@
   <script type="text/javascript">
     <!-- https://thepythoncode.com/article/how-to-build-a-chat-app-in-python-using-flask-and-flasksocketio -->
     function stoppedTyping() {
-        var value = document.forms["chatForm"]["message"].value;
+        var value = document.forms["chatForm"]["message"].value.trim();
         //console.log(`stoppedTyping value: ${value}, length: ${value.length}`)
         if(value.length > 0) { 
             $('#btn-submit').removeClass('disabled');
