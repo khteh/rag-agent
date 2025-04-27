@@ -126,7 +126,7 @@ async def invoke():
         if "prompt" in form and form["prompt"] and len(form["prompt"]):
             user_input = {"message": form["prompt"]}
     if not user_input or "message" not in user_input or not len(user_input["message"]):
-        await flash("Please input your query!", "danger")
+        await flash("Please input your query!", "danger") # https://quart.palletsprojects.com/en/latest/reference/source/quart.helpers.html
         return await Respond("index.html", title="Welcome to LLM-RAG 💬", error="Invalid input!")
     # Expect a single string.
     if isinstance(user_input["message"], (list, tuple)):
@@ -251,7 +251,7 @@ async def stream_agent(): #user_input: StreamInput):
         if "prompt" in form and form["prompt"] and len(form["prompt"]):
             user_input = {"message": form["prompt"]}
     if not user_input:
-        await flash("Please input your query!", "danger")
+        await flash("Please input your query!", "danger") # https://quart.palletsprojects.com/en/latest/reference/source/quart.helpers.html
         return await Respond("index.html", title="Welcome to LLM-RAG 💬", error="Invalid input!")
     # Expect a single string.
     if isinstance(user_input["message"], (list, tuple)):

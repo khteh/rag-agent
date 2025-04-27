@@ -79,6 +79,7 @@ hr {
   background-color: #CCC;
 }
 .msg.left {
+  margin-left: 10px;
   justify-content: flex-start;
   background-color: #555;
   color: white;

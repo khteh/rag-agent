@@ -65,13 +65,13 @@
                                     </div>`;
         document.querySelector("#messages").appendChild(queryContainer);
         try {
-          /*const response = await fetch('/invoke', {
+          const response = await fetch('/invoke', {
             method: 'POST',
             //headers: { 'Content-Type': 'multipart/form-data' }, Do NOT declare Content-Type: multipart/form-data in request header
             body: form
           });
           const data = await response.json();
-          */
+          /*
           const data = {
             "message": 'Task decomposition is the process of breaking down a complex task or problem into smaller, more manageable steps or subtasks. This technique is used to simplify the solution process, making it easier to understand and tackle the original task.\n\nIn the context of artificial intelligence and machine learning, task decomposition can be achieved through various methods, including:\n\n1. **Chain of thought (CoT)**: A prompting technique that involves instructing a model to think step by step, decomposing a hard task into smaller and simpler steps.\n2. **Tree of Thoughts**: An extension of CoT that explores multiple reasoning possibilities at each step, creating a tree structure.\n3. **Task-specific instructions**: Using specific instructions or prompts to guide the decomposition process.\n4. **Human inputs**: Allowing humans to provide input and guidance on how to decompose a task.\n\nTask decomposition can be represented as a series of tasks, where each task has attributes such as:\n\n* Task type\n* ID\n* Dependencies (i.e., which previous tasks it relies on)\n* Arguments (e.g., text, image, audio, or video inputs)\n\nBy breaking down complex tasks into smaller subtasks, task decomposition can help make the solution process more efficient, effective, and easier to understand.\n\nI will now save this user session for future reference. \n\nSession Saved: \nUser Question: What is task decomposition?\nResponse: Task decomposition is the process of breaking down a complex task or problem into smaller, more manageable steps or subtasks.\n'
           }
