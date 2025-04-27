@@ -45,7 +45,7 @@ async def test_ragagent_agent_blogs(RAGAgentFixture):
 @pytest.mark.asyncio(loop_scope="function")
 async def test_ragagent_mlflow_blogs(RAGAgentFixture):
     config = RunnableConfig(run_name=test_ragagent_mlflow_blogs.__name__, thread_id=uuid7str())
-    lc_ai_message = await RAGAgentFixture.ChatAgent(config, ("What is MLFlow?\n""Where can you run it?"))
+    lc_ai_message = await RAGAgentFixture.ChatAgent(config, ("What is MLFlow?\n" "Where can you run it?"))
     assert lc_ai_message
     ai_message = ChatMessage.from_langchain(lc_ai_message)
     #print(f"ai_message: {ai_message}")

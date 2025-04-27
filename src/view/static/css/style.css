@@ -68,6 +68,21 @@ hr {
   height: 50px;
   display: flex;
 }
+#messages {
+  position: relative;
+}
+.msg {
+  border-radius: 10px;
+}
+.msg.right {
+  justify-content: flex-end;
+  background-color: #CCC;
+}
+.msg.left {
+  justify-content: flex-start;
+  background-color: #555;
+  color: white;
+}
 #prompt {
   flex-grow: 1;
   padding: 10px;
