@@ -80,6 +80,7 @@ class GraphRAG():
         """
         self._config = config
         # https://python.langchain.com/api_reference/langchain/chat_models/langchain.chat_models.base.init_chat_model.html
+        # not a vector store but a LangGraph store object. https://github.com/langchain-ai/langchain/issues/30723
         self._in_memory_store = InMemoryStore(
             index={
                 "embed": OllamaEmbeddings(model=appconfig.EMBEDDING_MODEL, base_url=appconfig.OLLAMA_URI, num_ctx=8192, num_gpu=1, temperature=0),
