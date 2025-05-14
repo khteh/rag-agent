@@ -9,8 +9,7 @@ langchain-community = "*"
 langgraph = "*"
 langchain-openai = "*"
 python-dotenv = "*"
-langchain = {extras = ["google-vertexai"] }
-langchain-google-vertexai = "*"
+langchain = {extras = ["google-genai"] }
 beautifulsoup4 = "*"
 langchain-google-genai = "*"
 google-genai = "*"
@@ -32,7 +31,7 @@ neo4j = "*"
 retry = "*"
 langchain-neo4j = "*"
 jsonpickle = "*"
-mlflow = {extras = ["genai"], version = "*"}
+mlflow = {extras = ["langchain"], version = "*"}
 databricks-sdk = "*"
 langchain-ollama = "*"
 uuid7 = "*"
