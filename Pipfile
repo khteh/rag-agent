@@ -31,7 +31,6 @@ neo4j = "*"
 retry = "*"
 langchain-neo4j = "*"
 jsonpickle = "*"
-mlflow = {extras = ["langchain"], version = "*"}
 databricks-sdk = "*"
 langchain-ollama = "*"
 uuid7 = "*"
@@ -40,6 +39,7 @@ langchain-chroma = "*"
 langchain-nomic = "*"
 hypercorn = {extras = ["h3", "trio"], version = "*"}
 langchain-postgres = "*"
+mlflow = "*"
 
 [dev-packages]
 pytest-flask = "*"
