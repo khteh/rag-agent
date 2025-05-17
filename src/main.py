@@ -75,7 +75,7 @@ async def create_app() -> Quart:
     app.register_blueprint(health_blueprint, url_prefix="/health")
     app.register_blueprint(healthcare_blueprint, url_prefix="/healthcare")
     # https://quart-wtf.readthedocs.io/en/stable/how_to_guides/configuration.html
-    #csrf = CSRFProtect(app)
+    CSRFProtect(app)
     bcrypt.init_app(app)
     from src.rag_agent.RAGAgent import make_graph
     from src.rag_agent.GraphRAG import make_graph as graph_rag_make_graph

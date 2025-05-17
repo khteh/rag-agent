@@ -1,10 +1,12 @@
 {% extends "base.html" %}
 {% block content %}
+<meta name="csrf-token" content="{{ csrf_token() }}">
 <div class="container" style="margin-top: 10px">
   <div id="chat-room-widget" style="margin-top: 10px">
     <div id="messages">
     </div>
     <form id="chatForm" name="chatForm" action="{{url_for('home.invoke')}}" method="post" enctype="multipart/form-data">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
       <div id="message-box">
         <div class="col-md-9">
           <textarea id="prompt" name="message" placeholder="How can I help?" class="form-control" rows="1" required onkeyup="stoppedTyping()"></textarea>
@@ -34,6 +36,7 @@
     // Select your input type file and store it in a variable
     document.querySelector("#chatForm").addEventListener("submit", async (e) => {
       e.preventDefault();
+      var csrf_token = $('meta[name=csrf-token]').attr('content');
       const prompt = document.querySelector("#prompt").value;
       const image = document.querySelector("#image");
       //console.log(`btn-submit clicked. prompt: ${prompt}`)
@@ -68,6 +71,9 @@
           const response = await fetch('/invoke', {
             method: 'POST',
             //headers: { 'Content-Type': 'multipart/form-data' }, Do NOT declare Content-Type: multipart/form-data in request header
+            headers: {
+              "X-CSRFToken": csrf_token,
+            },
             body: form
           });
           const data = await response.json();
