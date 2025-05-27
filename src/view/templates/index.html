@@ -63,7 +63,7 @@
                                       <div class="col-md-1">
                                       </div>
                                       <div class="col-md-11 d-flex justify-content-end">
-                                        <p class="msg right">${prompt}</p>
+                                        <p class="msg-right">${prompt}</p>
                                       </div>
                                     </div>`;
         document.querySelector("#messages").appendChild(queryContainer);
@@ -94,7 +94,7 @@
           const responseContainer = document.createElement('div');
           // https://getbootstrap.com/docs/5.0/utilities/flex/
           responseContainer.innerHTML = `<div class="row d-flex">
-                                            <div class="col-md-11 msg left">
+                                            <div class="col-md-11 msg-left">
                                                 ${converter.makeHtml(data.message)}
                                             </div>
                                             <div clalss="col-md-1">
