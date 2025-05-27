@@ -92,9 +92,18 @@ $ gcloud auth application-default set-quota-project <ProjectID>
 
 - `./hypercorn.sh`
 
-## Curl
+## HTTP/3 curl:
 
+- To build your own HTTP/3 curl: https://curl.se/docs/http3.html
 - Add `Host` header which is defined as `server_names` in `hypercorn.toml`
+
+```
+curl --http3-only --insecure -v https://localhost:4433/<path> -H "Host: khteh.com"
+```
+
+```
+curl --http3-only --insecure -vv https://localhost:4433/chat/invoke -F 'prompt=:"What is task decomposition?"' -F 'file=@/usr/src/Python/PythonRestAPI/data/1.jpg' -F 'receipt=true'
+```
 
 ## TLS certificates
 
