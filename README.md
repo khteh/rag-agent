@@ -102,7 +102,7 @@ curl --http3-only --insecure -v https://localhost:4433/<path> -H "Host: khteh.co
 ```
 
 ```
-curl --http3-only --insecure -vv https://localhost:4433/chat/invoke -F 'prompt=:"What is task decomposition?"' -F 'file=@/usr/src/Python/PythonRestAPI/data/1.jpg' -F 'receipt=true'
+curl --http3-only --insecure -vv https://localhost:4433/chat/invoke -F 'prompt=:"What is task decomposition?"' -F 'file=@~/data/1.jpg' -F 'receipt=true'
 ```
 
 ## TLS certificates
