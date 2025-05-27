@@ -157,10 +157,8 @@ async def invoke():
             ai_message: ChatMessage = None
             if len(result):
                 ai_message = ChatMessage.from_langchain(result[-1])
-                #print(f"ai_message: {ai_message}")``
                 if ai_message and not ai_message.tool_calls and ai_message.content and len(ai_message.content):
                     logging.debug(f"/invoke respose: {ai_message.content}")
-                    #response = await Respond("index.html", title="Welcome to LLM-RAG 💬", message=ai_message.content)
                     #logging.debug(f"response: {response}")
                     return custom_response({"message": ai_message.content}, 200)
             return custom_response({"message": ""}, 503)
