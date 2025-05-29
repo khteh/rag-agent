@@ -6,7 +6,7 @@ from hypercorn.config import Config
 from hypercorn.asyncio import serve
 from psycopg import Error
 from psycopg_pool import AsyncConnectionPool, ConnectionPool
-from quart import Quart, Response, json, Blueprint, session, render_template, session, redirect, url_for
+from quart import Quart, Response, json, Blueprint, session, render_template, session, redirect, url_for, flash
 from src.common.Bcrypt import bcrypt
 from quart_wtf.csrf import CSRFProtect, CSRFError
 from quart_cors import cors
@@ -51,6 +51,8 @@ async def create_app() -> Quart:
 
     @app.errorhandler(CSRFError)
     async def handle_csrf_error(e):
+        logging.exception(e.description)
+        await flash("Session expired!", "danger")
         if "url" in session and session["url"]:
             return redirect(session["url"]), 400
         else:
