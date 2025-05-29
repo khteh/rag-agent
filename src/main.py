@@ -51,7 +51,7 @@ async def create_app() -> Quart:
 
     @app.errorhandler(CSRFError)
     async def handle_csrf_error(e):
-        logging.exception(e.description)
+        logging.exception(f"handle_csrf_error {e.description}")
         await flash("Session expired!", "danger")
         if "url" in session and session["url"]:
             return redirect(session["url"]), 400
