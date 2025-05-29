@@ -8,13 +8,14 @@ from psycopg import Error
 from psycopg_pool import AsyncConnectionPool, ConnectionPool
 from quart import Quart, Response
 from src.common.Bcrypt import bcrypt
-from quart_wtf.csrf import CSRFProtect
+from quart_wtf.csrf import CSRFProtect, CSRFError
 from quart_cors import cors
 from langchain_core.callbacks import AsyncCallbackHandler
 from langchain_core.runnables import RunnableConfig
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
 from langgraph.graph.graph import CompiledGraph
 from src.config import config as appconfig
+from src.common.ResponseHelper import Respond
 from src.Infrastructure.Checkpointer import CheckpointerSetup
 import warnings
 """
@@ -26,6 +27,7 @@ warnings.filterwarnings('always')
 #print(f"GEMINI_API_KEY: {os.environ.get("GEMINI_API_KEY")}")
 config = Config()
 config.from_toml("/etc/hypercorn.toml")
+
 # httpx library is a dependency of LangGraph and is used under the hood to communicate with the AI models.
 def _add_secure_headers(response: Response) -> Response:
     response.headers["Strict-Transport-Security"] = (
@@ -46,6 +48,11 @@ async def create_app() -> Quart:
     app.config["TEMPLATES_AUTO_RELOAD"] = True
     app.config["WTF_CSRF_TIME_LIMIT"] = None # Max age in seconds for CSRF tokens. If set to None, the CSRF token is valid for the life of the session.
     app = cors(app, allow_credentials=True, allow_origin="https://localhost:4433")
+
+    @app.errorhandler(CSRFError)
+    async def handle_csrf_error(e):
+        return await Respond("index.html", title="Welcome to LLM-RAG 💬", error=e.description), 400
+
     @app.before_serving
     async def before_serving() -> None:
         logging.debug(f"\n=== {before_serving.__name__} ===")
