@@ -14,8 +14,6 @@ beautifulsoup4 = "*"
 langchain-google-genai = "*"
 google-genai = "*"
 pillow = "*"
-psycopg = {extras = ["binary"] }
-psycopg2-binary = "*"
 quart = "*"
 quart-bcrypt = "*"
 quart-trio = "*"
@@ -24,7 +22,6 @@ Quart-CORS = "*"
 langgraph-checkpoint-postgres = "*"
 langchain-core = "*"
 vertexai = "*"
-psycopg-pool = "*"
 aioquic = "*"
 pydantic = {extras = ["email"], version = "*"}
 neo4j = "*"
@@ -40,6 +37,7 @@ langchain-nomic = "*"
 hypercorn = {extras = ["h3", "trio"], version = "*"}
 langchain-postgres = "*"
 mlflow = "*"
+psycopg = {extras = ["binary", "pool"], version = "*"}
 
 [dev-packages]
 pytest-flask = "*"
