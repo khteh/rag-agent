@@ -9,6 +9,8 @@ from langchain_core.runnables import RunnableConfig
 from langchain_core.messages import AIMessage, SystemMessage, HumanMessage
 from langchain_core.output_parsers import StrOutputParser
 from langgraph.graph import StateGraph, MessagesState
+from langgraph.types import CachePolicy
+from langgraph.cache.memory import InMemoryCache
 from langgraph.graph.graph import (
     END,
     START,
@@ -203,28 +205,33 @@ class EmailRAG():
         return "EmailTools" if last_message.tool_calls else END
 
     async def CreateGraph(self) -> CompiledGraph:
-        # Compile application and test
+        """
+        Compile application and test
+        https://langchain-ai.github.io/langgraph/tutorials/rag/langgraph_agentic_rag/
+        https://langchain-ai.github.io/langgraph/concepts/low_level/#node-caching
+        """
         logging.info(f"\n=== {self.CreateGraph.__name__} ===")
         try:
+            cache_policy = CachePolicy(ttl=600) # 10 minutes
             graph_builder = StateGraph(EmailRAGState)
-            graph_builder.add_node("ParseEmail", self.ParseEmail)
-            graph_builder.add_node("NeedsEscalation", self.NeedsEscalation)
+            graph_builder.add_node("ParseEmail", self.ParseEmail, cache_policy = cache_policy)
+            graph_builder.add_node("NeedsEscalation", self.NeedsEscalation, cache_policy = cache_policy)
             graph_builder.add_edge(START, "ParseEmail")
             graph_builder.add_edge("ParseEmail", "NeedsEscalation")
             graph_builder.add_edge("NeedsEscalation", END)
-            self._graph = graph_builder.compile(store=self._in_memory_store, name=self._graphName)
+            self._graph = graph_builder.compile(store=self._in_memory_store, name=self._graphName, cache=InMemoryCache())
             # https://langchain-ai.github.io/langgraph/reference/prebuilt/#langgraph.prebuilt.chat_agent_executor.create_react_agent
             #self._agent = create_react_agent(self._llm, [email_processing_tool], store=self._in_memory_store, config_schema=EmailConfiguration, state_schema=EmailAgentState, name=self._name, prompt=self._prompt) This doesn't work well as the LLM preprocess the input email instead of passing it through to email_processing_tool as is done in call_agent_model_node
             graph_builder = StateGraph(EmailAgentState)
-            graph_builder.add_node("EmailAgent", self.call_agent_model_node)
-            graph_builder.add_node("EmailTools", ToolNode([email_processing_tool]))
+            graph_builder.add_node("EmailAgent", self.call_agent_model_node, cache_policy = cache_policy)
+            graph_builder.add_node("EmailTools", ToolNode([email_processing_tool]), cache_policy = cache_policy)
             graph_builder.add_edge(START, "EmailAgent")
             graph_builder.add_conditional_edges(
                 # if the EmailAgent node returns a tool message, your graph moves to the EmailTools node to call the respective tool.
                 "EmailAgent", self.route_agent_graph_edge, ["EmailTools", END]
             )
             graph_builder.add_edge("EmailTools", "EmailAgent")
-            self._agent = graph_builder.compile(store=self._in_memory_store, name=self._agentName)
+            self._agent = graph_builder.compile(store=self._in_memory_store, name=self._agentName, cache=InMemoryCache())
         except ResourceExhausted as e:
             logging.exception(f"google.api_core.exceptions.ResourceExhausted")
         return self._agent

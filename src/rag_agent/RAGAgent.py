@@ -9,6 +9,8 @@ from langchain.chat_models import init_chat_model
 from langchain_core.runnables import RunnableConfig, ensure_config
 from langchain_core.messages import SystemMessage
 from langgraph.graph import StateGraph, MessagesState
+from langgraph.types import CachePolicy
+from langgraph.cache.memory import InMemoryCache
 from langgraph.graph.graph import (
     END,
     START,

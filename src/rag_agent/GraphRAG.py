@@ -8,6 +8,8 @@ from langchain_core.runnables import RunnableConfig
 from langchain_core.messages import SystemMessage, HumanMessage
 from langchain_core.output_parsers import StrOutputParser
 from langgraph.graph import StateGraph, MessagesState
+from langgraph.types import CachePolicy
+from langgraph.cache.memory import InMemoryCache
 from langgraph.graph.graph import (
     END,
     START,
@@ -256,15 +258,19 @@ class GraphRAG():
         return {"messages": [response]}
 
     async def CreateGraph(self) -> CompiledGraph:
-        # Compile application and test
-        # https://langchain-ai.github.io/langgraph/tutorials/rag/langgraph_agentic_rag/
+        """
+        Compile application and test
+        https://langchain-ai.github.io/langgraph/tutorials/rag/langgraph_agentic_rag/
+        https://langchain-ai.github.io/langgraph/concepts/low_level/#node-caching
+        """
         logging.info(f"\n=== {self.CreateGraph.__name__} ===")
         try:
+            cache_policy = CachePolicy(ttl=600) # 10 minutes
             graph_builder = StateGraph(CustomAgentState)
-            graph_builder.add_node("Agent", self.Agent)
-            graph_builder.add_node("Retrieve", ToolNode([self._vectorStore.retriever_tool])) # Execute the retrieval.
-            graph_builder.add_node("Rewrite", self.Rewrite)
-            graph_builder.add_node("Generate", self.Generate)
+            graph_builder.add_node("Agent", self.Agent, cache_policy = cache_policy)
+            graph_builder.add_node("Retrieve", ToolNode([self._vectorStore.retriever_tool]), cache_policy = cache_policy) # Execute the retrieval.
+            graph_builder.add_node("Rewrite", self.Rewrite, cache_policy = cache_policy)
+            graph_builder.add_node("Generate", self.Generate, cache_policy = cache_policy)
             graph_builder.add_edge(START, "Agent")
             #graph_builder.set_entry_point("query_or_respond")
             graph_builder.add_conditional_edges(
@@ -288,7 +294,7 @@ class GraphRAG():
             )
             graph_builder.add_edge("Generate", END)
             graph_builder.add_edge("Rewrite", "Agent")
-            self._graph = graph_builder.compile(store=self._in_memory_store, name=self._name)
+            self._graph = graph_builder.compile(store=self._in_memory_store, name=self._name, cache=InMemoryCache())
             #self.ShowGraph(self._graph, self._name) # This blocks
         except ResourceExhausted as e:
             logging.exception(f"google.api_core.exceptions.ResourceExhausted")
