@@ -3,7 +3,7 @@ It includes a basic Tavily search function (as an example)
 These tools are intended as free examples to get started. For production use,
 consider implementing more robust and specialized tools tailored to your needs.
 """
-import logging
+import asyncio, logging
 from typing import Any, Callable, List, Optional, cast
 from langchain_community.tools.tavily_search import TavilySearchResults
 from langchain_core.runnables import RunnableConfig, ensure_config
@@ -15,9 +15,10 @@ from google import genai
 from google.genai import types
 from google.genai.types import Tool, GenerateContentConfig, GoogleSearch
 from typing_extensions import Annotated
+from uuid_extensions import uuid7, uuid7str
 from src.common.configuration import Configuration
 from src.config import config as appconfig
-
+from src.common.State import CustomAgentState
 async def search(
     query: str, *, config: Annotated[RunnableConfig, InjectedToolArg]
 ) -> Optional[list[dict[str, Any]]]:
@@ -84,26 +85,66 @@ async def retrieve(query: str, *, config: Annotated[RunnableConfig, InjectedTool
     )
     return serialized, retrieved_docs#
 """
-https://langchain-ai.github.io/langgraph/reference/prebuilt/#langgraph.prebuilt.chat_agent_executor.create_react_agent
 https://langchain-ai.github.io/langgraph/concepts/memory/
 https://langchain-ai.github.io/langgraph/how-tos/cross-thread-persistence/
+https://github.com/langchain-ai/memory-agent
 """
-@tool(description="""
-      Save the given memory for the current user. This should only be used after you have exhausted all other tools to accomplish your task. 
-      After saving the memory for the current user, you should return to the user with your answer.
-      """)
-async def save_memory(memory: str, *, config: Annotated[RunnableConfig, InjectedToolArg], store: Annotated[BaseStore, InjectedStore()]) -> str:
+@tool(parse_docstring=True)
+async def upsert_memory(
+    content: str,
+    context: str,
+    *,
+    memory_id: Optional[uuid7str] = None,
+    # Hide these arguments from the model.
+    config: Annotated[RunnableConfig, InjectedToolArg],
+    store: Annotated[BaseStore, InjectedStore()],
+):
+    """Upsert a memory in the database.
+
+    If a memory conflicts with an existing one, then just UPDATE the
+    existing one by passing in memory_id - don't create two memories
+    that are the same. If the user corrects a memory, UPDATE it.
+
+    Args:
+        content: The main content of the memory. For example:
+            "User expressed interest in learning about French."
+        context: Additional context for the memory. For example:
+            "This was mentioned while discussing career options in Europe."
+        memory_id: ONLY PROVIDE IF UPDATING AN EXISTING MEMORY.
+        The memory to overwrite.
     """
-    Save the given memory for the current user.
-    This should only be used after you have exhausted all other tools to accomplish your task. After saving the memory for the current user, you should return to the user with your answer.
-    """
-    # This is a **tool** the model can use to save memories to storage
-    logging.info(f"{save_memory.__name__} memory: {memory}")
-    config = ensure_config(config)
-    user_id = config.get("configurable", {}).get("user_id")
-    """
-    Memories are namespaced by a tuple, which in this specific example will be (<user_id>, "memories"). The namespace can be any length and represent anything, does not have to be user specific.
-    """
-    namespace = ("memories", user_id)
-    await store.aput(namespace, f"memory_{len(await store.asearch(namespace))}", {"data": memory})
-    return f"Saved memory: {memory}"
+    logging.info(f"{upsert_memory.__name__} content: {content}, context: {context}, memory_id: {memory_id}")
+    mem_id = memory_id or uuid7str()
+    user_id = Configuration.from_runnable_config(config).user_id
+    await store.aput(
+        ("memories", user_id),
+        key=str(mem_id),
+        value={"content": content, "context": context},
+    )
+    return f"Stored memory {mem_id}"
+
+async def store_memory(state: CustomAgentState, config: Annotated[RunnableConfig, InjectedToolArg], *, store: Annotated[BaseStore, InjectedStore()]):
+    # Extract tool calls from the last message
+    tool_calls = state.messages[-1].tool_calls
+
+    # Concurrently execute all upsert_memory calls
+    saved_memories = await asyncio.gather(
+        *(
+            upsert_memory(**tc["args"], config=config, store=store)
+            for tc in tool_calls
+        )
+    )
+    # Format the results of memory storage operations
+    # This provides confirmation to the model that the actions it took were completed
+    results = [
+        {
+            "role": "tool",
+            "content": mem,
+            "tool_call_id": tc["id"],
+        }
+        for tc, mem in zip(tool_calls, saved_memories)
+    ]
+    return {"messages": results}
+
+if __name__ == "__main__":
+    print(f"upsert_memory input schema: {upsert_memory.get_input_schema().model_json_schema()}, tool_call schema: ${upsert_memory.tool_call_schema.model_json_schema()}")

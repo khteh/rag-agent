@@ -42,7 +42,7 @@ from src.config import config as appconfig
 from src.Infrastructure.VectorStore import VectorStore
 from src.common.State import CustomAgentState
 from src.utils.image import show_graph
-from .Tools import ground_search, save_memory
+from .Tools import ground_search, store_memory, upsert_memory
 from src.Healthcare.Tools import HealthcareReview, HealthcareCypher
 from src.Healthcare.HospitalWaitingTime import get_current_wait_times, get_most_available_hospital
 from src.common.configuration import Configuration
@@ -103,7 +103,7 @@ class RAGAgent():
         """
         GoogleSearch ground_search works well but it will sometimes take precedence and overwrite the ingested data into Chhroma and Neo4J. So, exclude it for now until it is really needed.
         """
-        self._tools = [self._vectorStore.retriever_tool, HealthcareReview, HealthcareCypher, get_current_wait_times, get_most_available_hospital, save_memory]
+        self._tools = [self._vectorStore.retriever_tool, HealthcareReview, HealthcareCypher, get_current_wait_times, get_most_available_hospital, upsert_memory]
         self._llm = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider="ollama", base_url = appconfig.OLLAMA_URI, configurable_fields=("user_id", "cypher"), streaming = True).bind_tools(self._tools)
         """
         self._neo4jGraph = Neo4jGraph(

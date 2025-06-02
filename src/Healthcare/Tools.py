@@ -5,7 +5,7 @@ from langgraph.store.base import BaseStore
 from langgraph.prebuilt import InjectedStore
 from langchain.prompts import PromptTemplate
 from langchain_neo4j import Neo4jGraph, GraphCypherQAChain
-from src.rag_agent.Tools import save_memory
+from src.rag_agent.Tools import upsert_memory
 from .HospitalWaitingTime import get_current_wait_times, get_most_available_hospital
 from .prompts import cypher_generation_template, qa_generation_template
 from .HospitalReviewChain import reviews_vector_chain
@@ -60,7 +60,7 @@ TOOLS = [
         hospital name as the key and the wait time in minutes as the value.
         """,
     ),
-    save_memory
+    upsert_memory
 ]
 
 @tool(description ="""Useful when you need to answer questions
