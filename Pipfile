@@ -43,7 +43,7 @@ psycopg = {extras = ["binary", "pool"], version = "*"}
 pytest-flask = "*"
 pytest = "*"
 pytest-asyncio = "*"
-langchain-cli = "*"
+langgraph-cli = {extras = ["inmem"], version = "*"}
 
 [requires]
 python_version = "3.13"

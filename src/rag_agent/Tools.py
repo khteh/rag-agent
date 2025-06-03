@@ -99,7 +99,7 @@ async def upsert_memory(
     config: Annotated[RunnableConfig, InjectedToolArg],
     store: Annotated[BaseStore, InjectedStore()],
 ):
-    """Upsert a memory in the database.
+    """Upsert a memory in the database if there are tool calls.
 
     If a memory conflicts with an existing one, then just UPDATE the
     existing one by passing in memory_id - don't create two memories
