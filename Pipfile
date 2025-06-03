@@ -4,10 +4,10 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
+PyJWT = "*"
 langchain-text-splitters = "*"
 langchain-community = "*"
 langgraph = "*"
-langchain-openai = "*"
 python-dotenv = "*"
 langchain = {extras = ["google-genai"] }
 beautifulsoup4 = "*"
@@ -31,9 +31,6 @@ jsonpickle = "*"
 databricks-sdk = "*"
 langchain-ollama = "*"
 uuid7 = "*"
-chromadb = "*"
-langchain-chroma = "*"
-langchain-nomic = "*"
 hypercorn = {extras = ["h3", "trio"], version = "*"}
 langchain-postgres = "*"
 mlflow = "*"

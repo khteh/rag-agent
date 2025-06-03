@@ -3,10 +3,11 @@
         "langchain-text-splitters",
         "langchain-community",
         "langgraph",
-        "langchain-openai",
         "python-dotenv",
-        "langchain-google-vertexai",
         "beautifulsoup4",
+        "langchain-neo4j",
+        "langchain-ollama",
+        "langchain-postgres",
         "langchain-google-genai",
         "langchain-core",
         "./src/rag_agent"
@@ -15,6 +16,6 @@
         "rag_agent": "./src/rag_agent/RAGAgent.py:make_graph"
     },
     "env": "./.env",
-    "python_version": "3.12",
+    "python_version": "3.13",
     "pip_config_file": "Pipfile"
 }

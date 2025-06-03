@@ -20,6 +20,7 @@ from langgraph.graph.graph import (
     Send,
 )
 from src.config import config as appconfig
+from .Tools import upsert_memory
 # https://python.langchain.com/docs/tutorials/rag/
 """
 https://python.langchain.com/api_reference/langchain/chat_models/langchain.chat_models.base.init_chat_model.html
@@ -27,9 +28,10 @@ https://python.langchain.com/api_reference/langchain/chat_models/langchain.chat_
 For VertexAI, use VertexAIEmbeddings, model="text-embedding-005"; "gemini-2.0-flash" model_provider="google_genai"
 https://cloud.google.com/vertex-ai/generative-ai/docs/embeddings/get-text-embeddings
 embeddings = VertexAIEmbeddings(model="text-embedding-005")
-
 """
-llm = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider="ollama", base_url=appconfig.OLLAMA_URI, streaming=True).bind_tools(self._tools)
+_vectorStore = VectorStore(model=appconfig.EMBEDDING_MODEL, chunk_size=1000, chunk_overlap=0)
+_tools = [_vectorStore.retriever_tool, upsert_memory]
+llm = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider="ollama", base_url=appconfig.OLLAMA_URI, streaming=True).bind_tools(_tools)
 """
 llm = init_chat_model("gpt-4o-mini", model_provider="openai")
 embeddings = OpenAIEmbeddings(model="text-embedding-3-large")"

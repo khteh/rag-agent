@@ -1,5 +1,5 @@
-import asyncio, atexit, bs4, chromadb, hashlib, logging
-from chromadb.config import Settings
+import asyncio, atexit, bs4, hashlib, logging
+#from chromadb.config import Settings
 from psycopg_pool import AsyncConnectionPool
 from typing_extensions import List, TypedDict, Optional, Any
 from langchain.tools.retriever import create_retriever_tool
@@ -106,7 +106,8 @@ class VectorStore(): #metaclass=VectorStoreSingleton):
         # self.vector_store.close()
         self.retriever_tool = None
 
-    def CreateTenantDatabase(self):
+    
+    #def CreateTenantDatabase(self):
         #tenant_id = f"tenant_user:{user_id}"
         """
         For Local Chroma server:
@@ -116,21 +117,21 @@ class VectorStore(): #metaclass=VectorStoreSingleton):
             persist_directory="multitenant",
         ))
         """
-        logging.info(f"{self.CreateTenantDatabase.__name__} tenant: {self._tenant}, database: {self._database}")
+    #    logging.info(f"{self.CreateTenantDatabase.__name__} tenant: {self._tenant}, database: {self._database}")
         # For Remote Chroma server:
-        adminClient = chromadb.AdminClient(Settings( # Does NOT support context manager protocol
-           chroma_api_impl="chromadb.api.fastapi.FastAPI",
-           chroma_server_host=config.CHROMA_URI,
-           chroma_server_http_port=80,
-        ))
-        try:
-            adminClient.get_tenant(name=self._tenant)
-        except Exception:
-            adminClient.create_tenant(name=self._tenant)
-        try:
-            adminClient.get_database(name=self._database, tenant=self._tenant)
-        except Exception:
-            adminClient.create_database(name=self._database, tenant=self._tenant)
+    #    adminClient = chromadb.AdminClient(Settings( # Does NOT support context manager protocol
+    #       chroma_api_impl="chromadb.api.fastapi.FastAPI",
+    #       chroma_server_host=config.CHROMA_URI,
+    #       chroma_server_http_port=80,
+    #    ))
+    #    try:
+    #        adminClient.get_tenant(name=self._tenant)
+    #    except Exception:
+    #        adminClient.create_tenant(name=self._tenant)
+    #    try:
+    #        adminClient.get_database(name=self._database, tenant=self._tenant)
+    #    except Exception:
+    #        adminClient.create_database(name=self._database, tenant=self._tenant)
 
     async def LoadDocuments(self, urls: List[str]) -> int:
         # Load and chunk contents of the blog
