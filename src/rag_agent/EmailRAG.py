@@ -14,10 +14,10 @@ from langgraph.cache.memory import InMemoryCache
 from langgraph.graph.graph import (
     END,
     START,
-    CompiledGraph,
     Graph,
     Send,
 )
+from langgraph.graph.state import CompiledStateGraph
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
 from psycopg_pool import AsyncConnectionPool, ConnectionPool
 from langchain_core.prompts import ChatPromptTemplate, HumanMessagePromptTemplate, PromptTemplate, SystemMessagePromptTemplate
@@ -47,7 +47,7 @@ from src.models import ChatMessage
 from src.models.EmailModel import EmailModel
 from src.models.EscalationModel import EscalationCheckModel
 from src.Infrastructure.VectorStore import VectorStore
-from src.Infrastructure.Checkpointer import CheckpointerSetup
+from src.Infrastructure.PostgreSQLSetup import PostgreSQLCheckpointerSetup, PostgreSQLStoreSetup
 from data.sample_emails import EMAILS
 from src.common.configuration import EmailConfiguration
 
@@ -128,11 +128,10 @@ class EmailRAG():
         ])
     # https://realpython.com/build-llm-rag-chatbot-with-langchain/#chains-and-langchain-expression-language-lcel
     _vectorStore = None
-    _in_memory_store: InMemoryStore = None
     _email_parser_chain = None
     _escalation_chain = None
-    _graph: CompiledGraph = None
-    _agent: CompiledGraph = None
+    _graph: CompiledStateGraph = None
+    _agent: CompiledStateGraph = None
     # Class constructor
     def __init__(self, config: RunnableConfig={}):
         """
@@ -149,12 +148,14 @@ class EmailRAG():
         For VertexAI, use VertexAIEmbeddings, model="text-embedding-005"; "gemini-2.0-flash" model_provider="google_genai"
         """
         # not a vector store but a LangGraph store object. https://github.com/langchain-ai/langchain/issues/30723
+        """
         self._in_memory_store = InMemoryStore(
             index={
                 "embed": OllamaEmbeddings(model=appconfig.EMBEDDING_MODEL, base_url=appconfig.OLLAMA_URI, num_ctx=8192, num_gpu=1, temperature=0),
                 #"dims": 1536,
             }
         )
+        """
         self._vectorStore = VectorStore(model=appconfig.EMBEDDING_MODEL, chunk_size=1000, chunk_overlap=0)
         self._llm = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider="ollama", base_url=appconfig.OLLAMA_URI, configurable_fields=("user_id", "graph", "email_state"), streaming=True, temperature=0).bind_tools([email_processing_tool])
         self._chainLLM = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider="ollama", base_url=appconfig.OLLAMA_URI, temperature=0)
@@ -204,7 +205,7 @@ class EmailRAG():
         last_message = state["messages"][-1]
         return "EmailTools" if last_message.tool_calls else END
 
-    async def CreateGraph(self) -> CompiledGraph:
+    async def CreateGraph(self) -> CompiledStateGraph:
         """
         Compile application and test
         https://langchain-ai.github.io/langgraph/tutorials/rag/langgraph_agentic_rag/
@@ -219,7 +220,7 @@ class EmailRAG():
             graph_builder.add_edge(START, "ParseEmail")
             graph_builder.add_edge("ParseEmail", "NeedsEscalation")
             graph_builder.add_edge("NeedsEscalation", END)
-            self._graph = graph_builder.compile(store=self._in_memory_store, name=self._graphName, cache=InMemoryCache())
+            self._graph = graph_builder.compile(name=self._graphName, cache=InMemoryCache())
             # https://langchain-ai.github.io/langgraph/reference/prebuilt/#langgraph.prebuilt.chat_agent_executor.create_react_agent
             #self._agent = create_react_agent(self._llm, [email_processing_tool], store=self._in_memory_store, config_schema=EmailConfiguration, state_schema=EmailAgentState, name=self._name, prompt=self._prompt) This doesn't work well as the LLM preprocess the input email instead of passing it through to email_processing_tool as is done in call_agent_model_node
             graph_builder = StateGraph(EmailAgentState)
@@ -231,7 +232,7 @@ class EmailRAG():
                 "EmailAgent", self.route_agent_graph_edge, ["EmailTools", END]
             )
             graph_builder.add_edge("EmailTools", "EmailAgent")
-            self._agent = graph_builder.compile(store=self._in_memory_store, name=self._agentName, cache=InMemoryCache())
+            self._agent = graph_builder.compile(name=self._agentName, cache=InMemoryCache())
         except ResourceExhausted as e:
             logging.exception(f"google.api_core.exceptions.ResourceExhausted")
         return self._agent
@@ -250,9 +251,12 @@ class EmailRAG():
             kwargs = appconfig.connection_kwargs,
         ) as pool:
             # Create the AsyncPostgresSaver
-            checkpointer = await CheckpointerSetup(pool)
+            checkpointer = await PostgreSQLCheckpointerSetup(pool)
+            store = await PostgreSQLStoreSetup(pool)
             self._agent.checkpointer = checkpointer
             self._graph.checkpointer = checkpointer
+            self._agent.store = store
+            self._graph.store = store
             async for step in self._agent.with_config({"graph": self._graph, "email_state": email_state, "thread_id": uuid7str()}).astream(
                 {"messages": [{"role": "user", "content": message_with_criteria}]},
                 stream_mode="values",
@@ -262,7 +266,7 @@ class EmailRAG():
                 step["messages"][-1].pretty_print()
             return result[-1]
 
-async def make_graph(config: RunnableConfig) -> CompiledGraph:
+async def make_graph(config: RunnableConfig) -> CompiledStateGraph:
     return await EmailRAG(config).CreateGraph()
 
 async def main():

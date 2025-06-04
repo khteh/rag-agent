@@ -14,10 +14,10 @@ from langgraph.cache.memory import InMemoryCache
 from langgraph.graph.graph import (
     END,
     START,
-    CompiledGraph,
     Graph,
     Send,
 )
+from langgraph.graph.state import CompiledStateGraph
 from langgraph.prebuilt import ToolNode, tools_condition, create_react_agent, InjectedStore
 from langgraph.checkpoint.memory import MemorySaver
 from typing_extensions import List, TypedDict
@@ -30,6 +30,7 @@ from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
 from langchain_neo4j import Neo4jGraph, GraphCypherQAChain
 from langchain.prompts import PromptTemplate
 from psycopg_pool import AsyncConnectionPool, ConnectionPool
+from langgraph.store.postgres.aio import AsyncPostgresStore
 """
 https://python.langchain.com/docs/tutorials/qa_chat_history/
 https://python.langchain.com/api_reference/langchain/chat_models/langchain.chat_models.base.init_chat_model.html
@@ -46,7 +47,7 @@ from .Tools import ground_search, store_memory, upsert_memory
 from src.Healthcare.Tools import HealthcareReview, HealthcareCypher
 from src.Healthcare.HospitalWaitingTime import get_current_wait_times, get_most_available_hospital
 from src.common.configuration import Configuration
-from src.Infrastructure.Checkpointer import CheckpointerSetup
+from src.Infrastructure.PostgreSQLSetup import PostgreSQLCheckpointerSetup, PostgreSQLStoreSetup
 from src.Healthcare.prompts import cypher_generation_template, qa_generation_template
 class RAGAgent():
     _name:str = "RAG ReAct Agent"
@@ -72,9 +73,8 @@ class RAGAgent():
                 ("placeholder", "{messages}")
         ])
     _vectorStore = None
-    _in_memory_store: InMemoryStore = None
     _tools: List[Callable[..., Any]] = None
-    _agent: CompiledGraph = None
+    _agent: CompiledStateGraph = None
     #_neo4jGraph: Neo4jGraph = None
     #_cypher_generation_prompt: PromptTemplate = None
     #_qa_generation_prompt: PromptTemplate = None
@@ -93,12 +93,14 @@ class RAGAgent():
         For VertexAI, use VertexAIEmbeddings, model="text-embedding-005"; "gemini-2.0-flash" model_provider="google_genai"
         """
         # not a vector store but a LangGraph store object. https://github.com/langchain-ai/langchain/issues/30723
+        """
         self._in_memory_store = InMemoryStore(
             index={
                 "embed": OllamaEmbeddings(model=appconfig.EMBEDDING_MODEL, base_url=appconfig.OLLAMA_URI, num_ctx=8192, num_gpu=1, temperature=0),
                 #"dims": 1536,
             }
         )
+        """
         self._vectorStore = VectorStore(model=appconfig.EMBEDDING_MODEL, chunk_size=1000, chunk_overlap=0)
         """
         GoogleSearch ground_search works well but it will sometimes take precedence and overwrite the ingested data into Chhroma and Neo4J. So, exclude it for now until it is really needed.
@@ -149,15 +151,16 @@ class RAGAgent():
         logging.debug(f"\n=== {self.LoadDocuments.__name__} ===")
         await self._vectorStore.LoadDocuments(self._urls)
 
-    async def CreateGraph(self) -> CompiledGraph:
+    async def CreateGraph(self) -> CompiledStateGraph:
         logging.debug(f"\n=== {self.CreateGraph.__name__} ===")
         try:
             """
             https://langchain-ai.github.io/langgraph/reference/prebuilt/#langgraph.prebuilt.chat_agent_executor.create_react_agent
             https://github.com/langchain-ai/langchain/issues/30723
             https://langchain-ai.github.io/langgraph/how-tos/cross-thread-persistence/
+            https://github.com/langchain-ai/langgraph/blob/main/libs/prebuilt/langgraph/prebuilt/chat_agent_executor.py#L241
             """
-            self._agent = create_react_agent(self._llm, self._tools, store = self._in_memory_store, config_schema = Configuration, state_schema = CustomAgentState, name = self._name, prompt = self._prompt)
+            self._agent = create_react_agent(self._llm, self._tools, config_schema = Configuration, state_schema = CustomAgentState, name = self._name, prompt = self._prompt)
             #self.ShowGraph() # This blocks
         except Exception as e:
             logging.exception(f"Exception! {e}")
@@ -178,8 +181,10 @@ class RAGAgent():
             max_size = appconfig.DB_MAX_CONNECTIONS,
             kwargs = appconfig.connection_kwargs,
         ) as pool:
-            # Create the AsyncPostgresSaver
-            self._agent.checkpointer = await CheckpointerSetup(pool)
+            # Create the AsyncPostgresSaver and AsyncPostgresStore
+            # https://github.com/langchain-ai/langgraph/blob/main/libs/langgraph/langgraph/graph/state.py#L828
+            self._agent.checkpointer = await PostgreSQLCheckpointerSetup(pool)
+            self._agent.store = await PostgreSQLStoreSetup(pool)
             """
             https://langchain-ai.github.io/langgraph/concepts/streaming/
             https://langchain-ai.github.io/langgraph/how-tos/#streaming
@@ -194,7 +199,7 @@ class RAGAgent():
                 step["messages"][-1].pretty_print()
             return result[-1]
         
-async def make_graph(config: RunnableConfig) -> CompiledGraph:
+async def make_graph(config: RunnableConfig) -> CompiledStateGraph:
     return await RAGAgent(config).CreateGraph()
 
 async def main():

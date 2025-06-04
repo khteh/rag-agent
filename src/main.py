@@ -16,7 +16,7 @@ from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
 from langgraph.graph.graph import CompiledGraph
 from src.config import config as appconfig
 from src.common.ResponseHelper import Respond
-from src.Infrastructure.Checkpointer import CheckpointerSetup
+from src.Infrastructure.PostgreSQLSetup import PostgreSQLCheckpointerSetup, PostgreSQLStoreSetup
 import warnings
 """
 https://docs.python.org/3/library/warnings.html#warnings.filterwarnings
@@ -68,11 +68,15 @@ async def create_app() -> Quart:
         )
         await app.db_pool.open()
         # Create the AsyncPostgresSaver
-        checkpointer = await CheckpointerSetup(app.db_pool)
+        checkpointer = await PostgreSQLCheckpointerSetup(app.db_pool)
+        store = await PostgreSQLStoreSetup(app.db_pool)
         # Assign the checkpointer to the assistant
         app.agent.checkpointer = checkpointer
         app.graph_rag.checkpointer = checkpointer
         app.healthcare_agent.checkpointer = checkpointer
+        app.agent.store = store
+        app.graph_rag.store = store
+        app.healthcare_agent.store = store
         logging.debug(f"\n=== {before_serving.__name__} done! ===")
 
     @app.after_serving

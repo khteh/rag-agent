@@ -19,10 +19,10 @@ from langgraph.store.memory import InMemoryStore
 from langgraph.graph.graph import (
     END,
     START,
-    CompiledGraph,
     Graph,
     Send,
 )
+from langgraph.graph.state import CompiledStateGraph
 from langgraph.prebuilt import ToolNode, tools_condition, create_react_agent, InjectedStore
 from langgraph.checkpoint.memory import MemorySaver
 from langchain_ollama import OllamaEmbeddings
@@ -32,7 +32,7 @@ from src.rag_agent.Tools import upsert_memory
 from src.common.configuration import Configuration
 from src.utils.image import show_graph
 from src.Infrastructure.VectorStore import VectorStore
-from src.Infrastructure.Checkpointer import CheckpointerSetup
+from src.Infrastructure.PostgreSQLSetup import PostgreSQLCheckpointerSetup, PostgreSQLStoreSetup
 from src.common.State import CustomAgentState
 class RAGAgent():
     _name:str = "Healthcare ReAct Agent"
@@ -48,7 +48,6 @@ class RAGAgent():
                 ("placeholder", "{messages}")
         ])
     _vectorStore = None
-    _in_memory_store: InMemoryStore = None
     _tools: List[Callable[..., Any]] = None
     # Class constructor
     def __init__(self, config: RunnableConfig={}):
@@ -63,25 +62,28 @@ class RAGAgent():
         For VertexAI, use VertexAIEmbeddings, model="text-embedding-005"; "gemini-2.0-flash" model_provider="google_genai"
         """
         # not a vector store but a LangGraph store object.
+        """
         self._in_memory_store = InMemoryStore(
             index={
                 "embed": OllamaEmbeddings(model=appconfig.EMBEDDING_MODEL, base_url=appconfig.OLLAMA_URI, num_ctx=8192, num_gpu=1, temperature=0),
                 #"dims": 1536,
             }
         )
+        """
         self._vectorStore = VectorStore(model=appconfig.EMBEDDING_MODEL, chunk_size=1000, chunk_overlap=0)
         self._tools = [self._vectorStore.retriever_tool, HealthcareReview, HealthcareCypher, get_current_wait_times, get_most_available_hospital, upsert_memory]
         self._llm = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider="ollama", base_url=appconfig.OLLAMA_URI, streaming=True).bind_tools(self._tools)
         # https://python.langchain.com/docs/integrations/chat/google_vertex_ai_palm/
-    async def CreateGraph(self) -> CompiledGraph:
+    async def CreateGraph(self) -> CompiledStateGraph:
         logging.debug(f"\n=== {self.CreateGraph.__name__} ===")
         try:
             """
             https://langchain-ai.github.io/langgraph/reference/prebuilt/#langgraph.prebuilt.chat_agent_executor.create_react_agent
             https://github.com/langchain-ai/langchain/issues/30723
             https://langchain-ai.github.io/langgraph/how-tos/cross-thread-persistence/
+            https://github.com/langchain-ai/langgraph/blob/main/libs/prebuilt/langgraph/prebuilt/chat_agent_executor.py#L241
             """
-            self._agent = create_react_agent(self._llm, self._tools, store = self._in_memory_store, config_schema = Configuration, state_schema=CustomAgentState, name=self._name, prompt=self._prompt)
+            self._agent = create_react_agent(self._llm, self._tools, config_schema = Configuration, state_schema=CustomAgentState, name=self._name, prompt=self._prompt)
             #self.ShowGraph() # This blocks
         except Exception as e:
             logging.exception(f"Exception! {e}")
@@ -99,7 +101,8 @@ class RAGAgent():
             kwargs = appconfig.connection_kwargs,
         ) as pool:
             # Create the AsyncPostgresSaver
-            self._agent.checkpointer = await CheckpointerSetup(pool)
+            self._agent.checkpointer = await PostgreSQLCheckpointerSetup(pool)
+            self._agent.store = await PostgreSQLStoreSetup(pool)
             async for step in self._agent.astream(
                 {"messages": [{"role": "user", "content": message}]},
                 stream_mode="values", # Use this to stream all values in the state after each step.
@@ -109,7 +112,7 @@ class RAGAgent():
                 step["messages"][-1].pretty_print()
             return result[-1]
 
-async def make_graph(config: RunnableConfig) -> CompiledGraph:
+async def make_graph(config: RunnableConfig) -> CompiledStateGraph:
     return await RAGAgent(config).CreateGraph()
 
 async def main():

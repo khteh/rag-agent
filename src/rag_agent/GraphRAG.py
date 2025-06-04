@@ -13,10 +13,10 @@ from langgraph.cache.memory import InMemoryCache
 from langgraph.graph.graph import (
     END,
     START,
-    CompiledGraph,
     Graph,
     Send,
 )
+from langgraph.graph.state import CompiledStateGraph
 from langgraph.prebuilt import ToolNode, tools_condition
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
@@ -41,7 +41,7 @@ from src.config import config as appconfig
 from src.common.configuration import Configuration
 from src.common.State import State, CustomAgentState
 from src.utils.image import show_graph
-from src.Infrastructure.Checkpointer import CheckpointerSetup
+from src.Infrastructure.PostgreSQLSetup import PostgreSQLCheckpointerSetup, PostgreSQLStoreSetup
 #from .State import State
 from src.Infrastructure.VectorStore import VectorStore
 
@@ -71,9 +71,8 @@ class GraphRAG():
         "https://mlflow.org/docs/latest/getting-started/tracking-server-overview/index.html",
         "https://mlflow.org/docs/latest/python_api/mlflow.deployments.html",        
     ]
-    _in_memory_store: InMemoryStore = None
     _vectorStore = None
-    _graph: CompiledGraph =  None
+    _graph: CompiledStateGraph =  None
     _retriever_tool = None
     # Class constructor
     def __init__(self, config: RunnableConfig={}):
@@ -83,12 +82,14 @@ class GraphRAG():
         self._config = config
         # https://python.langchain.com/api_reference/langchain/chat_models/langchain.chat_models.base.init_chat_model.html
         # not a vector store but a LangGraph store object. https://github.com/langchain-ai/langchain/issues/30723
+        """
         self._in_memory_store = InMemoryStore(
             index={
                 "embed": OllamaEmbeddings(model=appconfig.EMBEDDING_MODEL, base_url=appconfig.OLLAMA_URI, num_ctx=8192, num_gpu=1, temperature=0),
                 #"dims": 1536,
             }
         )
+        """
         self._vectorStore = VectorStore(model=appconfig.EMBEDDING_MODEL, chunk_size=1000, chunk_overlap=0)
         """
         .bind_tools() gives the agent LLM descriptions of each tool from their docstring and input arguments. 
@@ -257,7 +258,7 @@ class GraphRAG():
         #logging.debug(f"\nGenerate() response: {response}")
         return {"messages": [response]}
 
-    async def CreateGraph(self) -> CompiledGraph:
+    async def CreateGraph(self) -> CompiledStateGraph:
         """
         Compile application and test
         https://langchain-ai.github.io/langgraph/tutorials/rag/langgraph_agentic_rag/
@@ -294,7 +295,7 @@ class GraphRAG():
             )
             graph_builder.add_edge("Generate", END)
             graph_builder.add_edge("Rewrite", "Agent")
-            self._graph = graph_builder.compile(store=self._in_memory_store, name=self._name, cache=InMemoryCache())
+            self._graph = graph_builder.compile(name=self._name, cache=InMemoryCache())
             #self.ShowGraph(self._graph, self._name) # This blocks
         except ResourceExhausted as e:
             logging.exception(f"google.api_core.exceptions.ResourceExhausted")
@@ -324,7 +325,8 @@ class GraphRAG():
             kwargs = appconfig.connection_kwargs,
         ) as pool:
             # Create the AsyncPostgresSaver
-            self._graph.checkpointer = await CheckpointerSetup(pool)
+            self._graph.checkpointer = await PostgreSQLCheckpointerSetup(pool)
+            self._graph.store = await PostgreSQLStoreSetup(pool)
             async for step in self._graph.astream(
                 {"messages": [{"role": "user", "content": message}]},
                 stream_mode="values",
@@ -332,7 +334,7 @@ class GraphRAG():
             ):
                 step["messages"][-1].pretty_print()
 
-async def make_graph(config: RunnableConfig) -> CompiledGraph:
+async def make_graph(config: RunnableConfig) -> CompiledStateGraph:
     return await GraphRAG(config).CreateGraph()
 
 async def main():
