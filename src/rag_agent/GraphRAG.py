@@ -40,23 +40,42 @@ https://langchain-ai.github.io/langgraph/tutorials/rag/langgraph_agentic_rag/
 from src.config import config as appconfig
 from src.common.configuration import Configuration
 from src.common.State import State, CustomAgentState
+from src.models.DocumentGradeModel import DocumentGradeModel
 from src.utils.image import show_graph
 from src.Infrastructure.PostgreSQLSetup import PostgreSQLCheckpointerSetup, PostgreSQLStoreSetup
 #from .State import State
 from src.Infrastructure.VectorStore import VectorStore
 
 class GraphRAG():
-    _name: str = "Checkedpoint StateGraph RAG"
+    _name: str = "Checkpointed StateGraph RAG"
     _llm = None
     _config = None
-    _prompt = PromptTemplate(
+    _grading_prompt = PromptTemplate(
             template="""You are a grader assessing relevance of a retrieved document to a user question. \n 
-            Here is the retrieved document: \n\n {context} \n\n
-            Here is the user question: {question} \n
-            If the document contains keyword(s) or semantic meaning related to the user question, grade it as relevant. \n
-            Give a binary score 'yes' or 'no' score to indicate whether the document is relevant to the question.""",
+                        Here is the retrieved document: \n\n {context} \n\n
+                        Here is the user question: {question} \n
+                        If the document contains keyword(s) or semantic meaning related to the user question, grade it as relevant. \n
+                        Give a binary score 'yes' or 'no' score to indicate whether the document is relevant to the question.""",
             input_variables=["context", "question"],
         )
+    _rewrite_prompt = PromptTemplate(
+        template="""Look at the input and try to reason about the underlying semantic intent / meaning. \n
+                    Here is the initial question:
+                    \n ------- \n
+                    {question}
+                    \n ------- \n
+                    Formulate an improved question:""",
+        input_variables=["question"],
+    )
+    _generate_prompt = PromptTemplate(
+        template="""You are an assistant for question-answering tasks. \n
+                    Use the following pieces of retrieved context to answer the question. \n
+                    If you don't know the answer, just say that you don't know. \n
+                    Use three sentences maximum and keep the answer concise. \n
+                    Question: {question} \n
+                    Context: {context}""",
+        input_variables=["context", "question"],
+    )
     """
     Prompt
     https://smith.langchain.com/hub
@@ -96,7 +115,7 @@ class GraphRAG():
         If the agent LLM determines that its input requires a tool call, it’ll return a JSON tool message with the name of the tool it wants to use, along with the input arguments.
         For VertexAI, use VertexAIEmbeddings, model="text-embedding-005"; "gemini-2.0-flash" model_provider="google_genai"
         """
-        self._llm = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider="ollama", base_url=appconfig.OLLAMA_URI, streaming=True).bind_tools([self._vectorStore.retriever_tool])
+        self._llm = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider="ollama", base_url=appconfig.OLLAMA_URI, streaming=True, temperature=0).bind_tools([self._vectorStore.retriever_tool])
         # https://python.langchain.com/docs/integrations/chat/google_vertex_ai_palm/
 
     # https://langchain-ai.github.io/langgraph/tutorials/rag/langgraph_agentic_rag/
@@ -114,6 +133,7 @@ class GraphRAG():
         logging.info(f"\n=== {self.Agent.__name__} ===")
         logging.debug(f"state: {state}")
         response = await self._llm.with_config(config).ainvoke(state["messages"])
+        logging.debug(f"response: {response}")
         # MessageState appends messages to state instead of overwriting
         return {"messages": [response]}
 
@@ -131,31 +151,20 @@ class GraphRAG():
         Note: Edge functions return strings that tell you which node or nodes to navigate to.
         """
         logging.info(f"\n=== {self.GradeDocuments.__name__} CHECK RELEVANCE ===")
-        # Data model
-        class grade(BaseModel):
-            """Binary score for relevance check."""
-            binary_score: str = Field(description="Relevance score 'yes' or 'no'")
-
-        # LLM with tool and validation
-        # https://python.langchain.com/docs/how_to/structured_output/
-        llm_with_tool = self._llm.with_structured_output(grade)
-
-        # Chain
-        chain = self._prompt | llm_with_tool
-
-        messages = state["messages"]
-        last_message = messages[-1]
-
-        question = messages[0].content
-        docs = last_message.content
-
-        scored_result = await chain.with_config(config).ainvoke({"question": question, "context": docs})
-        score = scored_result.binary_score
-
+        question = state["messages"][0].content
+        context = state["messages"][-1].content
+        prompt = self._grading_prompt.format(context=context, question=question)
+        response = (
+            # LLM with tool and validation
+            # https://python.langchain.com/docs/how_to/structured_output/
+            await self._llm.with_structured_output(DocumentGradeModel).ainvoke(
+                [{"role": "user", "content": prompt}]
+            )
+        )
+        score = response.binary_score        
         if score == "yes":
             logging.debug("---DECISION: DOCS RELEVANT---")
             return "Generate"
-
         else:
             logging.debug(f"---DECISION: DOCS NOT RELEVANT (score: {score})---")
             return "Rewrite"
@@ -174,20 +183,10 @@ class GraphRAG():
         logging.info(f"\n=== {self.Rewrite.__name__} TRANSFORM QUERY ===")
         messages = state["messages"]
         question = messages[0].content
-        msg = [
-            HumanMessage(
-                content=f""" \n 
-                        Look at the input and try to reason about the underlying semantic intent / meaning. \n 
-                        Here is the initial question:
-                        \n ------- \n
-                        {question} 
-                        \n ------- \n
-                        Formulate an improved question: """,
-            )
-        ]
-        # Grader
-        response = await self._llm.with_config(config).ainvoke(msg)
-        return {"messages": [response]}
+        prompt = self._rewrite_prompt.format(question=question)
+        response = await self._llm.with_config(config).ainvoke([{"role": "user", "content": prompt}])
+        logging.debug(f"response: {response.content}")
+        return {"messages": [{"role": "user", "content": response.content}]}
 
     # https://langchain-ai.github.io/langgraph/tutorials/rag/langgraph_agentic_rag/
     async def Generate(self, state: CustomAgentState, config: RunnableConfig):
@@ -201,21 +200,10 @@ class GraphRAG():
             dict: The updated state with re-phrased question
         """
         logging.info(f"\n=== {self.Generate.__name__} ===")
-        messages = state["messages"]
-        question = messages[0].content
-        last_message = messages[-1]
-
-        docs = last_message.content
-
-        # Post-processing
-        def format_docs(docs):
-            return "\n\n".join(doc.page_content for doc in docs)
-
-        # Chain: https://python.langchain.com/docs/concepts/lcel/
-        rag_chain = self._rag_prompt | self._llm | StrOutputParser()
-
-        # Run
-        response = await rag_chain.with_config(config).ainvoke({"context": docs, "question": question})
+        question = state["messages"][0].content
+        context = state["messages"][-1].content
+        prompt = self._generate_prompt.format(context=context, question=question)
+        response = await self._llm.ainvoke([{"role": "user", "content": prompt}])
         return {"messages": [response]}
     
     # Step 3: Generate a response using the retrieved content.
@@ -339,7 +327,7 @@ async def main():
     parser.add_argument('-l', '--load-urls', action='store_true', help='Load documents from URLs')
     args = parser.parse_args()
     #vertexai.init(project=os.environ.get("GOOGLE_CLOUD_PROJECT"), location=os.environ.get("GOOGLE_CLOUD_LOCATION"))
-    config = RunnableConfig(run_name="Checkedpoint StateGraph RAG", thread_id=uuid7str(), user_id=uuid7str())
+    config = RunnableConfig(run_name="Checkpointed StateGraph RAG", thread_id=uuid7str(), user_id=uuid7str())
     graph = GraphRAG(config)
     print(f"args: {args}")
     if args.load_urls:

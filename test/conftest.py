@@ -24,6 +24,16 @@ async def EmailRAGFixture():
     return rag
 
 @pytest_asyncio.fixture(scope="function")
+async def GraphRAGFixture():
+    logging.basicConfig(format='%(asctime)s %(levelname)-8s %(message)s', level=logging.DEBUG, datefmt='%Y-%m-%d %H:%M:%S')
+    #vertexai.init(project=os.environ.get("GOOGLE_CLOUD_PROJECT"), location=os.environ.get("GOOGLE_CLOUD_LOCATION"))
+    config = RunnableConfig(run_name="Checkpointed StateGraph RAG", thread_id=uuid7str())
+    from src.rag_agent.GraphRAG import GraphRAG
+    rag = GraphRAG(config)
+    await rag.CreateGraph()
+    return rag
+
+@pytest_asyncio.fixture(scope="function")
 async def RAGAgentFixture():
     logging.basicConfig(format='%(asctime)s %(levelname)-8s %(message)s', level=logging.DEBUG, datefmt='%Y-%m-%d %H:%M:%S')
     #vertexai.init(project=os.environ.get("GOOGLE_CLOUD_PROJECT"), location=os.environ.get("GOOGLE_CLOUD_LOCATION"))
