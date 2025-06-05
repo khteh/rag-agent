@@ -94,7 +94,7 @@ class VectorStore(): #metaclass=VectorStoreSingleton):
         # https://api.python.langchain.com/en/latest/tools/langchain.tools.retriever.create_retriever_tool.html
         self.retriever_tool = create_retriever_tool(
             self.vector_store.as_retriever(),
-            "Retrieve information related to a query",
+            "retrieve_blog_posts",
             "Search and return information about the query from the documents available in the store",
         )
         atexit.register(self.Cleanup)

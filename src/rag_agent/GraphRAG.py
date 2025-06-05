@@ -51,29 +51,29 @@ class GraphRAG():
     _llm = None
     _config = None
     _grading_prompt = PromptTemplate(
-            template="""You are a grader assessing relevance of a retrieved document to a user question. \n 
-                        Here is the retrieved document: \n\n {context} \n\n
-                        Here is the user question: {question} \n
-                        If the document contains keyword(s) or semantic meaning related to the user question, grade it as relevant. \n
-                        Give a binary score 'yes' or 'no' score to indicate whether the document is relevant to the question.""",
+            template = "You are a grader assessing relevance of a retrieved document to a user question. \n "
+                            "Here is the retrieved document: \n\n {context} \n\n"
+                            "Here is the user question: {question} \n"
+                            "If the document contains keyword(s) or semantic meaning related to the user question, grade it as relevant. \n"
+                            "Give a binary score 'yes' or 'no' score to indicate whether the document is relevant to the question.",
             input_variables=["context", "question"],
         )
     _rewrite_prompt = PromptTemplate(
-        template="""Look at the input and try to reason about the underlying semantic intent / meaning. \n
-                    Here is the initial question:
-                    \n ------- \n
-                    {question}
-                    \n ------- \n
-                    Formulate an improved question:""",
+        template = "Look at the input and try to reason about the underlying semantic intent / meaning.\n"
+                    "Here is the initial question:"
+                    "\n ------- \n"
+                    "{question}"
+                    "\n ------- \n"
+                    "Formulate an improved question:",
         input_variables=["question"],
     )
     _generate_prompt = PromptTemplate(
-        template="""You are an assistant for question-answering tasks. \n
-                    Use the following pieces of retrieved context to answer the question. \n
-                    If you don't know the answer, just say that you don't know. \n
-                    Use three sentences maximum and keep the answer concise. \n
-                    Question: {question} \n
-                    Context: {context}""",
+        template = "You are an assistant for question-answering tasks. "
+                    "Use the following pieces of retrieved context to answer the question. "
+                    "If you don't know the answer, just say that you don't know. "
+                    "Use three sentences maximum and keep the answer concise.\n"
+                    "Question: {question} \n"
+                    "Context: {context}",
         input_variables=["context", "question"],
     )
     """
@@ -133,7 +133,7 @@ class GraphRAG():
         logging.info(f"\n=== {self.Agent.__name__} ===")
         logging.debug(f"state: {state}")
         response = await self._llm.with_config(config).ainvoke(state["messages"])
-        logging.debug(f"response: {response}")
+        print(f"{self.Agent.__name__} response: {response.content}")
         # MessageState appends messages to state instead of overwriting
         return {"messages": [response]}
 
@@ -184,7 +184,9 @@ class GraphRAG():
         messages = state["messages"]
         question = messages[0].content
         prompt = self._rewrite_prompt.format(question=question)
+        #print(f"{self.Rewrite.__name__} prompt: {prompt}")
         response = await self._llm.with_config(config).ainvoke([{"role": "user", "content": prompt}])
+        print(f"{self.Rewrite.__name__} response: {response.content}")
         logging.debug(f"response: {response.content}")
         return {"messages": [{"role": "user", "content": response.content}]}
 
@@ -203,7 +205,9 @@ class GraphRAG():
         question = state["messages"][0].content
         context = state["messages"][-1].content
         prompt = self._generate_prompt.format(context=context, question=question)
+        #print(f"{self.Generate.__name__} prompt: {prompt}")
         response = await self._llm.ainvoke([{"role": "user", "content": prompt}])
+        print(f"{self.Generate.__name__} response: {response}")
         return {"messages": [response]}
     
     # Step 3: Generate a response using the retrieved content.

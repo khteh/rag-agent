@@ -3,9 +3,19 @@ from datetime import datetime
 from uuid_extensions import uuid7, uuid7str
 from langchain_core.runnables import RunnableConfig
 from langchain_core.messages import convert_to_messages
-from langchain_core.messages import convert_to_messages
 from src.models import ChatMessage
 from src.common.State import EmailRAGState
+
+@pytest.mark.asyncio(loop_scope="function")
+async def test_generate_query_or_respond(GraphRAGFixture):
+    config = RunnableConfig(run_name=test_generate_query_or_respond.__name__, thread_id=uuid7str())
+    input = {"messages": [{"role": "user", "content": "Hello, who are you?"}]}
+    response = await GraphRAGFixture.Agent(input, config)
+    lc_ai_message = response["messages"][-1]
+    assert lc_ai_message
+    ai_message = ChatMessage.from_langchain(lc_ai_message)
+    print(f"{test_generate_query_or_respond.__name__} response: {len(ai_message.content)}, {response["messages"][-1].pretty_print()}")
+    assert len(ai_message.content)
 
 @pytest.mark.asyncio(loop_scope="function")
 async def test_should_rewrite_question(GraphRAGFixture):
@@ -91,7 +101,7 @@ async def test_rewrite_question(GraphRAGFixture):
         )
     }
     response = await GraphRAGFixture.Rewrite(input, config)
-    print(f"response: {len(response["messages"][-1]["content"])}, {response["messages"][-1]["content"]}")
+    print(f"{test_rewrite_question.__name__} response: {len(response["messages"][-1]["content"])}, {response["messages"][-1]["content"]}")
     assert len(response["messages"][-1]["content"])
    
 @pytest.mark.asyncio(loop_scope="function")
@@ -127,5 +137,5 @@ async def test_generete_answer(GraphRAGFixture):
     lc_ai_message = response["messages"][-1]
     assert lc_ai_message
     ai_message = ChatMessage.from_langchain(lc_ai_message)
-    print(f"response: {len(ai_message.content)}, {response["messages"][-1].pretty_print()}")
+    print(f"{test_generete_answer.__name__} response: {len(ai_message.content)}, {response["messages"][-1].pretty_print()}")
     assert len(ai_message.content)

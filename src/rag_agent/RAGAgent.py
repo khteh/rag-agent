@@ -106,7 +106,7 @@ class RAGAgent():
         GoogleSearch ground_search works well but it will sometimes take precedence and overwrite the ingested data into Chhroma and Neo4J. So, exclude it for now until it is really needed.
         """
         self._tools = [self._vectorStore.retriever_tool, HealthcareReview, HealthcareCypher, get_current_wait_times, get_most_available_hospital, upsert_memory]
-        self._llm = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider="ollama", base_url = appconfig.OLLAMA_URI, configurable_fields=("user_id", "cypher"), streaming = True, temperature=0).bind_tools(self._tools)
+        self._llm = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider="ollama", base_url = appconfig.OLLAMA_URI, configurable_fields=("user_id"), streaming = True, temperature=0).bind_tools(self._tools)
         """
         self._neo4jGraph = Neo4jGraph(
                 url = appconfig.NEO4J_URI,
