@@ -279,10 +279,7 @@ class GraphRAG():
                 # Assess agent decision
                 tools_condition,
                 {
-                    """
-                    Translate the condition outputs to nodes in our graph
-                    which node to go to based on the output of the conditional edge function - tools_condition.
-                    """
+                    # Translate the condition outputs to nodes in our graph. Which node to go to based on the output of the conditional edge function - tools_condition.
                     "tools": "Retrieve",
                     END: END
                 },
