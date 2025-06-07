@@ -131,7 +131,6 @@ class RAGAgent():
             allow_dangerous_requests = True # https://python.langchain.com/docs/security/
         )
         """
-        # https://python.langchain.com/docs/integrations/chat/google_vertex_ai_palm/
     
     def Cleanup(self):
         logging.info(f"\n=== {self.Cleanup.__name__} ===")
