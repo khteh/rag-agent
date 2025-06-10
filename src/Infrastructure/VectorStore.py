@@ -12,11 +12,9 @@ from langchain_core.documents import Document
 from langchain_community.document_loaders import WebBaseLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from src.config import config
-"""
-https://cloud.google.com/vertex-ai/generative-ai/docs/embeddings/get-text-embeddings
-https://realpython.com/python-class-constructor/
-https://stackoverflow.com/questions/79506120/python-subclass-constructor-calls-metaclass-with-args-and-kwargs
-"""
+#https://cloud.google.com/vertex-ai/generative-ai/docs/embeddings/get-text-embeddings
+#https://realpython.com/python-class-constructor/
+#https://stackoverflow.com/questions/79506120/python-subclass-constructor-calls-metaclass-with-args-and-kwargs
 class VectorStoreSingleton(type): # Inherit from "type" in order to gain access to method __call__
     __registry = {}
     def __call__(cls, *args, **kwargs):
@@ -53,32 +51,28 @@ class VectorStore(): #metaclass=VectorStoreSingleton):
         self._collection = collection
         self._tenant = tenant
         self._database = database
-        """
-        https://python.langchain.com/api_reference/_modules/langchain_ollama/embeddings.html#OllamaEmbeddings
-        https://huggingface.co/blog/matryoshka
-        https://ollama.com/library/nomic-embed-text
-        """
+        #https://python.langchain.com/api_reference/_modules/langchain_ollama/embeddings.html#OllamaEmbeddings
+        #https://huggingface.co/blog/matryoshka
+        #https://ollama.com/library/nomic-embed-text
         self._embeddings = OllamaEmbeddings(model=config.EMBEDDING_MODEL, base_url=config.OLLAMA_URI, num_ctx=8192, num_gpu=1, temperature=0)
-        """
-        settings=Settings(chroma_client_auth_provider = "chromadb.auth.token_authn.TokenAuthenticationServerProvider",
-                                    chroma_client_auth_credentials = config.CHROMA_TOKEN,
-                                    #chroma_client_auth_token_transport_header = "X-Chroma-Token"
-        ))
-        https://github.com/chroma-core/chroma/issues/1474
-        https://github.com/chroma-core/chroma/blob/main/chromadb/test/client/test_database_tenant.py
+        #settings=Settings(chroma_client_auth_provider = "chromadb.auth.token_authn.TokenAuthenticationServerProvider",
+        #                            chroma_client_auth_credentials = config.CHROMA_TOKEN,
+        #                            #chroma_client_auth_token_transport_header = "X-Chroma-Token"
+        #))
+        #https://github.com/chroma-core/chroma/issues/1474
+        #https://github.com/chroma-core/chroma/blob/main/chromadb/test/client/test_database_tenant.py
         # Create two databases with same name in different tenants
-        admin_client = client_factories.create_admin_client_from_system()
-        admin_client.create_tenant("test_tenant1")
-        admin_client.create_tenant("test_tenant2")
-        admin_client.create_database("test_db", tenant="test_tenant1")
-        admin_client.create_database("test_db", tenant="test_tenant2")
+        #admin_client = client_factories.create_admin_client_from_system()
+        #admin_client.create_tenant("test_tenant1")
+        #admin_client.create_tenant("test_tenant2")
+        #admin_client.create_database("test_db", tenant="test_tenant1")
+        #admin_client.create_database("test_db", tenant="test_tenant2")
 
         # Create collections in each database with same name
-        client.set_tenant(tenant="test_tenant1", database="test_db")
-        coll_tenant1 = client.create_collection("collection")
-        client.set_tenant(tenant="test_tenant2", database="test_db")
-        coll_tenant2 = client.create_collection("collection")
-        """
+        #client.set_tenant(tenant="test_tenant1", database="test_db")
+        #coll_tenant1 = client.create_collection("collection")
+        #client.set_tenant(tenant="test_tenant2", database="test_db")
+        #coll_tenant2 = client.create_collection("collection")
         #self.CreateTenantDatabase()
         #self._client = chromadb.HttpClient(host=config.CHROMA_URI, port=80, headers={"X-Chroma-Token": config.CHROMA_TOKEN}, tenant=self._tenant, database=self._database)
         #self._client.reset()  # resets the database - delete all data. Must be enabled with ALLOW_RESET env in chroma server
@@ -106,17 +100,14 @@ class VectorStore(): #metaclass=VectorStoreSingleton):
         # self.vector_store.close()
         self.retriever_tool = None
 
-    
     #def CreateTenantDatabase(self):
         #tenant_id = f"tenant_user:{user_id}"
-        """
-        For Local Chroma server:
-        adminClient = chromadb.AsyncAdminClient(Settings(
-            chroma_api_impl="chromadb.api.segment.SegmentAPI",
-            is_persistent=True,
-            persist_directory="multitenant",
-        ))
-        """
+        #For Local Chroma server:
+        #adminClient = chromadb.AsyncAdminClient(Settings(
+        #    chroma_api_impl="chromadb.api.segment.SegmentAPI",
+        #    is_persistent=True,
+        #    persist_directory="multitenant",
+        #))
     #    logging.info(f"{self.CreateTenantDatabase.__name__} tenant: {self._tenant}, database: {self._database}")
         # For Remote Chroma server:
     #    adminClient = chromadb.AdminClient(Settings( # Does NOT support context manager protocol

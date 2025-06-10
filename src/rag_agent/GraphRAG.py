@@ -266,6 +266,7 @@ class GraphRAG():
             graph_builder.add_node("Generate", self.Generate, cache_policy = cache_policy)
             graph_builder.add_edge(START, "Agent")
             #graph_builder.set_entry_point("query_or_respond")
+            # https://langchain-ai.github.io/langgraph/reference/graphs/#langgraph.graph.state.StateGraph.add_conditional_edges
             graph_builder.add_conditional_edges(
                 "Agent",
                 # Assess agent decision

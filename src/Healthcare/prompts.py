@@ -116,3 +116,8 @@ the query results. Always use the data in the query results.
 
 Helpful Answer:
 """
+review_template = """Your job is to use patient reviews to answer questions about their experience at a hospital. 
+Use the following context to answer questions. Be as detailed as possible, but don't make up any information that's not from the context. 
+If you don't know an answer, say you don't know.
+{context}
+"""

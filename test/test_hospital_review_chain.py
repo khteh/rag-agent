@@ -1,12 +1,15 @@
 import os,pytest, vertexai
+from uuid_extensions import uuid7, uuid7str
+from langchain_core.runnables import RunnableConfig
+from src.Healthcare.Tools import HealthcareReview
 pytest_plugins = ('pytest_asyncio',)
 
 @pytest.mark.asyncio(loop_scope="function")
 async def test_hospital_review_chain():
+    config = RunnableConfig(run_name=test_hospital_review_chain.__name__, thread_id=uuid7str())
     query = """What have patients said about hospital efficiency?
             Mention details from specific reviews."""
-    from src.Healthcare.HospitalReviewChain import reviews_vector_chain
-    response = await reviews_vector_chain.ainvoke(query)
+    response = await HealthcareReview.ainvoke(query, config)
     """
     response: {'query': 'What have patients said about hospital efficiency?\n Mention details from specific reviews.', 
                'result': 'Patients haven\'t directly mentioned hospital efficiency in their reviews. However, some comments can be indirectly related to efficiency. 
@@ -17,7 +20,7 @@ async def test_hospital_review_chain():
     No other reviews mention anything related to hospital efficiency, such as wait times, admission processes, or discharge procedures.                         
     """
     result = response.get('result')
-    print(f"test_hospital_review_chain: response: {response}, type: {type(response)}, result: {result}")
+    print(f"{test_hospital_review_chain.__name__}: response: {response}, type: {type(response)}, result: {result}")
     assert result
     assert "Gary Cook" in result
     assert "Jordan Inc" in result
