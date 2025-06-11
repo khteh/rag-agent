@@ -19,6 +19,7 @@ from src.Infrastructure.VectorStore import VectorStore
 class Configuration:
     """The configuration for the agent."""
     user_id: str = "default"
+    """The ID of the user to remember in the conversation."""
     system_prompt: str = field(
         default = SYSTEM_PROMPT,
         metadata = {
