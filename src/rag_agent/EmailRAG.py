@@ -243,7 +243,7 @@ class EmailRAG():
             )
             graph_builder.add_edge("EmailTools", "EmailAgent")
             await self._db_pool.open()
-            self._store = await PostgreSQLStoreSetup(self._db_pool)
+            self._store = await PostgreSQLStoreSetup(self._db_pool) # store is needed when creating the ReAct agent / StateGraph for InjectedStore to work
             self._agent = graph_builder.compile(name=self._agentName, cache=InMemoryCache(), store = self._store)
         except ResourceExhausted as e:
             logging.exception(f"google.api_core.exceptions.ResourceExhausted")

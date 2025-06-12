@@ -296,7 +296,7 @@ class GraphRAG():
             graph_builder.add_edge("Generate", END)
             graph_builder.add_edge("Rewrite", "Agent")
             await self._db_pool.open()
-            self._store = await PostgreSQLStoreSetup(self._db_pool)
+            self._store = await PostgreSQLStoreSetup(self._db_pool) # store is needed when creating the ReAct agent / StateGraph for InjectedStore to work
             self._graph = graph_builder.compile(name=self._name, cache=InMemoryCache(), store = self._store)
             #self.ShowGraph(self._graph, self._name) # This blocks
         except ResourceExhausted as e:

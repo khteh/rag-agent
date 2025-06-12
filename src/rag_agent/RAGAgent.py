@@ -138,7 +138,7 @@ class RAGAgent():
             # https://langchain-ai.github.io/langgraph/how-tos/cross-thread-persistence/
             # https://github.com/langchain-ai/langgraph/blob/main/libs/prebuilt/langgraph/prebuilt/chat_agent_executor.py#L241
             await self._db_pool.open()
-            self._store = await PostgreSQLStoreSetup(self._db_pool)
+            self._store = await PostgreSQLStoreSetup(self._db_pool) # store is needed when creating the ReAct agent / StateGraph for InjectedStore to work
             self._agent = create_react_agent(self._llm, self._tools, config_schema = Configuration, state_schema = CustomAgentState, name = self._name, prompt = self._prompt, store = self._store)
             #self.ShowGraph() # This blocks
         except Exception as e:
