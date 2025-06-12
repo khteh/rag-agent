@@ -16,7 +16,7 @@ from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
 from langgraph.graph.graph import CompiledGraph
 from src.config import config as appconfig
 from src.common.ResponseHelper import Respond
-from src.Infrastructure.PostgreSQLSetup import PostgreSQLCheckpointerSetup, PostgreSQLStoreSetup
+from src.Infrastructure.PostgreSQLSetup import PostgreSQLCheckpointerSetup
 import warnings
 """
 https://docs.python.org/3/library/warnings.html#warnings.filterwarnings
@@ -69,14 +69,10 @@ async def create_app() -> Quart:
         await app.db_pool.open()
         # Create the AsyncPostgresSaver
         checkpointer = await PostgreSQLCheckpointerSetup(app.db_pool)
-        store = await PostgreSQLStoreSetup(app.db_pool)
         # Assign the checkpointer to the assistant
         app.agent.checkpointer = checkpointer
         app.graph_rag.checkpointer = checkpointer
         app.healthcare_agent.checkpointer = checkpointer
-        app.agent.store = store
-        app.graph_rag.store = store
-        app.healthcare_agent.store = store
         logging.debug(f"\n=== {before_serving.__name__} done! ===")
 
     @app.after_serving
@@ -107,6 +103,7 @@ async def create_app() -> Quart:
     # https://github.com/pgjones/hypercorn/issues/294
     #    return HTTPToHTTPSRedirectMiddleware(app, "khteh.com")  # type: ignore - Defined in hypercorn.toml server_names
     #else:
+    logging.debug(f"\n=== {create_app.__name__} done! ===")
     return app
 
 app = asyncio.run(create_app())

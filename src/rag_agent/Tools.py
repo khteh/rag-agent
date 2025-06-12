@@ -83,12 +83,11 @@ async def retrieve(query: str, *, config: Annotated[RunnableConfig, InjectedTool
         (f"Source: {doc.metadata}\n" f"Content: {doc.page_content}")
         for doc in retrieved_docs
     )
-    return serialized, retrieved_docs#
-"""
-https://langchain-ai.github.io/langgraph/concepts/memory/
-https://langchain-ai.github.io/langgraph/how-tos/cross-thread-persistence/
-https://github.com/langchain-ai/memory-agent
-"""
+    return serialized, retrieved_docs
+
+# https://langchain-ai.github.io/langgraph/concepts/memory/
+# https://langchain-ai.github.io/langgraph/how-tos/cross-thread-persistence/
+# https://github.com/langchain-ai/memory-agent
 @tool(parse_docstring=True)
 async def upsert_memory(
     content: str,
@@ -99,7 +98,7 @@ async def upsert_memory(
     config: Annotated[RunnableConfig, InjectedToolArg],
     store: Annotated[BaseStore, InjectedStore()],
 ):
-    """Upsert a memory in the database if there are tool calls.
+    """Upsert a memory in the database.
 
     If a memory conflicts with an existing one, then just UPDATE the
     existing one by passing in memory_id - don't create two memories
@@ -113,14 +112,16 @@ async def upsert_memory(
         memory_id: ONLY PROVIDE IF UPDATING AN EXISTING MEMORY.
         The memory to overwrite.
     """
-    logging.info(f"{upsert_memory.__name__} content: {content}, context: {context}, memory_id: {memory_id}")
+    logging.debug(f"upsert_memory content: {content}, context: {context}, memory_id: {memory_id}")
     mem_id = memory_id or uuid7str()
     user_id = Configuration.from_runnable_config(config).user_id
+    logging.debug(f"upsert_memory user_id: {user_id}")
     await store.aput(
         ("memories", user_id),
         key=str(mem_id),
         value={"content": content, "context": context},
     )
+    logging.debug(f"upsert_memory mem_id: {mem_id}")
     return f"Stored memory {mem_id}"
 
 async def store_memory(state: CustomAgentState, config: Annotated[RunnableConfig, InjectedToolArg], *, store: Annotated[BaseStore, InjectedStore()]):

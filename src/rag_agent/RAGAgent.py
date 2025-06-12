@@ -27,10 +27,19 @@ from langgraph.store.base import BaseStore
 from langgraph.store.memory import InMemoryStore
 from langchain_ollama import OllamaEmbeddings
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
+from langgraph.store.postgres.aio import AsyncPostgresStore
 from langchain_neo4j import Neo4jGraph, GraphCypherQAChain
 from langchain.prompts import PromptTemplate
 from psycopg_pool import AsyncConnectionPool, ConnectionPool
-from langgraph.store.postgres.aio import AsyncPostgresStore
+from quart import (
+    Blueprint,
+    Response,
+    ResponseReturnValue,
+    current_app,
+    make_response,
+    render_template,
+    session
+)
 #https://python.langchain.com/docs/tutorials/qa_chat_history/
 #https://python.langchain.com/api_reference/langchain/chat_models/langchain.chat_models.base.init_chat_model.html
 #https://cloud.google.com/vertex-ai/generative-ai/docs/embeddings/get-text-embeddings
@@ -68,6 +77,8 @@ class RAGAgent():
                 ("system", "You are a helpful AI assistant named Bob. Always provide accurate answer."),
                 ("placeholder", "{messages}")
         ])
+    _db_pool: AsyncConnectionPool = None
+    _store: AsyncPostgresStore = None
     _vectorStore = None
     _tools: List[Callable[..., Any]] = None
     _agent: CompiledStateGraph = None
@@ -89,13 +100,20 @@ class RAGAgent():
         #        #"dims": 1536,
         #    }
         #)
+        self._db_pool = AsyncConnectionPool(
+                conninfo = appconfig.POSTGRESQL_DATABASE_URI,
+                max_size = appconfig.DB_MAX_CONNECTIONS,
+                kwargs = appconfig.connection_kwargs,
+            )
         self._vectorStore = VectorStore(model=appconfig.EMBEDDING_MODEL, chunk_size=1000, chunk_overlap=0)
         # GoogleSearch ground_search works well but it will sometimes take precedence and overwrite the ingested data into Chhroma and Neo4J. So, exclude it for now until it is really needed.
-        self._tools = [self._vectorStore.retriever_tool, HealthcareReview, HealthcareCypher, get_current_wait_times, get_most_available_hospital, upsert_memory]
+        self._tools = [self._vectorStore.retriever_tool, HealthcareReview, HealthcareCypher, get_current_wait_times, get_most_available_hospital]
         self._llm = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider="ollama", base_url = appconfig.OLLAMA_URI, configurable_fields=("user_id"), streaming = True, temperature=0).bind_tools(self._tools)
     
-    def Cleanup(self):
+    async def Cleanup(self):
         logging.info(f"\n=== {self.Cleanup.__name__} ===")
+        await self._store.close()
+        await self._db_pool.close()
         #self._in_memory_store.close()
 
     async def prepare_model_inputs(self, state: CustomAgentState, config: RunnableConfig, store: BaseStore):
@@ -119,7 +137,9 @@ class RAGAgent():
             # https://github.com/langchain-ai/langchain/issues/30723
             # https://langchain-ai.github.io/langgraph/how-tos/cross-thread-persistence/
             # https://github.com/langchain-ai/langgraph/blob/main/libs/prebuilt/langgraph/prebuilt/chat_agent_executor.py#L241
-            self._agent = create_react_agent(self._llm, self._tools, config_schema = Configuration, state_schema = CustomAgentState, name = self._name, prompt = self._prompt)
+            await self._db_pool.open()
+            self._store = await PostgreSQLStoreSetup(self._db_pool)
+            self._agent = create_react_agent(self._llm, self._tools, config_schema = Configuration, state_schema = CustomAgentState, name = self._name, prompt = self._prompt, store = self._store)
             #self.ShowGraph() # This blocks
         except Exception as e:
             logging.exception(f"Exception! {e}")
@@ -143,7 +163,6 @@ class RAGAgent():
             # Create the AsyncPostgresSaver and AsyncPostgresStore
             # https://github.com/langchain-ai/langgraph/blob/main/libs/langgraph/langgraph/graph/state.py#L828
             self._agent.checkpointer = await PostgreSQLCheckpointerSetup(pool)
-            self._agent.store = await PostgreSQLStoreSetup(pool)
             # https://langchain-ai.github.io/langgraph/concepts/streaming/
             # https://langchain-ai.github.io/langgraph/how-tos/#streaming
             # async for step in self._agent.with_config({"user_id": uuid7str()}).astream(
@@ -155,7 +174,7 @@ class RAGAgent():
                 result.append(step["messages"][-1])
                 step["messages"][-1].pretty_print()
             return result[-1]
-        
+
 async def make_graph(config: RunnableConfig) -> CompiledStateGraph:
     return await RAGAgent(config).CreateGraph()
 

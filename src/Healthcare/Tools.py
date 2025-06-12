@@ -79,7 +79,7 @@ async def HealthcareCypher(
         qa_generation_prompt = PromptTemplate(
             input_variables=["context", "question"], template=configuration.qa_generation_prompt
         )
-        hospital_cypher_chain = GraphCypherQAChain.from_llm(
+        hospital_cypher_chain = GraphCypherQAChain.from_llm( # 'GraphCypherQAChain' object does not support the context manager protocol"
             cypher_llm = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider="ollama", base_url=appconfig.OLLAMA_URI, streaming=True, temperature=0),
             qa_llm = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider="ollama", base_url=appconfig.OLLAMA_URI, streaming=True, temperature=0),
             graph = graph,
@@ -89,5 +89,5 @@ async def HealthcareCypher(
             validate_cypher = True,
             top_k = 100,
             allow_dangerous_requests = True # https://python.langchain.com/docs/security/
-        )    
+        )
         return await hospital_cypher_chain.ainvoke(query)

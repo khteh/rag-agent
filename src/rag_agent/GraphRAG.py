@@ -20,6 +20,7 @@ from langgraph.graph.state import CompiledStateGraph
 from langgraph.prebuilt import ToolNode, tools_condition
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
+from langgraph.store.postgres.aio import AsyncPostgresStore
 from langchain_ollama import OllamaEmbeddings
 from psycopg_pool import AsyncConnectionPool, ConnectionPool
 from typing_extensions import List, TypedDict
@@ -90,6 +91,8 @@ class GraphRAG():
         "https://mlflow.org/docs/latest/getting-started/tracking-server-overview/index.html",
         "https://mlflow.org/docs/latest/python_api/mlflow.deployments.html",        
     ]
+    _db_pool: AsyncConnectionPool = None
+    _store: AsyncPostgresStore = None
     _vectorStore = None
     _graph: CompiledStateGraph =  None
     _retriever_tool = None
@@ -101,22 +104,29 @@ class GraphRAG():
         self._config = config
         # https://python.langchain.com/api_reference/langchain/chat_models/langchain.chat_models.base.init_chat_model.html
         # not a vector store but a LangGraph store object. https://github.com/langchain-ai/langchain/issues/30723
-        """
-        self._in_memory_store = InMemoryStore(
-            index={
-                "embed": OllamaEmbeddings(model=appconfig.EMBEDDING_MODEL, base_url=appconfig.OLLAMA_URI, num_ctx=8192, num_gpu=1, temperature=0),
-                #"dims": 1536,
-            }
-        )
-        """
+        #self._in_memory_store = InMemoryStore(
+        #    index={
+        #        "embed": OllamaEmbeddings(model=appconfig.EMBEDDING_MODEL, base_url=appconfig.OLLAMA_URI, num_ctx=8192, num_gpu=1, temperature=0),
+        #        #"dims": 1536,
+        #    }
+        #)
+        self._db_pool = AsyncConnectionPool(
+                conninfo = appconfig.POSTGRESQL_DATABASE_URI,
+                max_size = appconfig.DB_MAX_CONNECTIONS,
+                kwargs = appconfig.connection_kwargs,
+            )
         self._vectorStore = VectorStore(model=appconfig.EMBEDDING_MODEL, chunk_size=1000, chunk_overlap=0)
-        """
-        .bind_tools() gives the agent LLM descriptions of each tool from their docstring and input arguments. 
-        If the agent LLM determines that its input requires a tool call, it’ll return a JSON tool message with the name of the tool it wants to use, along with the input arguments.
-        For VertexAI, use VertexAIEmbeddings, model="text-embedding-005"; "gemini-2.0-flash" model_provider="google_genai"
-        """
+        # .bind_tools() gives the agent LLM descriptions of each tool from their docstring and input arguments. 
+        # If the agent LLM determines that its input requires a tool call, it’ll return a JSON tool message with the name of the tool it wants to use, along with the input arguments.
+        # For VertexAI, use VertexAIEmbeddings, model="text-embedding-005"; "gemini-2.0-flash" model_provider="google_genai"
         self._llm = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider="ollama", base_url=appconfig.OLLAMA_URI, streaming=True, temperature=0).bind_tools([self._vectorStore.retriever_tool])
         # https://python.langchain.com/docs/integrations/chat/google_vertex_ai_palm/
+
+    async def Cleanup(self):
+        logging.info(f"\n=== {self.Cleanup.__name__} ===")
+        await self._store.close()
+        await self._db_pool.close()
+        #self._in_memory_store.close()
 
     # https://langchain-ai.github.io/langgraph/tutorials/rag/langgraph_agentic_rag/
     async def Agent(self, state: CustomAgentState, config: RunnableConfig):
@@ -285,7 +295,9 @@ class GraphRAG():
             )
             graph_builder.add_edge("Generate", END)
             graph_builder.add_edge("Rewrite", "Agent")
-            self._graph = graph_builder.compile(name=self._name, cache=InMemoryCache())
+            await self._db_pool.open()
+            self._store = await PostgreSQLStoreSetup(self._db_pool)
+            self._graph = graph_builder.compile(name=self._name, cache=InMemoryCache(), store = self._store)
             #self.ShowGraph(self._graph, self._name) # This blocks
         except ResourceExhausted as e:
             logging.exception(f"google.api_core.exceptions.ResourceExhausted")
@@ -316,7 +328,6 @@ class GraphRAG():
         ) as pool:
             # Create the AsyncPostgresSaver
             self._graph.checkpointer = await PostgreSQLCheckpointerSetup(pool)
-            self._graph.store = await PostgreSQLStoreSetup(pool)
             async for step in self._graph.astream(
                 {"messages": [{"role": "user", "content": message}]},
                 stream_mode="values",

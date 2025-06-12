@@ -19,6 +19,7 @@ from langgraph.graph.graph import (
 )
 from langgraph.graph.state import CompiledStateGraph
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
+from langgraph.store.postgres.aio import AsyncPostgresStore
 from psycopg_pool import AsyncConnectionPool, ConnectionPool
 from langchain_core.prompts import ChatPromptTemplate, HumanMessagePromptTemplate, PromptTemplate, SystemMessagePromptTemplate
 from langgraph.prebuilt import ToolNode, tools_condition
@@ -127,6 +128,8 @@ class EmailRAG():
                 ("user", "Remember, always provide accurate answer!"),
         ])
     # https://realpython.com/build-llm-rag-chatbot-with-langchain/#chains-and-langchain-expression-language-lcel
+    _db_pool: AsyncConnectionPool = None
+    _store: AsyncPostgresStore = None
     _vectorStore = None
     _email_parser_chain = None
     _escalation_chain = None
@@ -139,23 +142,24 @@ class EmailRAG():
         """
         logging.info(f"\n=== {self.__init__.__name__} ===")
         self._config = config
-        """
-        https://python.langchain.com/api_reference/langchain/chat_models/langchain.chat_models.base.init_chat_model.html
-        https://python.langchain.com/docs/integrations/chat/google_vertex_ai_palm/
-        https://python.langchain.com/docs/how_to/structured_output/
-        .bind_tools() gives the agent LLM descriptions of each tool from their docstring and input arguments. 
-        If the agent LLM determines that its input requires a tool call, it’ll return a JSON tool message with the name of the tool it wants to use, along with the input arguments.
-        For VertexAI, use VertexAIEmbeddings, model="text-embedding-005"; "gemini-2.0-flash" model_provider="google_genai"
-        """
+        # https://python.langchain.com/api_reference/langchain/chat_models/langchain.chat_models.base.init_chat_model.html
+        # https://python.langchain.com/docs/integrations/chat/google_vertex_ai_palm/
+        # https://python.langchain.com/docs/how_to/structured_output/
+        # .bind_tools() gives the agent LLM descriptions of each tool from their docstring and input arguments. 
+        # If the agent LLM determines that its input requires a tool call, it’ll return a JSON tool message with the name of the tool it wants to use, along with the input arguments.
+        # For VertexAI, use VertexAIEmbeddings, model="text-embedding-005"; "gemini-2.0-flash" model_provider="google_genai"
         # not a vector store but a LangGraph store object. https://github.com/langchain-ai/langchain/issues/30723
-        """
-        self._in_memory_store = InMemoryStore(
-            index={
-                "embed": OllamaEmbeddings(model=appconfig.EMBEDDING_MODEL, base_url=appconfig.OLLAMA_URI, num_ctx=8192, num_gpu=1, temperature=0),
-                #"dims": 1536,
-            }
-        )
-        """
+        #self._in_memory_store = InMemoryStore(
+        #    index={
+        #        "embed": OllamaEmbeddings(model=appconfig.EMBEDDING_MODEL, base_url=appconfig.OLLAMA_URI, num_ctx=8192, num_gpu=1, temperature=0),
+        #        #"dims": 1536,
+        #    }
+        #)
+        self._db_pool = AsyncConnectionPool(
+                conninfo = appconfig.POSTGRESQL_DATABASE_URI,
+                max_size = appconfig.DB_MAX_CONNECTIONS,
+                kwargs = appconfig.connection_kwargs,
+            )
         self._vectorStore = VectorStore(model=appconfig.EMBEDDING_MODEL, chunk_size=1000, chunk_overlap=0)
         self._llm = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider="ollama", base_url=appconfig.OLLAMA_URI, configurable_fields=("user_id", "graph", "email_state"), streaming=True, temperature=0).bind_tools([email_processing_tool])
         self._chainLLM = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider="ollama", base_url=appconfig.OLLAMA_URI, temperature=0)
@@ -167,6 +171,12 @@ class EmailRAG():
             self._escalation_prompt
             | self._chainLLM.with_structured_output(EscalationCheckModel)
         )
+
+    async def Cleanup(self):
+        logging.info(f"\n=== {self.Cleanup.__name__} ===")
+        await self._store.close()
+        await self._db_pool.close()
+        #self._in_memory_store.close()
 
     async def ParseEmail(self, state: EmailRAGState, config: RunnableConfig) -> EmailRAGState:
         """
@@ -232,7 +242,9 @@ class EmailRAG():
                 "EmailAgent", self.route_agent_graph_edge, ["EmailTools", END]
             )
             graph_builder.add_edge("EmailTools", "EmailAgent")
-            self._agent = graph_builder.compile(name=self._agentName, cache=InMemoryCache())
+            await self._db_pool.open()
+            self._store = await PostgreSQLStoreSetup(self._db_pool)
+            self._agent = graph_builder.compile(name=self._agentName, cache=InMemoryCache(), store = self._store)
         except ResourceExhausted as e:
             logging.exception(f"google.api_core.exceptions.ResourceExhausted")
         return self._agent
@@ -252,11 +264,8 @@ class EmailRAG():
         ) as pool:
             # Create the AsyncPostgresSaver
             checkpointer = await PostgreSQLCheckpointerSetup(pool)
-            store = await PostgreSQLStoreSetup(pool)
             self._agent.checkpointer = checkpointer
             self._graph.checkpointer = checkpointer
-            self._agent.store = store
-            self._graph.store = store
             async for step in self._agent.with_config({"graph": self._graph, "email_state": email_state, "thread_id": uuid7str()}).astream(
                 {"messages": [{"role": "user", "content": message_with_criteria}]},
                 stream_mode="values",
