@@ -54,11 +54,9 @@ async def create_app() -> Quart:
         logging.exception(f"handle_csrf_error {e.description}")
         await flash("Session expired!", "danger")
         if "url" in session and session["url"]:
-            logging.debug(f"handle_csrf_error. Redirect to {session["url"]}")
-            return redirect(session["url"]), 400
+            return redirect(session["url"]), 440
         else:
-            logging.debug(f"handle_csrf_error. Invalid session. Redirect to home.index")
-            return redirect(url_for("home.index")), 400
+            return redirect(url_for("home.index")), 440
 
     @app.before_serving
     async def before_serving() -> None:

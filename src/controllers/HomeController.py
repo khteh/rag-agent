@@ -1,4 +1,5 @@
 import re, asyncio, json, jsonpickle, logging, jsonpickle, pickle
+from pprint import pprint
 from uuid_extensions import uuid7, uuid7str
 from typing import AsyncGenerator, Dict, Any, Tuple
 from quart import (
@@ -20,6 +21,7 @@ from contextlib import asynccontextmanager
 from quart.helpers import stream_with_context
 from src.common.Authentication import Authentication
 from src.models.schema import ChatMessage, UserInput, StreamInput
+from langchain_core.messages import HumanMessage, AIMessage, ToolMessage, SystemMessage, ToolCall
 from langchain_core.callbacks import AsyncCallbackHandler
 from langgraph.graph.graph import CompiledGraph
 from langchain_core.runnables import RunnableConfig
@@ -143,17 +145,15 @@ async def invoke():
             ):
                 result.append(step["messages"][-1])
                 step["messages"][-1].pretty_print()
-            """
-            2025-04-12 20:23:19 DEBUG    /invoke respose: content='Task decomposition is a process of breaking down complex tasks or problems into smaller, more manageable steps or subtasks. This technique is used to simplify complicated tasks, making them easier to understand, plan, and execute. 
-                        It involves identifying the individual components or steps required to complete a task, and then organizing these steps in a logical order.\n\nTask decomposition can be applied in various contexts, including project management, problem-solving, and decision-making. 
-                        It helps individuals or teams to:\n\n1. Clarify complex tasks: By breaking down complex tasks into smaller steps, individuals can better understand what needs to be done.\n2. Identify priorities: Task decomposition helps to identify the most critical steps that need to be completed first.\n3. 
-                        Allocate resources: With a clear understanding of the individual steps, resources can be allocated more effectively.\n4. Monitor progress: Decomposing tasks into smaller steps makes it easier to track progress and identify potential bottlenecks.\n\n
-                        In the context of artificial intelligence and machine learning, task decomposition is used in techniques such as Chain of Thought (CoT) and Tree of Thoughts. These methods involve breaking down complex tasks into smaller steps, allowing models to utilize more test-time computation and provide insights into their thinking processes.\n\n
-                        Overall, task decomposition is a powerful technique for simplifying complex tasks, improving productivity, and enhancing decision-making.' 
-            additional_kwargs={} 
-            response_metadata={'model': 'llama3.3', 'created_at': '2025-04-12T12:23:19.47198126Z', 'done': True, 'done_reason': 'stop', 'total_duration': 428800185880, 'load_duration': 23447133, 'prompt_eval_count': 674, 'prompt_eval_duration': 19170396674, 'eval_count': 265, 'eval_duration': 409602973053, 'message': 
-            Message(role='assistant', content='Task decomposition is a process of breaking down complex tasks or problems into smaller, more manageable steps or subtasks. This technique is used to simplify complicated tasks, making them easier to understand, plan, and execute. It involves identifying the individual components or steps required to complete a task, and then organizing these steps in a logical order.\n\nTask decomposition can be applied in various contexts, including project management, problem-solving, and decision-making. It helps individuals or teams to:\n\n1. Clarify complex tasks: By breaking down complex tasks into smaller steps, individuals can better understand what needs to be done.\n2. Identify priorities: Task decomposition helps to identify the most critical steps that need to be completed first.\n3. Allocate resources: With a clear understanding of the individual steps, resources can be allocated more effectively.\n4. Monitor progress: Decomposing tasks into smaller steps makes it easier to track progress and identify potential bottlenecks.\n\nIn the context of artificial intelligence and machine learning, task decomposition is used in techniques such as Chain of Thought (CoT) and Tree of Thoughts. These methods involve breaking down complex tasks into smaller steps, allowing models to utilize more test-time computation and provide insights into their thinking processes.\n\nOverall, task decomposition is a powerful technique for simplifying complex tasks, improving productivity, and enhancing decision-making.', images=None, tool_calls=None), 'model_name': 'llama3.3'} name='RAG ReAct Agent' id='run-fc59fe44-18ea-44d5-b806-4c8454401703-0' usage_metadata={'input_tokens': 674, 'output_tokens': 265, 'total_tokens': 939}
-            """
+            #2025-04-12 20:23:19 DEBUG    /invoke respose: content='Task decomposition is a process of breaking down complex tasks or problems into smaller, more manageable steps or subtasks. This technique is used to simplify complicated tasks, making them easier to understand, plan, and execute. 
+            #            It involves identifying the individual components or steps required to complete a task, and then organizing these steps in a logical order.\n\nTask decomposition can be applied in various contexts, including project management, problem-solving, and decision-making. 
+            #            It helps individuals or teams to:\n\n1. Clarify complex tasks: By breaking down complex tasks into smaller steps, individuals can better understand what needs to be done.\n2. Identify priorities: Task decomposition helps to identify the most critical steps that need to be completed first.\n3. 
+            #            Allocate resources: With a clear understanding of the individual steps, resources can be allocated more effectively.\n4. Monitor progress: Decomposing tasks into smaller steps makes it easier to track progress and identify potential bottlenecks.\n\n
+            #            In the context of artificial intelligence and machine learning, task decomposition is used in techniques such as Chain of Thought (CoT) and Tree of Thoughts. These methods involve breaking down complex tasks into smaller steps, allowing models to utilize more test-time computation and provide insights into their thinking processes.\n\n
+            #            Overall, task decomposition is a powerful technique for simplifying complex tasks, improving productivity, and enhancing decision-making.' 
+            #additional_kwargs={} 
+            #response_metadata={'model': 'llama3.3', 'created_at': '2025-04-12T12:23:19.47198126Z', 'done': True, 'done_reason': 'stop', 'total_duration': 428800185880, 'load_duration': 23447133, 'prompt_eval_count': 674, 'prompt_eval_duration': 19170396674, 'eval_count': 265, 'eval_duration': 409602973053, 'message': 
+            #Message(role='assistant', content='Task decomposition is a process of breaking down complex tasks or problems into smaller, more manageable steps or subtasks. This technique is used to simplify complicated tasks, making them easier to understand, plan, and execute. It involves identifying the individual components or steps required to complete a task, and then organizing these steps in a logical order.\n\nTask decomposition can be applied in various contexts, including project management, problem-solving, and decision-making. It helps individuals or teams to:\n\n1. Clarify complex tasks: By breaking down complex tasks into smaller steps, individuals can better understand what needs to be done.\n2. Identify priorities: Task decomposition helps to identify the most critical steps that need to be completed first.\n3. Allocate resources: With a clear understanding of the individual steps, resources can be allocated more effectively.\n4. Monitor progress: Decomposing tasks into smaller steps makes it easier to track progress and identify potential bottlenecks.\n\nIn the context of artificial intelligence and machine learning, task decomposition is used in techniques such as Chain of Thought (CoT) and Tree of Thoughts. These methods involve breaking down complex tasks into smaller steps, allowing models to utilize more test-time computation and provide insights into their thinking processes.\n\nOverall, task decomposition is a powerful technique for simplifying complex tasks, improving productivity, and enhancing decision-making.', images=None, tool_calls=None), 'model_name': 'llama3.3'} name='RAG ReAct Agent' id='run-fc59fe44-18ea-44d5-b806-4c8454401703-0' usage_metadata={'input_tokens': 674, 'output_tokens': 265, 'total_tokens': 939}
             ai_message: ChatMessage = None
             if len(result):
                 ai_message = ChatMessage.from_langchain(result[-1])
@@ -163,14 +163,28 @@ async def invoke():
                     return custom_response({"message": ai_message.content}, 200)
             return custom_response({"message": ""}, 503)
         except Exception as e:
+            # https://langchain-ai.github.io/langgraph/troubleshooting/errors/INVALID_CHAT_HISTORY/
             logging.exception(f"/invoke exception! {str(e)}, repr: {repr(e)}")
             if attempt == 2:
                 raise HTTPException(description = str(e))
             if "Found AIMessages with tool_calls that do not have a corresponding ToolMessage" in str(e):
+                #state = await current_app.agent.with_config(config).aget_state() XXX: This doesn't work! Why!?!
                 state = await current_app.agent.aget_state({"configurable": {"thread_id": session["thread_id"], "user_id": session["user_id"]}})
-                logging.debug(f"state: {state}, {len(state.tasks)} tasks")
-                for task in state.tasks:
-                    logging.debug(f"task: {task}")          
+                tool_messages = set()
+                outstanding_tool_call_ids = set()
+                # Assumption: state.messages is chronologically ordered
+                for message in reversed(state.values["messages"]):
+                    msg = ChatMessage.from_langchain(message)
+                    if msg.type == "tool":
+                        tool_messages.add(msg.tool_call_id)
+                    elif msg.type == "ai" and len(msg.tool_calls):
+                        for tc in msg.tool_calls:
+                            if tc["id"] not in tool_messages:
+                                outstanding_tool_call_ids.add(tc["id"])
+                for id in outstanding_tool_call_ids:
+                    # provide ToolMessages that match existing tool calls and call graph.invoke({'messages': [ToolMessage(...)]}). 
+                    # NOTE: this will append the messages to the history and run the graph from the START node.
+                    await current_app.agent.with_config(config).ainvoke({'messages': [ToolMessage(content="I don't know!", tool_call_id=id)]})
 
 async def message_generator(user_input: StreamInput, config: RunnableConfig) -> AsyncGenerator[str, None]:
     """
