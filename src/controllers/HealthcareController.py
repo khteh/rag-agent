@@ -19,7 +19,7 @@ from contextlib import asynccontextmanager
 from quart.helpers import stream_with_context
 from src.models.schema import ChatMessage, UserInput, StreamInput
 from langchain_core.callbacks import AsyncCallbackHandler
-from langgraph.graph.graph import CompiledGraph
+from langgraph.graph.state import CompiledStateGraph
 from langchain_core.runnables import RunnableConfig
 from src.utils.AsyncRetry import async_retry
 from src.common.Response import custom_response

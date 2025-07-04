@@ -9,13 +9,7 @@ from langgraph.graph.message import add_messages
 from langgraph.managed import IsLastStep
 from langgraph.prebuilt.chat_agent_executor import AgentState
 from typing_extensions import Annotated
-from langgraph.graph.graph import (
-    END,
-    START,
-    CompiledGraph,
-    Graph,
-    Send,
-)
+from langgraph.graph.state import CompiledStateGraph
 from src.models.EmailModel import EmailModel
 from pydantic import EmailStr
 
@@ -52,4 +46,4 @@ class EmailRAGState(TypedDict):
 @dataclass
 class EmailAgentState(AgentState):
     context: EmailRAGState
-    graph: CompiledGraph
+    graph: CompiledStateGraph

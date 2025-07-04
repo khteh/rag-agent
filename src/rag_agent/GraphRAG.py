@@ -13,7 +13,7 @@ from langgraph.cache.memory import InMemoryCache
 from langgraph.graph.graph import (
     END,
     START,
-    Graph,
+    StateGraph,
     Send,
 )
 from langgraph.graph.state import CompiledStateGraph

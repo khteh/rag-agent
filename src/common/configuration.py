@@ -4,13 +4,7 @@ from dataclasses import dataclass, field, fields
 from typing import Annotated, Optional
 from langchain_core.runnables import RunnableConfig, ensure_config
 from langchain.prompts import PromptTemplate
-from langgraph.graph.graph import (
-    END,
-    START,
-    CompiledGraph,
-    Graph,
-    Send,
-)
+from langgraph.graph.state import CompiledStateGraph
 from .prompts import SYSTEM_PROMPT
 from src.Healthcare.prompts import cypher_generation_template, qa_generation_template, review_template
 from .State import EmailRAGState
@@ -72,5 +66,5 @@ class Configuration:
 @dataclass(kw_only=True)
 class EmailConfiguration(Configuration):
     """The configuration for the email agent."""
-    graph: CompiledGraph = None
+    graph: CompiledStateGraph = None
     email_state: EmailRAGState = None

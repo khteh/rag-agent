@@ -12,11 +12,11 @@ from langgraph.graph import START, StateGraph
 from typing_extensions import List, TypedDict
 from langgraph.types import CachePolicy
 from langgraph.cache.memory import InMemoryCache
-from langgraph.graph.graph import (
+from langgraph.graph.state import CompiledStateGraph
+from langgraph.graph import (
     END,
     START,
-    CompiledGraph,
-    Graph,
+    StateGraph,
     Send,
 )
 from src.config import config as appconfig
@@ -84,7 +84,7 @@ async def generate(state: State, config: RunnableConfig):
     response = await llm.ainvoke(messages, config)
     return {"answer": response.content}
 
-def BuildGraph(config: RunnableConfig) -> CompiledGraph:
+def BuildGraph(config: RunnableConfig) -> CompiledStateGraph:
     # Compile application and test
     logging.info(f"\n=== {BuildGraph.__name__} ===")
     graph_builder = StateGraph(State).add_sequence([retrieve, generate])
@@ -118,7 +118,7 @@ async def main():
     #subdocs = SplitDocuments(docs)
     #await IndexChunks(subdocs)
     config = RunnableConfig(run_name="RAG")
-    graph: CompiledGraph = BuildGraph(config)
+    graph: CompiledStateGraph = BuildGraph(config)
     show_graph(graph, "RAG")
     await Invoke(graph, "What is Task Decomposition?")
     await Stream(graph, "What is Task Decomposition?")
