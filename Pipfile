@@ -35,6 +35,7 @@ hypercorn = {extras = ["h3", "trio"], version = "*"}
 langchain-postgres = "*"
 mlflow = "*"
 psycopg = {extras = ["binary", "pool"], version = "*"}
+deepagents = "*"
 
 [dev-packages]
 pytest-flask = "*"

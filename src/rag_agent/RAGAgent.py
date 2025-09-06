@@ -10,12 +10,14 @@ from langchain_core.prompts import ChatPromptTemplate
 from langgraph.store.base import BaseStore
 from langgraph.store.postgres.aio import AsyncPostgresStore
 from psycopg_pool import AsyncConnectionPool, ConnectionPool
-#https://python.langchain.com/docs/tutorials/qa_chat_history/
-#https://python.langchain.com/api_reference/langchain/chat_models/langchain.chat_models.base.init_chat_model.html
-#https://cloud.google.com/vertex-ai/generative-ai/docs/embeddings/get-text-embeddings
-#https://langchain-ai.github.io/langgraph/how-tos/streaming/#values
-#https://python.langchain.com/docs/how_to/configure/
-#https://langchain-ai.github.io/langgraph/how-tos/
+from deepagents import create_deep_agent
+# https://github.com/langchain-ai/deepagents
+# https://python.langchain.com/docs/tutorials/qa_chat_history/
+# https://python.langchain.com/api_reference/langchain/chat_models/langchain.chat_models.base.init_chat_model.html
+# https://cloud.google.com/vertex-ai/generative-ai/docs/embeddings/get-text-embeddings
+# https://langchain-ai.github.io/langgraph/how-tos/streaming/#values
+# https://python.langchain.com/docs/how_to/configure/
+# https://langchain-ai.github.io/langgraph/how-tos/
 from src.config import config as appconfig
 from src.Infrastructure.VectorStore import VectorStore
 from src.common.State import CustomAgentState
@@ -109,7 +111,8 @@ class RAGAgent():
             # https://github.com/langchain-ai/langgraph/blob/main/libs/prebuilt/langgraph/prebuilt/chat_agent_executor.py#L241
             await self._db_pool.open()
             self._store = await PostgreSQLStoreSetup(self._db_pool) # store is needed when creating the ReAct agent / StateGraph for InjectedStore to work
-            self._agent = create_react_agent(self._llm, self._tools, config_schema = Configuration, state_schema = CustomAgentState, name = self._name, prompt = self._prompt, store = self._store)
+            #self._agent = create_react_agent(self._llm, self._tools, config_schema = Configuration, state_schema = CustomAgentState, name = self._name, prompt = self._prompt, store = self._store)
+            self._agent = create_deep_agent()
             #self.ShowGraph() # This blocks
         except Exception as e:
             logging.exception(f"Exception! {e}")
