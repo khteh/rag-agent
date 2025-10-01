@@ -30,6 +30,7 @@ from langchain_core.tools import InjectedToolArg, tool
 from langgraph.prebuilt import ToolNode, tools_condition, create_react_agent, InjectedStore
 from langchain_ollama import OllamaEmbeddings
 from pydantic import BaseModel, Field
+from deepagents import create_deep_agent
 """
 https://langchain-ai.github.io/langgraph/tutorials/rag/langgraph_agentic_rag/
 https://cloud.google.com/vertex-ai/generative-ai/docs/embeddings/get-text-embeddings
@@ -50,6 +51,7 @@ from src.Infrastructure.PostgreSQLSetup import PostgreSQLCheckpointerSetup, Post
 from data.sample_emails import EMAILS
 from src.common.configuration import EmailConfiguration
 
+# XXX: I don't think this is required any more using deepagent. The deepagent should use the custom subagent which is a CompiledStateGraph to accomplish it's objective.
 @tool
 async def email_processing_tool(
     email: str, escalation_criteria: str,
@@ -133,6 +135,8 @@ class EmailRAG():
     _escalation_chain = None
     _graph: CompiledStateGraph = None
     _agent: CompiledStateGraph = None
+    _subagent = None
+    _subagents = None
     # Class constructor
     def __init__(self, config: RunnableConfig={}):
         """
@@ -222,6 +226,7 @@ class EmailRAG():
         logging.info(f"\n=== {self.CreateGraph.__name__} ===")
         try:
             cache_policy = CachePolicy(ttl=600) # 10 minutes
+            # This should be a custom subagent.
             graph_builder = StateGraph(EmailRAGState)
             graph_builder.add_node("ParseEmail", self.ParseEmail, cache_policy = cache_policy)
             graph_builder.add_node("NeedsEscalation", self.NeedsEscalation, cache_policy = cache_policy)
@@ -229,8 +234,16 @@ class EmailRAG():
             graph_builder.add_edge("ParseEmail", "NeedsEscalation")
             graph_builder.add_edge("NeedsEscalation", END)
             self._graph = graph_builder.compile(name=self._graphName, cache=InMemoryCache())
+            # Use it as a custom subagent
+            self._subagent = {
+                "name": "Email SubAgent",
+                "description": "Specialized agent for complex email parser tasks",
+                "graph": self._graph
+            }
+            self._subagents = [self._subagent]
             # https://langchain-ai.github.io/langgraph/reference/prebuilt/#langgraph.prebuilt.chat_agent_executor.create_react_agent
             #self._agent = create_react_agent(self._llm, [email_processing_tool], store=self._in_memory_store, config_schema=EmailConfiguration, state_schema=EmailAgentState, name=self._name, prompt=self._prompt) This doesn't work well as the LLM preprocess the input email instead of passing it through to email_processing_tool as is done in call_agent_model_node
+            """
             graph_builder = StateGraph(EmailAgentState)
             graph_builder.add_node("EmailAgent", self.call_agent_model_node, cache_policy = cache_policy)
             graph_builder.add_node("EmailTools", ToolNode([email_processing_tool]), cache_policy = cache_policy)
@@ -240,9 +253,15 @@ class EmailRAG():
                 "EmailAgent", self.route_agent_graph_edge, ["EmailTools", END]
             )
             graph_builder.add_edge("EmailTools", "EmailAgent")
+            """
             await self._db_pool.open()
             self._store = await PostgreSQLStoreSetup(self._db_pool) # store is needed when creating the ReAct agent / StateGraph for InjectedStore to work
-            self._agent = graph_builder.compile(name=self._agentName, cache=InMemoryCache(), store = self._store)
+            #self._agent = graph_builder.compile(name=self._agentName, cache=InMemoryCache(), store = self._store)
+            self._agent = create_deep_agent(
+                tools, # XXX:
+                self._prompt,
+                subagents=self._subagents
+            )
         except ResourceExhausted as e:
             logging.exception(f"google.api_core.exceptions.ResourceExhausted")
         return self._agent
