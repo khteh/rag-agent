@@ -22,6 +22,7 @@ from src.config import config as appconfig
 from src.Infrastructure.VectorStore import VectorStore
 from src.common.State import CustomAgentState
 from src.utils.image import show_graph
+from src import Healthcare
 from .Tools import ground_search, store_memory, upsert_memory
 from src.Healthcare.Tools import HealthcareReview, HealthcareCypher
 from src.Healthcare.HospitalWaitingTime import get_current_wait_times, get_most_available_hospital
@@ -53,7 +54,13 @@ class RAGAgent():
     _store: AsyncPostgresStore = None
     _vectorStore = None
     _tools: List[Callable[..., Any]] = None
-    _agent: CompiledStateGraph = None
+    _healthcare_rag: Healthcare.RAGAgent.RAGAgent = None
+    _healthcare_agent = None
+    _ragagent = None
+    _subagents = None
+    _healthcare_subagent = None
+    _rag_subagent = None
+    _agent = None
     # Class constructor
     def __init__(self, config: RunnableConfig={}):
         """
@@ -72,6 +79,7 @@ class RAGAgent():
         #        #"dims": 1536,
         #    }
         #)
+        self._healthcare_rag = Healthcare.RAGAgent.RAGAgent(config)
         self._db_pool = AsyncConnectionPool(
                 conninfo = appconfig.POSTGRESQL_DATABASE_URI,
                 max_size = appconfig.DB_MAX_CONNECTIONS,
@@ -79,7 +87,9 @@ class RAGAgent():
             )
         self._vectorStore = VectorStore(model=appconfig.EMBEDDING_MODEL, chunk_size=1000, chunk_overlap=0)
         # GoogleSearch ground_search works well but it will sometimes take precedence and overwrite the ingested data into Chhroma and Neo4J. So, exclude it for now until it is really needed.
-        self._tools = [self._vectorStore.retriever_tool, HealthcareReview, HealthcareCypher, get_current_wait_times, get_most_available_hospital]
+        # Use it as a custom subagent
+        #self._tools = [self._vectorStore.retriever_tool, HealthcareReview, HealthcareCypher, get_current_wait_times, get_most_available_hospital]
+        self._tools = [self._vectorStore.retriever_tool]
         self._llm = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider="ollama", base_url = appconfig.OLLAMA_URI, configurable_fields=("user_id"), streaming = True, temperature=0).bind_tools(self._tools)
     
     async def Cleanup(self):
@@ -111,8 +121,25 @@ class RAGAgent():
             # https://github.com/langchain-ai/langgraph/blob/main/libs/prebuilt/langgraph/prebuilt/chat_agent_executor.py#L241
             await self._db_pool.open()
             self._store = await PostgreSQLStoreSetup(self._db_pool) # store is needed when creating the ReAct agent / StateGraph for InjectedStore to work
-            #self._agent = create_react_agent(self._llm, self._tools, config_schema = Configuration, state_schema = CustomAgentState, name = self._name, prompt = self._prompt, store = self._store)
-            self._agent = create_deep_agent()
+            self._ragagent = create_react_agent(self._llm, self._tools, config_schema = Configuration, state_schema = CustomAgentState, name = self._name, prompt = self._prompt, store = self._store)
+            self._healthcare_agent = await self._healthcare_rag.CreateGraph()
+            self._healthcare_subagent = {
+                "name": "Healthcare SubAgent",
+                "description": "Specialized healthcare AI assistant",
+                "graph": self._healthcare_agent
+            }
+            self._rag_subagent = {
+                "name": "RAG SubAgent",
+                "description": "Specialized agent which answers users' questions based on the information in the vector store",
+                "graph": self._ragagent
+            }
+            self._subagents = [self._healthcare_subagent, self._rag_subagent]
+            self._agent = create_deep_agent(
+                model = self._llm,
+                tools = [ground_search],
+                prompt = self._prompt,
+                subagents = self._subagents
+            )
             #self.ShowGraph() # This blocks
         except Exception as e:
             logging.exception(f"Exception! {e}")

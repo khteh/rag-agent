@@ -41,7 +41,7 @@ class RAGAgent():
     _store: AsyncPostgresStore = None   
     _vectorStore = None
     _tools: List[Callable[..., Any]] = None
-    _agent: CompiledStateGraph = None
+    agent: CompiledStateGraph = None
     # Class constructor
     def __init__(self, config: RunnableConfig={}):
         """
@@ -84,14 +84,14 @@ class RAGAgent():
             # https://github.com/langchain-ai/langgraph/blob/main/libs/prebuilt/langgraph/prebuilt/chat_agent_executor.py#L241
             await self._db_pool.open()
             self._store = await PostgreSQLStoreSetup(self._db_pool) # store is needed when creating the ReAct agent / StateGraph for InjectedStore to work
-            self._agent = create_react_agent(self._llm, self._tools, config_schema = Configuration, state_schema=CustomAgentState, name=self._name, prompt=self._prompt, store = self._store)
+            self.agent = create_react_agent(self._llm, self._tools, config_schema = Configuration, state_schema=CustomAgentState, name=self._name, prompt=self._prompt, store = self._store)
             #self.ShowGraph() # This blocks
         except Exception as e:
             logging.exception(f"Exception! {e}")
-        return self._agent
+        return self.agent
 
     def ShowGraph(self):
-        show_graph(self._agent, self._name) # This blocks
+        show_graph(self.agent, self._name) # This blocks
 
     async def ChatAgent(self, config, message: str):
         logging.info(f"\n=== {self.ChatAgent.__name__} ===")
@@ -102,8 +102,8 @@ class RAGAgent():
             kwargs = appconfig.connection_kwargs,
         ) as pool:
             # Create the AsyncPostgresSaver
-            self._agent.checkpointer = await PostgreSQLCheckpointerSetup(pool)
-            async for step in self._agent.astream(
+            self.agent.checkpointer = await PostgreSQLCheckpointerSetup(pool)
+            async for step in self.agent.astream(
                 {"messages": [{"role": "user", "content": message}]},
                 stream_mode="values", # Use this to stream all values in the state after each step.
                 config=config, # This is needed by Checkpointer

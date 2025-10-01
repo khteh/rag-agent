@@ -163,7 +163,8 @@ class EmailRAG():
                 kwargs = appconfig.connection_kwargs,
             )
         self._vectorStore = VectorStore(model=appconfig.EMBEDDING_MODEL, chunk_size=1000, chunk_overlap=0)
-        self._llm = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider="ollama", base_url=appconfig.OLLAMA_URI, configurable_fields=("user_id", "graph", "email_state"), streaming=True, temperature=0).bind_tools([email_processing_tool])
+        #self._llm = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider="ollama", base_url=appconfig.OLLAMA_URI, configurable_fields=("user_id", "graph", "email_state"), streaming=True, temperature=0).bind_tools([email_processing_tool])
+        self._llm = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider="ollama", base_url=appconfig.OLLAMA_URI, configurable_fields=("user_id", "email_state"), streaming=True, temperature=0).bind_tools([email_processing_tool])
         self._chainLLM = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider="ollama", base_url=appconfig.OLLAMA_URI, temperature=0)
         self._email_parser_chain = (
             self._email_parser_prompt
@@ -253,14 +254,15 @@ class EmailRAG():
                 "EmailAgent", self.route_agent_graph_edge, ["EmailTools", END]
             )
             graph_builder.add_edge("EmailTools", "EmailAgent")
+            self._agent = graph_builder.compile(name=self._agentName, cache=InMemoryCache(), store = self._store)
             """
             await self._db_pool.open()
             self._store = await PostgreSQLStoreSetup(self._db_pool) # store is needed when creating the ReAct agent / StateGraph for InjectedStore to work
-            #self._agent = graph_builder.compile(name=self._agentName, cache=InMemoryCache(), store = self._store)
             self._agent = create_deep_agent(
-                tools, # XXX:
-                self._prompt,
-                subagents=self._subagents
+                model = self._llm,
+                tools = tools, # XXX:
+                prompt = self._prompt,
+                subagents = self._subagents
             )
         except ResourceExhausted as e:
             logging.exception(f"google.api_core.exceptions.ResourceExhausted")
@@ -283,7 +285,8 @@ class EmailRAG():
             checkpointer = await PostgreSQLCheckpointerSetup(pool)
             self._agent.checkpointer = checkpointer
             self._graph.checkpointer = checkpointer
-            async for step in self._agent.with_config({"graph": self._graph, "email_state": email_state, "thread_id": uuid7str()}).astream(
+            #async for step in self._agent.with_config({"graph": self._graph, "email_state": email_state, "thread_id": uuid7str()}).astream(
+            async for step in self._agent.with_config({"email_state": email_state, "thread_id": uuid7str()}).astream(
                 {"messages": [{"role": "user", "content": message_with_criteria}]},
                 stream_mode="values",
                 #config = config
