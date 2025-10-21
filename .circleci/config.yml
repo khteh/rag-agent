@@ -19,7 +19,8 @@ jobs:
     steps:
       - setup_remote_docker:
           docker_layer_caching: true
-      - checkout
+      - checkout:
+          method: full
       - restore_cache:
           key: v1-dependencies-{{ .Branch }}-{{ checksum "Pipfile.lock" }}
       - run: pipenv install #-d
