@@ -23,7 +23,7 @@ from src.common.Authentication import Authentication
 from src.models.schema import ChatMessage, UserInput, StreamInput
 from langchain_core.messages import HumanMessage, AIMessage, ToolMessage, SystemMessage, ToolCall
 from langchain_core.callbacks import AsyncCallbackHandler
-from langgraph.graph import CompiledStateGraph
+from langgraph.graph.state import CompiledStateGraph
 from langchain_core.runnables import RunnableConfig
 from urllib.parse import urlparse, parse_qs
 from typing_extensions import List, TypedDict

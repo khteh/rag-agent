@@ -10,7 +10,7 @@ from langchain_core.output_parsers import StrOutputParser
 from langgraph.graph import StateGraph, MessagesState
 from langgraph.types import CachePolicy
 from langgraph.cache.memory import InMemoryCache
-from langgraph.graph.graph import (
+from langgraph.graph import (
     END,
     START,
     StateGraph,
@@ -26,7 +26,7 @@ from psycopg_pool import AsyncConnectionPool, ConnectionPool
 from typing_extensions import List, TypedDict
 from langgraph.store.memory import InMemoryStore
 from langchain_core.prompts import PromptTemplate
-from langchain.tools.retriever import create_retriever_tool
+from langchain_core.tools.retriever import create_retriever_tool
 from google.api_core.exceptions import ResourceExhausted
 from pydantic import BaseModel, Field
 """

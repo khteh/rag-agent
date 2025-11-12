@@ -7,7 +7,7 @@ from typing import Sequence
 from langchain_core.messages import AnyMessage, BaseMessage
 from langgraph.graph.message import add_messages
 from langgraph.managed import IsLastStep
-from langgraph.prebuilt.chat_agent_executor import AgentState
+from langchain.agents import AgentState
 from typing_extensions import Annotated
 from langgraph.graph.state import CompiledStateGraph
 from src.models.EmailModel import EmailModel
