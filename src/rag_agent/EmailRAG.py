@@ -11,11 +11,11 @@ from langchain_core.output_parsers import StrOutputParser
 from langgraph.graph import StateGraph, MessagesState
 from langgraph.types import CachePolicy
 from langgraph.cache.memory import InMemoryCache
-from langgraph.graph.graph import (
+from langgraph.graph import (
     END,
     START,
 )
-from langgraph.graph import CompiledStateGraph
+from langgraph.graph.state import CompiledStateGraph
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
 from langgraph.store.postgres.aio import AsyncPostgresStore
 from psycopg_pool import AsyncConnectionPool, ConnectionPool

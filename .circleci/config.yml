@@ -19,11 +19,13 @@ jobs:
     steps:
       - setup_remote_docker:
           docker_layer_caching: true
-      - checkout
+      - checkout:
+          method: full
       - restore_cache:
-          key: v1-dependencies-{{ .Branch }}-{{ checksum "Pipfile.lock" }}
-      - run: pipenv install #-d
-      #- run: pipenv run pytest -v Needs /etc/ragagent_config.json
+          key: v1-dependencies-{{ .Branch }}-{{ checksum "uv.lock" }}
+      - run: uv sync
+      - run: uv pip install --group dev
+      #- run: uv run pytest -v Needs /etc/ragagent_config.json
       - run:
           name: Build docker image
           command: docker build -t khteh/ragagent:latest .
@@ -34,7 +36,7 @@ jobs:
           name: Push images to docker hub
           command: docker push khteh/ragagent:latest
       - save_cache:
-          key: v1-dependencies-{{ .Branch }}-{{ checksum "Pipfile.lock" }}
+          key: v1-dependencies-{{ .Branch }}-{{ checksum "uv.lock" }}
           paths:
             - /home/circleci/.local/bin
             - /home/circleci/.local/lib

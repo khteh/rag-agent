@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field, fields
 from typing import Annotated, Optional
 from langchain_core.runnables import RunnableConfig, ensure_config
-from langchain.prompts import PromptTemplate
+from langchain_core.prompts import PromptTemplate
 from langgraph.graph.state import CompiledStateGraph
 from .prompts import SYSTEM_PROMPT
 from src.Healthcare.prompts import cypher_generation_template, qa_generation_template, review_template

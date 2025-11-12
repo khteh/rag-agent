@@ -1,3 +1,41 @@
+Metadata-Version: 2.4
+Name: rag-agent
+Version: 0.1.0
+Summary: Add your description here
+Requires-Python: >=3.13
+Description-Content-Type: text/markdown
+Requires-Dist: PyJWT
+Requires-Dist: langchain-text-splitters
+Requires-Dist: langchain-community
+Requires-Dist: langgraph
+Requires-Dist: python-dotenv
+Requires-Dist: langchain[google-genai]
+Requires-Dist: beautifulsoup4
+Requires-Dist: langchain-google-genai
+Requires-Dist: google-genai
+Requires-Dist: pillow
+Requires-Dist: quart
+Requires-Dist: quart-bcrypt
+Requires-Dist: quart-trio
+Requires-Dist: quart-wtforms
+Requires-Dist: Quart-CORS
+Requires-Dist: langgraph-checkpoint-postgres
+Requires-Dist: langchain-core
+Requires-Dist: vertexai
+Requires-Dist: aioquic
+Requires-Dist: pydantic[email]
+Requires-Dist: neo4j
+Requires-Dist: retry
+Requires-Dist: langchain-neo4j
+Requires-Dist: jsonpickle
+Requires-Dist: databricks-sdk
+Requires-Dist: langchain-ollama
+Requires-Dist: uuid7
+Requires-Dist: hypercorn[h3,trio]
+Requires-Dist: langchain-postgres
+Requires-Dist: mlflow
+Requires-Dist: psycopg[binary,pool]
+
 # LLM-RAG ReAct agent using LangChain, LangGraph, LangSmith
 
 Python LLM-RAG ReAct agent using LangChain, LangGraph and LangSmith built on Quart web microframework and served using Hypercorn ASGI and WSGI web server.
@@ -167,7 +205,7 @@ $ c3 -v https://localhost:4433/healthcare/invoke -m 300 -X POST -d '{"message": 
 
 ### Run local Langgraph server
 
-- `uv run python -m langgraph_cli dev`
+- `langgraph dev`
 
 ## ReAct Agent answers question using Google Search and Vector Database
 

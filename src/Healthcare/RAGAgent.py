@@ -5,7 +5,7 @@ from datetime import datetime
 from typing_extensions import List, TypedDict
 from typing import Any, Callable, List, Optional, cast
 from google.api_core.exceptions import ResourceExhausted
-from langgraph.prebuilt.chat_agent_executor import AgentState
+from langchain.agents import AgentState
 from .HospitalWaitingTime import (
     get_current_wait_times,
     get_most_available_hospital,

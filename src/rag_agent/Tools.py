@@ -10,7 +10,7 @@ from langchain_core.runnables import RunnableConfig, ensure_config
 from langchain_core.tools import InjectedToolArg, tool
 from langgraph.store.base import BaseStore
 from langgraph.prebuilt import InjectedStore
-from langchain.schema import Document
+from langchain_core.documents import Document
 from google import genai
 from google.genai import types
 from google.genai.types import Tool, GenerateContentConfig, GoogleSearch

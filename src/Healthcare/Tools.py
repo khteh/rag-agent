@@ -3,11 +3,12 @@ from typing_extensions import Annotated
 from langchain_core.runnables import RunnableConfig
 from langchain.chat_models import init_chat_model
 from langchain_neo4j import Neo4jGraph, GraphCypherQAChain
-from langchain.prompts import PromptTemplate
+from langchain_core.prompts import PromptTemplate
 from langchain_core.prompts import ChatPromptTemplate, HumanMessagePromptTemplate, PromptTemplate, SystemMessagePromptTemplate
 from langchain_community.vectorstores import Neo4jVector
 from langchain_ollama import OllamaEmbeddings
-from langchain.chains import RetrievalQA
+from langchain.chains import create_retrieval_chain
+from langchain.chains.combine_documents import create_stuff_documents_chain
 from src.common.configuration import Configuration
 from src.config import config as appconfig
 from src.utils.ModelString import split_model_and_provider
@@ -50,11 +51,8 @@ async def HealthcareReview(
     review_prompt = ChatPromptTemplate(
         input_variables=["context", "question"], messages=messages
     )
-    reviews_vector_chain = RetrievalQA.from_chain_type(
-        llm = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider="ollama", base_url=appconfig.OLLAMA_URI, streaming=True, temperature=0),
-        chain_type = "stuff", # pass all k reviews to the prompt.
-        retriever = neo4j_vector_index.as_retriever(k=3),
-    )
+    question_answer_chain = create_stuff_documents_chain(init_chat_model(appconfig.LLM_RAG_MODEL, model_provider="ollama", base_url=appconfig.OLLAMA_URI, streaming=True, temperature=0), review_prompt)
+    reviews_vector_chain = create_retrieval_chain(neo4j_vector_index.as_retriever(k=3), question_answer_chain)
     reviews_vector_chain.combine_documents_chain.llm_chain.prompt = review_prompt    
     return await reviews_vector_chain.ainvoke(query)
 
