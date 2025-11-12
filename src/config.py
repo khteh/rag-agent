@@ -2,7 +2,7 @@ import os, json, logging, sys
 from logging.handlers import TimedRotatingFileHandler
 from dotenv import load_dotenv
 from urllib import parse
-load_dotenv()
+load_dotenv("./.env")
 class ConfigSingleton(type): # Inherit from "type" in order to gain access to method __call__
     __registry = {}
     def __call__(cls, *args, **kwargs):
