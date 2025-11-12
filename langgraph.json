@@ -17,5 +17,5 @@
     },
     "env": "./.env",
     "python_version": "3.13",
-    "pip_config_file": "Pipfile"
+    "pip_config_file": "pyproject.toml"
 }

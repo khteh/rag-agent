@@ -1,0 +1,47 @@
+[project]
+name = "rag-agent"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "PyJWT",
+    "langchain-text-splitters",
+    "langchain-community",
+    "langgraph",
+    "python-dotenv",
+    "langchain[google-genai]",
+    "beautifulsoup4",
+    "langchain-google-genai",
+    "google-genai",
+    "pillow",
+    "quart",
+    "quart-bcrypt",
+    "quart-trio",
+    "quart-wtforms",
+    "Quart-CORS",
+    "langgraph-checkpoint-postgres",
+    "langchain-core",
+    "vertexai",
+    "aioquic",
+    "pydantic[email]",
+    "neo4j",
+    "retry",
+    "langchain-neo4j",
+    "jsonpickle",
+    "databricks-sdk",
+    "langchain-ollama",
+    "uuid7",
+    "hypercorn[h3,trio]",
+    "langchain-postgres",
+    "mlflow",
+    "psycopg[binary,pool]",
+]
+
+[dependency-groups]
+dev = [
+    "pytest-flask",
+    "pytest",
+    "pytest-asyncio",
+    "langgraph-cli[inmem]",
+]
