@@ -3,7 +3,7 @@ from uuid_extensions import uuid7, uuid7str
 from typing import Annotated, Literal, Sequence
 from datetime import datetime
 from google.api_core.exceptions import ResourceExhausted
-from langchain import hub
+from langchain_classic import hub
 from langchain.chat_models import init_chat_model
 from langchain_core.runnables import RunnableConfig
 from langchain_core.messages import AIMessage, SystemMessage, HumanMessage

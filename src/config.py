@@ -2,7 +2,15 @@ import os, json, logging, sys
 from logging.handlers import TimedRotatingFileHandler
 from dotenv import load_dotenv
 from urllib import parse
-load_dotenv("./.env")
+"""
+https://pypi.org/project/python-dotenv/
+By default, load_dotenv() will:
+
+Look for a .env file in the same directory as the Python script (or higher up the directory tree).
+Read each key-value pair and add it to os.environ.
+Not override an environment variable that is already set, unless you explicitly pass override=True.
+"""
+load_dotenv()
 class ConfigSingleton(type): # Inherit from "type" in order to gain access to method __call__
     __registry = {}
     def __call__(cls, *args, **kwargs):

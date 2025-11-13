@@ -2,7 +2,7 @@ import argparse, asyncio, logging, os, vertexai
 from uuid_extensions import uuid7, uuid7str
 from typing import Annotated, Literal, Sequence
 from datetime import datetime
-from langchain import hub
+from langchain_classic import hub
 from langchain.chat_models import init_chat_model
 from langchain_core.runnables import RunnableConfig
 from langchain_core.messages import SystemMessage, HumanMessage
@@ -14,7 +14,6 @@ from langgraph.graph import (
     END,
     START,
     StateGraph,
-    Send,
 )
 from langgraph.graph.state import CompiledStateGraph
 from langgraph.prebuilt import ToolNode, tools_condition

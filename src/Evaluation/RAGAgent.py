@@ -1,14 +1,11 @@
-import ast, os, mlflow, mlflow.deployments, pandas, vertexai
-from datetime import datetime
+import mlflow, pandas
 from langchain.chat_models import init_chat_model
-from langchain.chains import RetrievalQA
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_classic.chains import create_retrieval_chain
+from langchain_classic.chains.combine_documents import create_stuff_documents_chain
 #from langchain.embeddings.sentence_transformer import SentenceTransformerEmbeddings
-from langchain_community.llms import Databricks
-from mlflow.deployments import set_deployments_target
 from mlflow.metrics.genai.metric_definitions import relevance
-from langchain_core.runnables import RunnableConfig
 from src.Infrastructure.VectorStore import VectorStore
-from src.rag_agent.RAGAgent import RAGAgent
 from src.config import config
 _urls = [
     "https://lilianweng.github.io/posts/2023-06-23-agent/",
@@ -36,13 +33,21 @@ def model(input_df):
     # For VertexAI, use VertexAIEmbeddings, model="text-embedding-005"; "gemini-2.0-flash" model_provider="google_genai"
     model = init_chat_model(config.LLM_RAG_MODEL, model_provider="ollama", base_url=config.OLLAMA_URI, streaming=True, temperature=0)
     vectorStore = VectorStore(model=config.EMBEDDING_MODEL, chunk_size=1000, chunk_overlap=0)
-    qa = RetrievalQA.from_chain_type(
-          llm = model,
-          chain_type="stuff",
-          retriever=vectorStore.vector_store.as_retriever(fetch_k=3),
-          return_source_documents=True,
+    system_prompt = (
+        "Use the given context to answer the question. "
+        "If you don't know the answer, say you don't know. "
+        "Use three sentence maximum and keep the answer concise. "
+        "Context: {context}"
     )
-    return input_df["questions"].map(qa).tolist()
+    prompt = ChatPromptTemplate.from_messages(
+        [
+            ("system", system_prompt),
+            ("human", "{input}"),
+        ]
+    )    
+    question_answer_chain = create_stuff_documents_chain(model, prompt)
+    chain = create_retrieval_chain(vectorStore.vector_store.as_retriever(fetch_k=3), question_answer_chain)
+    return input_df["questions"].map(chain).tolist()
 
 def evaluate_rag():
     relevance_metric = relevance(
@@ -52,11 +57,9 @@ def evaluate_rag():
     mlflow.langchain.autolog()
   
     with mlflow.start_run():
-      results = mlflow.evaluate(
+      results = mlflow.genai.evaluate(
           model,
           _eval_data,
-          model_type="question-answering",
-          evaluators="default",
           predictions="result",
           extra_metrics=[relevance_metric, mlflow.metrics.latency()],
           evaluator_config={
