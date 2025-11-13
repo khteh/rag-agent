@@ -1,9 +1,5 @@
-import ast, os, mlflow, mlflow.deployments, pandas
-from langchain.chains import RetrievalQA
+import mlflow, pandas
 #from langchain.embeddings.sentence_transformer import SentenceTransformerEmbeddings
-from langchain_community.llms import Databricks
-from mlflow.deployments import set_deployments_target
-from mlflow.metrics.genai.metric_definitions import relevance
 from src.Infrastructure.VectorStore import VectorStore
 from src.config import config
 _urls = [

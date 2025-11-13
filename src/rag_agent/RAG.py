@@ -3,7 +3,7 @@ from PIL import Image
 from src.utils.image import show_graph
 from src.common.State import State
 from langchain.chat_models import init_chat_model
-from langchain import hub
+from langchain_classic import hub
 from langchain_community.document_loaders import WebBaseLoader
 from langchain_core.documents import Document
 from langchain_core.runnables import RunnableConfig
@@ -17,7 +17,6 @@ from langgraph.graph import (
     END,
     START,
     StateGraph,
-    Send,
 )
 from src.config import config as appconfig
 from .Tools import upsert_memory

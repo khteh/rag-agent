@@ -7,8 +7,8 @@ from langchain_core.prompts import PromptTemplate
 from langchain_core.prompts import ChatPromptTemplate, HumanMessagePromptTemplate, PromptTemplate, SystemMessagePromptTemplate
 from langchain_community.vectorstores import Neo4jVector
 from langchain_ollama import OllamaEmbeddings
-from langchain.chains import create_retrieval_chain
-from langchain.chains.combine_documents import create_stuff_documents_chain
+from langchain_classic.chains import create_retrieval_chain
+from langchain_classic.chains.combine_documents import create_stuff_documents_chain
 from src.common.configuration import Configuration
 from src.config import config as appconfig
 from src.utils.ModelString import split_model_and_provider
