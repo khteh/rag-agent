@@ -27,7 +27,8 @@ from langgraph.store.memory import InMemoryStore
 from langchain_core.prompts import PromptTemplate
 from langchain_google_vertexai import ChatVertexAI
 from langchain_core.tools import InjectedToolArg, tool
-from langgraph.prebuilt import ToolNode, tools_condition, create_react_agent, InjectedStore
+from langgraph.prebuilt import ToolNode
+from langchain.agents import create_agent
 from langchain_ollama import OllamaEmbeddings
 from pydantic import BaseModel, Field
 """
@@ -230,7 +231,7 @@ class EmailRAG():
             graph_builder.add_edge("NeedsEscalation", END)
             self._graph = graph_builder.compile(name=self._graphName, cache=InMemoryCache())
             # https://langchain-ai.github.io/langgraph/reference/prebuilt/#langgraph.prebuilt.chat_agent_executor.create_react_agent
-            #self._agent = create_react_agent(self._llm, [email_processing_tool], store=self._in_memory_store, config_schema=EmailConfiguration, state_schema=EmailAgentState, name=self._name, prompt=self._prompt) This doesn't work well as the LLM preprocess the input email instead of passing it through to email_processing_tool as is done in call_agent_model_node
+            #self._agent = create_agent(self._llm, [email_processing_tool], store=self._in_memory_store, config_schema=EmailConfiguration, state_schema=EmailAgentState, name=self._name, system_prompt=self._prompt) This doesn't work well as the LLM preprocess the input email instead of passing it through to email_processing_tool as is done in call_agent_model_node
             graph_builder = StateGraph(EmailAgentState)
             graph_builder.add_node("EmailAgent", self.call_agent_model_node, cache_policy = cache_policy)
             graph_builder.add_node("EmailTools", ToolNode([email_processing_tool]), cache_policy = cache_policy)

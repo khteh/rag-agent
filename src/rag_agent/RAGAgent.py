@@ -5,7 +5,7 @@ from typing import Any, Callable, List, Optional, cast
 from langchain.chat_models import init_chat_model
 from langchain_core.runnables import RunnableConfig, ensure_config
 from langgraph.graph.state import CompiledStateGraph
-from langgraph.prebuilt import ToolNode, tools_condition, create_react_agent, InjectedStore
+from langchain.agents import create_agent
 from langchain_core.prompts import ChatPromptTemplate
 from langgraph.store.base import BaseStore
 from langgraph.store.postgres.aio import AsyncPostgresStore
@@ -109,7 +109,7 @@ class RAGAgent():
             # https://github.com/langchain-ai/langgraph/blob/main/libs/prebuilt/langgraph/prebuilt/chat_agent_executor.py#L241
             await self._db_pool.open()
             self._store = await PostgreSQLStoreSetup(self._db_pool) # store is needed when creating the ReAct agent / StateGraph for InjectedStore to work
-            self._agent = create_react_agent(self._llm, self._tools, config_schema = Configuration, state_schema = CustomAgentState, name = self._name, prompt = self._prompt, store = self._store)
+            self._agent = create_agent(self._llm, self._tools, config_schema = Configuration, state_schema = CustomAgentState, name = self._name, system_prompt = self._prompt, store = self._store)
             #self.ShowGraph() # This blocks
         except Exception as e:
             logging.exception(f"Exception! {e}")
