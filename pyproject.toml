@@ -1,7 +1,7 @@
 [project]
 name = "rag-agent"
-version = "0.1.0"
-description = "Add your description here"
+version = "1.0.0"
+description = "Python LLM-RAG ReAct agent using LangChain, LangGraph and LangSmith built on Quart web microframework and served using Hypercorn ASGI and WSGI web server."
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
