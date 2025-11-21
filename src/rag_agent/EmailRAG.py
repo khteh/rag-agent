@@ -1,13 +1,10 @@
-import asyncio, logging, os, vertexai
+import asyncio, logging
 from uuid_extensions import uuid7, uuid7str
 from typing import Annotated, Literal, Sequence
-from datetime import datetime
 from google.api_core.exceptions import ResourceExhausted
-from langchain_classic import hub
 from langchain.chat_models import init_chat_model
 from langchain_core.runnables import RunnableConfig
 from langchain_core.messages import AIMessage, SystemMessage, HumanMessage
-from langchain_core.output_parsers import StrOutputParser
 from langgraph.graph import StateGraph, MessagesState
 from langgraph.types import CachePolicy
 from langgraph.cache.memory import InMemoryCache
@@ -16,21 +13,11 @@ from langgraph.graph import (
     START,
 )
 from langgraph.graph.state import CompiledStateGraph
-from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
 from langgraph.store.postgres.aio import AsyncPostgresStore
 from psycopg_pool import AsyncConnectionPool, ConnectionPool
 from langchain_core.prompts import ChatPromptTemplate, HumanMessagePromptTemplate, PromptTemplate, SystemMessagePromptTemplate
-from langgraph.prebuilt import ToolNode, tools_condition
-from langgraph.checkpoint.memory import MemorySaver
 from typing_extensions import List, TypedDict
-from langgraph.store.memory import InMemoryStore
-from langchain_core.prompts import PromptTemplate
-from langchain_google_vertexai import ChatVertexAI
 from langchain_core.tools import InjectedToolArg, tool
-from langgraph.prebuilt import ToolNode
-from langchain.agents import create_agent
-from langchain_ollama import OllamaEmbeddings
-from pydantic import BaseModel, Field
 from deepagents import create_deep_agent
 """
 https://langchain-ai.github.io/langgraph/tutorials/rag/langgraph_agentic_rag/
