@@ -1,11 +1,8 @@
-import asyncio, os, logging, vertexai
+import asyncio, logging
 from uuid_extensions import uuid7, uuid7str
 from src.config import config as appconfig
-from datetime import datetime
 from typing_extensions import List, TypedDict
 from typing import Any, Callable, List, Optional, cast
-from google.api_core.exceptions import ResourceExhausted
-from langchain.agents import AgentState
 from .HospitalWaitingTime import (
     get_current_wait_times,
     get_most_available_hospital,
@@ -15,8 +12,6 @@ from langchain_core.runnables import RunnableConfig
 from langchain_core.prompts import ChatPromptTemplate
 from langgraph.graph.state import CompiledStateGraph
 from langchain.agents import create_agent
-from langgraph.checkpoint.memory import MemorySaver
-from langchain_ollama import OllamaEmbeddings
 from psycopg_pool import AsyncConnectionPool, ConnectionPool
 from langgraph.store.postgres.aio import AsyncPostgresStore
 from .Tools import HealthcareReview, HealthcareCypher

@@ -1,20 +1,14 @@
-import os, bs4, vertexai, asyncio, logging
-from PIL import Image
+import bs4, asyncio, logging
 from src.utils.image import show_graph
 from src.common.State import State
 from langchain.chat_models import init_chat_model
 from langchain_classic import hub
 from langchain_community.document_loaders import WebBaseLoader
-from langchain_core.documents import Document
 from langchain_core.runnables import RunnableConfig
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langgraph.graph import START, StateGraph
-from typing_extensions import List, TypedDict
-from langgraph.types import CachePolicy
-from langgraph.cache.memory import InMemoryCache
 from langgraph.graph.state import CompiledStateGraph
 from langgraph.graph import (
-    END,
     START,
     StateGraph,
 )

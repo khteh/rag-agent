@@ -1,5 +1,4 @@
-import pytest, sys, pytest_asyncio, logging, vertexai, os, sys
-from datetime import datetime
+import sys, pytest_asyncio, logging, sys
 from uuid_extensions import uuid7, uuid7str
 from os.path import dirname, join, abspath
 from langchain_core.runnables import RunnableConfig

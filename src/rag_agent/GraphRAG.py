@@ -1,12 +1,10 @@
-import argparse, asyncio, logging, os, vertexai
+import argparse, asyncio, logging
 from uuid_extensions import uuid7, uuid7str
 from typing import Annotated, Literal, Sequence
-from datetime import datetime
 from langchain_classic import hub
 from langchain.chat_models import init_chat_model
 from langchain_core.runnables import RunnableConfig
 from langchain_core.messages import SystemMessage, HumanMessage
-from langchain_core.output_parsers import StrOutputParser
 from langgraph.graph import StateGraph, MessagesState
 from langgraph.types import CachePolicy
 from langgraph.cache.memory import InMemoryCache
@@ -17,17 +15,10 @@ from langgraph.graph import (
 )
 from langgraph.graph.state import CompiledStateGraph
 from langgraph.prebuilt import ToolNode, tools_condition
-from langgraph.checkpoint.memory import MemorySaver
-from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
 from langgraph.store.postgres.aio import AsyncPostgresStore
-from langchain_ollama import OllamaEmbeddings
 from psycopg_pool import AsyncConnectionPool, ConnectionPool
-from typing_extensions import List, TypedDict
-from langgraph.store.memory import InMemoryStore
 from langchain_core.prompts import PromptTemplate
-from langchain_core.tools.retriever import create_retriever_tool
 from google.api_core.exceptions import ResourceExhausted
-from pydantic import BaseModel, Field
 """
 https://langchain-ai.github.io/langgraph/tutorials/rag/langgraph_agentic_rag/
 https://cloud.google.com/vertex-ai/generative-ai/docs/embeddings/get-text-embeddings
@@ -38,7 +29,6 @@ https://langchain-ai.github.io/langgraph/how-tos/streaming/#values
 https://langchain-ai.github.io/langgraph/tutorials/rag/langgraph_agentic_rag/
 """
 from src.config import config as appconfig
-from src.common.configuration import Configuration
 from src.common.State import State, CustomAgentState
 from src.models.DocumentGradeModel import DocumentGradeModel
 from src.utils.image import show_graph

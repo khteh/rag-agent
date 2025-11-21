@@ -1,4 +1,4 @@
-import os,pytest, vertexai, re
+import pytest, re
 from uuid_extensions import uuid7, uuid7str
 from langchain_core.runnables import RunnableConfig
 from src.Healthcare.Tools import HealthcareCypher

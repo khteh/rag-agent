@@ -1,12 +1,10 @@
-import asyncio, atexit, bs4, hashlib, logging
+import atexit, bs4, hashlib, logging
 #from chromadb.config import Settings
-from psycopg_pool import AsyncConnectionPool
 from typing_extensions import List, TypedDict, Optional, Any
 from langchain_core.tools.retriever import create_retriever_tool
 #from langchain_google_vertexai import VertexAIEmbeddings
 from langchain_postgres.vectorstores import PGVector
 from langchain_ollama import OllamaEmbeddings
-from langchain_core.vectorstores import InMemoryVectorStore
 #from langchain_chroma import Chroma
 from langchain_core.documents import Document
 from langchain_community.document_loaders import WebBaseLoader

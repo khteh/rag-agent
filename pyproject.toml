@@ -22,7 +22,6 @@ dependencies = [
     "Quart-CORS",
     "langgraph-checkpoint-postgres",
     "langchain-core",
-    "vertexai",
     "aioquic",
     "pydantic[email]",
     "neo4j",
