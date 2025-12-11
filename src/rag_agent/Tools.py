@@ -5,6 +5,7 @@ consider implementing more robust and specialized tools tailored to your needs.
 """
 import asyncio, logging
 from typing import Any, Callable, List, Optional, cast
+from langgraph.runtime import Runtime
 from langchain_community.tools.tavily_search import TavilySearchResults
 from langchain_core.runnables import RunnableConfig, ensure_config
 from langchain_core.tools import InjectedToolArg, tool
@@ -19,6 +20,7 @@ from uuid_extensions import uuid7, uuid7str
 from src.common.configuration import Configuration
 from src.config import config as appconfig
 from src.common.State import CustomAgentState
+from rag_agent.Context import Context
 async def search(
     query: str, *, config: Annotated[RunnableConfig, InjectedToolArg]
 ) -> Optional[list[dict[str, Any]]]:
@@ -103,6 +105,7 @@ async def upsert_memory(
     If a memory conflicts with an existing one, then just UPDATE the
     existing one by passing in memory_id - don't create two memories
     that are the same. If the user corrects a memory, UPDATE it.
+    It uses a simple memory structure "content: str, context: str" for each memory, but it could be structured in other ways.
 
     Args:
         content: The main content of the memory. For example:
@@ -124,14 +127,23 @@ async def upsert_memory(
     logging.debug(f"upsert_memory mem_id: {mem_id}")
     return f"Stored memory {mem_id}"
 
-async def store_memory(state: CustomAgentState, config: Annotated[RunnableConfig, InjectedToolArg], *, store: Annotated[BaseStore, InjectedStore()]):
+async def store_memory(state: CustomAgentState, runtime: Runtime[Context]):
+    """
+    Read from the agent/graph's `Store` to easily list extracted memories. 
+    If it calls a tool, LangGraph will route to the `store_memory` node to save the information to the store.
+    """
     # Extract tool calls from the last message
-    tool_calls = state.messages[-1].tool_calls
+    tool_calls = getattr(state.messages[-1], "tool_calls", [])
 
     # Concurrently execute all upsert_memory calls
     saved_memories = await asyncio.gather(
         *(
-            upsert_memory(**tc["args"], config=config, store=store)
+            #upsert_memory(**tc["args"], user_id=runtime.context.user_id, config=config, store=store)
+            upsert_memory(
+                **tc["args"],
+                user_id=runtime.context.user_id,
+                store=cast(BaseStore, runtime.store),
+            )
             for tc in tool_calls
         )
     )
