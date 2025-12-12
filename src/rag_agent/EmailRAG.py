@@ -12,13 +12,14 @@ from langgraph.graph import (
     END,
     START,
 )
+from langgraph.prebuilt import ToolNode, tools_condition
 from langgraph.graph.state import CompiledStateGraph
 from langgraph.store.postgres.aio import AsyncPostgresStore
 from psycopg_pool import AsyncConnectionPool, ConnectionPool
 from langchain_core.prompts import ChatPromptTemplate, HumanMessagePromptTemplate, PromptTemplate, SystemMessagePromptTemplate
 from typing_extensions import List, TypedDict
 from langchain_core.tools import InjectedToolArg, tool
-from deepagents import create_deep_agent
+from deepagents import create_deep_agent, CompiledSubAgent
 """
 https://langchain-ai.github.io/langgraph/tutorials/rag/langgraph_agentic_rag/
 https://cloud.google.com/vertex-ai/generative-ai/docs/embeddings/get-text-embeddings
@@ -28,6 +29,7 @@ https://github.com/langchain-ai/langgraph/blob/main/libs/langgraph/langgraph/gra
 https://langchain-ai.github.io/langgraph/how-tos/streaming/#values
 https://python.langchain.com/docs/how_to/configure/
 """
+from src.rag_agent.Prompts import EMAIL_PARSER_INSTRUCTIONS, EMAIL_PROCESSING_INSTRUCTIONS
 from src.config import config as appconfig
 from src.common.State import EmailRAGState, EmailAgentState
 from src.utils.image import show_graph
@@ -121,10 +123,12 @@ class EmailRAG():
     _vectorStore = None
     _email_parser_chain = None
     _escalation_chain = None
-    _graph: CompiledStateGraph = None
-    _agent: CompiledStateGraph = None
-    _subagent = None
+    _parser_graph: CompiledStateGraph = None
+    _email_graph: CompiledStateGraph = None
+    _parser_subagent: CompiledSubAgent = None
+    _email_subagent: CompiledSubAgent = None
     _subagents = None
+    _agent: CompiledStateGraph = None
     # Class constructor
     def __init__(self, config: RunnableConfig={}):
         """
@@ -152,7 +156,7 @@ class EmailRAG():
             )
         self._vectorStore = VectorStore(model=appconfig.EMBEDDING_MODEL, chunk_size=1000, chunk_overlap=0)
         #self._llm = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider="ollama", base_url=appconfig.OLLAMA_URI, configurable_fields=("user_id", "graph", "email_state"), streaming=True, temperature=0).bind_tools([email_processing_tool])
-        self._llm = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider="ollama", base_url=appconfig.OLLAMA_URI, configurable_fields=("user_id", "email_state"), streaming=True, temperature=0).bind_tools([email_processing_tool])
+        self._llm = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider="ollama", base_url=appconfig.OLLAMA_URI, configurable_fields=("user_id", "email_state"), streaming=True, temperature=0)
         self._chainLLM = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider="ollama", base_url=appconfig.OLLAMA_URI, temperature=0)
         self._email_parser_chain = (
             self._email_parser_prompt
@@ -222,34 +226,47 @@ class EmailRAG():
             graph_builder.add_edge(START, "ParseEmail")
             graph_builder.add_edge("ParseEmail", "NeedsEscalation")
             graph_builder.add_edge("NeedsEscalation", END)
-            self._graph = graph_builder.compile(name=self._graphName, cache=InMemoryCache())
+            self._parser_graph = graph_builder.compile(name=self._graphName, cache=InMemoryCache())
             # Use it as a custom subagent
-            self._subagent = {
-                "name": "Email SubAgent",
-                "description": "Specialized agent for complex email parser tasks",
-                "graph": self._graph
-            }
-            self._subagents = [self._subagent]
+            self._parser_subagent = CompiledSubAgent(
+                name = "Email Parser SubAgent",
+                description = """Extract structured fields from a regulatory email.
+                            This should be used when the email message comes from
+                            a regulatory body or auditor regarding a property or
+                            construction site that the company works on.
+
+                            escalation_criteria is a description of which kinds of
+                            notices require immediate escalation.
+                        """,
+                system_prompt = EMAIL_PARSER_INSTRUCTIONS,
+                runnable = self._parser_graph
+            )
             # https://langchain-ai.github.io/langgraph/reference/prebuilt/#langgraph.prebuilt.chat_agent_executor.create_react_agent
             #self._agent = create_agent(self._llm, [email_processing_tool], store=self._in_memory_store, config_schema=EmailConfiguration, state_schema=EmailAgentState, name=self._name, system_prompt=self._prompt) This doesn't work well as the LLM preprocess the input email instead of passing it through to email_processing_tool as is done in call_agent_model_node
-            """
-            graph_builder = StateGraph(EmailAgentState)
-            graph_builder.add_node("EmailAgent", self.call_agent_model_node, cache_policy = cache_policy)
-            graph_builder.add_node("EmailTools", ToolNode([email_processing_tool]), cache_policy = cache_policy)
-            graph_builder.add_edge(START, "EmailAgent")
-            graph_builder.add_conditional_edges(
+            #graph_builder = StateGraph(EmailAgentState)
+            #graph_builder.add_node("EmailAgent", self.call_agent_model_node, cache_policy = cache_policy)
+            #graph_builder.add_node("EmailTools", ToolNode([email_processing_tool]), cache_policy = cache_policy)
+            #graph_builder.add_edge(START, "EmailAgent")
+            #graph_builder.add_conditional_edges(
                 # if the EmailAgent node returns a tool message, your graph moves to the EmailTools node to call the respective tool.
-                "EmailAgent", self.route_agent_graph_edge, ["EmailTools", END]
-            )
-            graph_builder.add_edge("EmailTools", "EmailAgent")
-            self._agent = graph_builder.compile(name=self._agentName, cache=InMemoryCache(), store = self._store)
-            """
+            #    "EmailAgent", self.route_agent_graph_edge, ["EmailTools", END]
+            #)
+            #graph_builder.add_edge("EmailTools", "EmailAgent")
+            #self._email_graph = graph_builder.compile(name=self._agentName, cache=InMemoryCache(), store = self._store)
+            #self._email_subagent = CompiledSubAgent(
+            #    name = "Email SubAgent",
+            #    description = """Extract structured fields from an input email and determine if the email needs escalation.
+            #                    escalation_criteria is a description which helps determine if the email needs immediate escalation.
+            #                    After you have received the escalate state from tools, you should stop processing and return an answer with the structured fields extracted from the email.""",
+            #)
+            #self._subagents = [self._email_subagent, self._parser_subagent]
+            self._subagents = [self._parser_subagent]
             await self._db_pool.open()
             self._store = await PostgreSQLStoreSetup(self._db_pool) # store is needed when creating the ReAct agent / StateGraph for InjectedStore to work
             self._agent = create_deep_agent(
                 model = self._llm,
-                tools = tools, # XXX:
-                prompt = self._prompt,
+                #tools = tools, # XXX:
+                system_prompt = EMAIL_PROCESSING_INSTRUCTIONS,
                 subagents = self._subagents
             )
         except ResourceExhausted as e:
@@ -257,7 +274,7 @@ class EmailRAG():
         return self._agent
     
     def ShowGraph(self):
-        show_graph(self._graph, self._graphName) # This blocks
+        show_graph(self._parser_graph, self._graphName) # This blocks
         show_graph(self._agent, self._agentName) # This blocks
 
     async def Chat(self, criteria, email, email_state, config: RunnableConfig) -> List[str]:
@@ -272,8 +289,8 @@ class EmailRAG():
             # Create the AsyncPostgresSaver
             checkpointer = await PostgreSQLCheckpointerSetup(pool)
             self._agent.checkpointer = checkpointer
-            self._graph.checkpointer = checkpointer
-            #async for step in self._agent.with_config({"graph": self._graph, "email_state": email_state, "thread_id": uuid7str()}).astream(
+            self._parser_graph.checkpointer = checkpointer
+            #async for step in self._agent.with_config({"graph": self._parser_graph, "email_state": email_state, "thread_id": uuid7str()}).astream(
             async for step in self._agent.with_config({"email_state": email_state, "thread_id": uuid7str()}).astream(
                 {"messages": [{"role": "user", "content": message_with_criteria}]},
                 stream_mode="values",

@@ -45,7 +45,7 @@ class EmailModel(BaseModel):
     )
     max_potential_fine: float | None = Field(
         default=None,
-        description="The maximum potential fine (if any)",
+        description="The maximum potential fine (if any) - must be an float",
     )
 
     @staticmethod
