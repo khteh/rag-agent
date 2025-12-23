@@ -29,7 +29,7 @@ https://github.com/langchain-ai/langgraph/blob/main/libs/langgraph/langgraph/gra
 https://langchain-ai.github.io/langgraph/how-tos/streaming/#values
 https://python.langchain.com/docs/how_to/configure/
 """
-from src.rag_agent.Prompts import EMAIL_PARSER_INSTRUCTIONS, EMAIL_PROCESSING_INSTRUCTIONS
+from src.rag_agent.EmailPrompts import EMAIL_PARSER_INSTRUCTIONS, EMAIL_PROCESSING_INSTRUCTIONS
 from src.config import config as appconfig
 from src.common.State import EmailRAGState, EmailAgentState
 from src.utils.image import show_graph
