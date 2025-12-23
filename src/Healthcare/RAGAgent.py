@@ -28,10 +28,7 @@ class RAGAgent():
     # placeholder:
     # Means the template will receive an optional list of messages under the "messages" key.
     # A list of the names of the variables for placeholder or MessagePlaceholder that are optional. These variables are auto inferred from the prompt and user need not provide them.
-    _prompt = ChatPromptTemplate.from_messages([
-                ("system", "You are a helpful healthcare AI assistant named Bob."),
-                ("placeholder", "{messages}")
-        ])
+    _prompt = "You are a helpful healthcare AI assistant named Bob. Always provide accurate answer."
     _db_pool: AsyncConnectionPool = None
     _store: AsyncPostgresStore = None   
     _vectorStore = None
@@ -79,7 +76,7 @@ class RAGAgent():
             # https://github.com/langchain-ai/langgraph/blob/main/libs/prebuilt/langgraph/prebuilt/chat_agent_executor.py#L241
             await self._db_pool.open()
             self._store = await PostgreSQLStoreSetup(self._db_pool) # store is needed when creating the ReAct agent / StateGraph for InjectedStore to work
-            self._agent = create_agent(self._llm, self._tools, config_schema = Configuration, state_schema=CustomAgentState, name=self._name, system_prompt=self._prompt, store = self._store)
+            self._agent = create_agent(self._llm, self._tools, context_schema = Configuration, state_schema=CustomAgentState, name=self._name, system_prompt=self._prompt, store = self._store)
             #self.ShowGraph() # This blocks
         except Exception as e:
             logging.exception(f"Exception! {e}")

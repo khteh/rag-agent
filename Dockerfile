@@ -1,5 +1,5 @@
 FROM khteh/ubuntu:latest
-MAINTAINER Kok How, Teh <funcoolgeek@gmail.com>
+LABEL org.opencontainers.image.authors="Kok How, Teh <funcoolgeeek@gmail.com>"
 WORKDIR /app
 ADD data data
 ADD src src

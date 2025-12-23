@@ -6,6 +6,7 @@ from langchain_core.runnables import RunnableConfig, ensure_config
 from langgraph.graph.state import CompiledStateGraph
 from langchain.agents import create_agent
 from langchain_core.prompts import ChatPromptTemplate
+from langchain.messages import SystemMessage, HumanMessage
 from langgraph.store.base import BaseStore
 from langgraph.store.postgres.aio import AsyncPostgresStore
 from psycopg_pool import AsyncConnectionPool, ConnectionPool
@@ -22,7 +23,7 @@ from src.config import config as appconfig
 from src.Infrastructure.VectorStore import VectorStore
 from src.common.State import CustomAgentState
 from src.utils.image import show_graph
-from src import Healthcare
+from src.Healthcare.RAGAgent import RAGAgent as HealthAgent
 from src.rag_agent.Tools import ground_search, store_memory, upsert_memory
 from src.common.configuration import Configuration
 from src.Infrastructure.PostgreSQLSetup import PostgreSQLCheckpointerSetup, PostgreSQLStoreSetup
@@ -43,15 +44,12 @@ class RAGAgent():
     #placeholder:
     #Means the template will receive an optional list of messages under the "messages" key.
     #A list of the names of the variables for placeholder or MessagePlaceholder that are optional. These variables are auto inferred from the prompt and user need not provide them.
-    _prompt = ChatPromptTemplate.from_messages([
-                ("system", "You are a helpful AI assistant named Bob. Always provide accurate answer."),
-                ("placeholder", "{messages}")
-        ])
+    _prompt = "You are a helpful AI assistant named Bob. Always provide accurate answer."
     _db_pool: AsyncConnectionPool = None
     _store: AsyncPostgresStore = None
     _vectorStore = None
     _tools: List[Callable[..., Any]] = None
-    _healthcare_rag: Healthcare.RAGAgent.RAGAgent = None
+    _healthcare_rag: HealthAgent = None
     _healthcare_agent = None
     _ragagent = None
     _subagents = None
@@ -76,7 +74,7 @@ class RAGAgent():
         #        #"dims": 1536,
         #    }
         #)
-        self._healthcare_rag = Healthcare.RAGAgent.RAGAgent(config)
+        self._healthcare_rag = HealthAgent(config)
         self._db_pool = AsyncConnectionPool(
                 conninfo = appconfig.POSTGRESQL_DATABASE_URI,
                 max_size = appconfig.DB_MAX_CONNECTIONS,
@@ -118,7 +116,7 @@ class RAGAgent():
             # https://github.com/langchain-ai/langgraph/blob/main/libs/prebuilt/langgraph/prebuilt/chat_agent_executor.py#L241
             await self._db_pool.open()
             self._store = await PostgreSQLStoreSetup(self._db_pool) # store is needed when creating the ReAct agent / StateGraph for InjectedStore to work
-            self._ragagent = create_agent(self._llm, self._tools, config_schema = Configuration, state_schema = CustomAgentState, name = self._name, prompt = self._prompt, store = self._store)
+            self._ragagent = create_agent(self._llm, self._tools, context_schema = Configuration, state_schema = CustomAgentState, name = self._name, system_prompt = self._prompt, store = self._store)
             # Use it as a custom subagent
             self._rag_subagent = CompiledSubAgent(
                 name="RAG Agent",
@@ -132,10 +130,21 @@ class RAGAgent():
                 runnable= self._healthcare_agent
             )
             self._subagents = [self._healthcare_subagent, self._rag_subagent]
+            # Combine orchestrator instructions (RESEARCHER_INSTRUCTIONS only for sub-agents)
+            INSTRUCTIONS = (
+                RESEARCH_WORKFLOW_INSTRUCTIONS
+                + "\n\n"
+                + "=" * 80
+                + "\n\n"
+                + SUBAGENT_DELEGATION_INSTRUCTIONS.format(
+                    max_concurrent_research_units=max_concurrent_research_units,
+                    max_researcher_iterations=max_researcher_iterations,
+                )
+            )
             self._agent = create_deep_agent(
                 model = self._llm,
                 tools = [ground_search],
-                prompt = self._prompt,
+                system_prompt = self._prompt,
                 subagents = self._subagents
             )
             #self.ShowGraph() # This blocks

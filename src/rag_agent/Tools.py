@@ -20,7 +20,7 @@ from uuid_extensions import uuid7, uuid7str
 from src.common.configuration import Configuration
 from src.config import config as appconfig
 from src.common.State import CustomAgentState
-from rag_agent.Context import Context
+from src.rag_agent.Context import Context
 async def search(
     query: str, *, config: Annotated[RunnableConfig, InjectedToolArg]
 ) -> Optional[list[dict[str, Any]]]:

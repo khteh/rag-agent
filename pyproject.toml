@@ -35,6 +35,8 @@ dependencies = [
     "langchain-postgres",
     "mlflow",
     "psycopg[binary,pool]",
+    "deepagents>=0.3.0",
+    "google-api-core>=2.28.1",
 ]
 
 [dependency-groups]
