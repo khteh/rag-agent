@@ -1,5 +1,6 @@
 import argparse, atexit, asyncio, logging
 from uuid_extensions import uuid7, uuid7str
+from datetime import datetime
 from typing import Any, Callable, List, Optional, cast
 from langchain.chat_models import init_chat_model
 from langchain_core.runnables import RunnableConfig, ensure_config
@@ -19,12 +20,15 @@ from deepagents import create_deep_agent, CompiledSubAgent
 #https://python.langchain.com/docs/how_to/configure/
 #https://langchain-ai.github.io/langgraph/how-tos/
 from src.rag_agent.Context import Context
+from src.rag_agent.RAGPrompts import RAG_INSTRUCTIONS, SUBAGENT_DELEGATION_INSTRUCTIONS, RAG_WORKFLOW_INSTRUCTIONS
+from src.rag_agent.Tools import upsert_memory, think_tool
 from src.config import config as appconfig
 from src.Infrastructure.VectorStore import VectorStore
 from src.common.State import CustomAgentState
 from src.utils.image import show_graph
 from src.Healthcare.RAGAgent import RAGAgent as HealthAgent
-from src.rag_agent.Tools import ground_search, store_memory, upsert_memory
+from src.Healthcare.prompts import HEALTHCARE_INSTRUCTIONS
+from src.rag_agent.Tools import ground_search, upsert_memory
 from src.common.configuration import Configuration
 from src.Infrastructure.PostgreSQLSetup import PostgreSQLCheckpointerSetup, PostgreSQLStoreSetup
 class RAGAgent():
@@ -45,6 +49,23 @@ class RAGAgent():
     #Means the template will receive an optional list of messages under the "messages" key.
     #A list of the names of the variables for placeholder or MessagePlaceholder that are optional. These variables are auto inferred from the prompt and user need not provide them.
     _prompt = "You are a helpful AI assistant named Bob. Always provide accurate answer."
+    # Limits
+    _max_concurrent_research_units = 3
+    _max_researcher_iterations = 3
+
+    # Get current date
+    _current_date = datetime.now().strftime("%Y-%m-%d")
+    # Combine orchestrator instructions (RESEARCHER_INSTRUCTIONS only for sub-agents)
+    _INSTRUCTIONS = (
+        RAG_WORKFLOW_INSTRUCTIONS
+        + "\n\n"
+        + "=" * 80
+        + "\n\n"
+        + SUBAGENT_DELEGATION_INSTRUCTIONS.format(
+            max_concurrent_research_units = _max_concurrent_research_units,
+            max_researcher_iterations = _max_researcher_iterations,
+        )
+    )
     _db_pool: AsyncConnectionPool = None
     _store: AsyncPostgresStore = None
     _vectorStore = None
@@ -84,7 +105,7 @@ class RAGAgent():
         # GoogleSearch ground_search works well but it will sometimes take precedence and overwrite the ingested data into Chhroma and Neo4J. So, exclude it for now until it is really needed.
         # Use it as a custom subagent
         #self._tools = [self._vectorStore.retriever_tool, HealthcareReview, HealthcareCypher, get_current_wait_times, get_most_available_hospital]
-        self._tools = [self._vectorStore.retriever_tool]
+        self._tools = [self._vectorStore.retriever_tool, upsert_memory, think_tool]
         #self._llm = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider="ollama", base_url = appconfig.BASE_URI, configurable_fields=("user_id"), streaming = True, temperature=0).bind_tools(self._tools)
         if appconfig.BASE_URI:
             self._llm = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider=appconfig.MODEL_PROVIDER, base_url=appconfig.BASE_URI, streaming=True, temperature=0)
@@ -120,7 +141,7 @@ class RAGAgent():
             # https://github.com/langchain-ai/langgraph/blob/main/libs/prebuilt/langgraph/prebuilt/chat_agent_executor.py#L241
             await self._db_pool.open()
             self._store = await PostgreSQLStoreSetup(self._db_pool) # store is needed when creating the ReAct agent / StateGraph for InjectedStore to work
-            self._ragagent = create_agent(self._llm, self._tools, context_schema = Configuration, state_schema = CustomAgentState, name = self._name, system_prompt = self._prompt, store = self._store)
+            self._ragagent = create_agent(self._llm, self._tools, context_schema = Configuration, state_schema = CustomAgentState, name = self._name, system_prompt = RAG_INSTRUCTIONS, store = self._store)
             # Use it as a custom subagent
             self._rag_subagent = CompiledSubAgent(
                 name="RAG Agent",
@@ -136,21 +157,10 @@ class RAGAgent():
                 runnable= self._healthcare_agent
             )
             self._subagents = [self._healthcare_subagent, self._rag_subagent]
-            # Combine orchestrator instructions (RESEARCHER_INSTRUCTIONS only for sub-agents)
-            INSTRUCTIONS = (
-                RESEARCH_WORKFLOW_INSTRUCTIONS
-                + "\n\n"
-                + "=" * 80
-                + "\n\n"
-                + SUBAGENT_DELEGATION_INSTRUCTIONS.format(
-                    max_concurrent_research_units=max_concurrent_research_units,
-                    max_researcher_iterations=max_researcher_iterations,
-                )
-            )
             self._agent = create_deep_agent(
                 model = self._llm,
                 tools = [ground_search],
-                system_prompt = self._prompt,
+                system_prompt = self._INSTRUCTIONS,
                 subagents = self._subagents
             )
             #self.ShowGraph() # This blocks

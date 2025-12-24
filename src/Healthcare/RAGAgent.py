@@ -14,6 +14,7 @@ from langgraph.graph.state import CompiledStateGraph
 from langchain.agents import create_agent
 from psycopg_pool import AsyncConnectionPool, ConnectionPool
 from langgraph.store.postgres.aio import AsyncPostgresStore
+from .prompts import HEALTHCARE_INSTRUCTIONS
 from .Tools import HealthcareReview, HealthcareCypher
 from src.rag_agent.Tools import upsert_memory, think_tool
 from src.common.configuration import Configuration
@@ -78,7 +79,7 @@ class RAGAgent():
             # https://github.com/langchain-ai/langgraph/blob/main/libs/prebuilt/langgraph/prebuilt/chat_agent_executor.py#L241
             await self._db_pool.open()
             self._store = await PostgreSQLStoreSetup(self._db_pool) # store is needed when creating the ReAct agent / StateGraph for InjectedStore to work
-            self._agent = create_agent(self._llm, self._tools, context_schema = Configuration, state_schema=CustomAgentState, name=self._name, system_prompt=self._prompt, store = self._store)
+            self._agent = create_agent(self._llm, self._tools, context_schema = Configuration, state_schema=CustomAgentState, name=self._name, system_prompt=HEALTHCARE_INSTRUCTIONS, store = self._store)
             #self.ShowGraph() # This blocks
         except Exception as e:
             logging.exception(f"Exception! {e}")
