@@ -35,7 +35,7 @@ async def PostgreSQLStoreSetup(pool: AsyncConnectionPool) -> AsyncPostgresStore:
     # Set up the checkpointer (uncomment this line the first time you run the app)
     # Check if the checkpoints table exists
     store = AsyncPostgresStore(pool, index={
-                "embed": OllamaEmbeddings(model=appconfig.EMBEDDING_MODEL, base_url=appconfig.OLLAMA_URI, num_ctx=8192, num_gpu=1, temperature=0),
+                "embed": OllamaEmbeddings(model=appconfig.EMBEDDING_MODEL, base_url=appconfig.BASE_URI, num_ctx=8192, num_gpu=1, temperature=0),
                 "dims": 1536,
             }
     )

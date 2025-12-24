@@ -26,7 +26,7 @@ async def HealthcareReview(
     query: str, *, config: Annotated[RunnableConfig, InjectedToolArg]
 ) -> dict[str, float]:
     neo4j_vector_index = Neo4jVector.from_existing_graph(
-        embedding = OllamaEmbeddings(model=appconfig.EMBEDDING_MODEL, base_url=appconfig.OLLAMA_URI, num_ctx=8192, num_gpu=1, temperature=0),
+        embedding = OllamaEmbeddings(model=appconfig.EMBEDDING_MODEL, base_url=appconfig.BASE_URI, num_ctx=8192, num_gpu=1, temperature=0),
         url = appconfig.NEO4J_URI,
         username = appconfig.NEO4J_USERNAME,
         password = appconfig.NEO4J_PASSWORD,
@@ -51,7 +51,7 @@ async def HealthcareReview(
     review_prompt = ChatPromptTemplate(
         input_variables=["context", "question"], messages=messages
     )
-    question_answer_chain = create_stuff_documents_chain(init_chat_model(appconfig.LLM_RAG_MODEL, model_provider="ollama", base_url=appconfig.OLLAMA_URI, streaming=True, temperature=0), review_prompt)
+    question_answer_chain = create_stuff_documents_chain(init_chat_model(appconfig.LLM_RAG_MODEL, model_provider="ollama", base_url=appconfig.BASE_URI, streaming=True, temperature=0), review_prompt)
     reviews_vector_chain = create_retrieval_chain(neo4j_vector_index.as_retriever(k=3), question_answer_chain)
     reviews_vector_chain.combine_documents_chain.llm_chain.prompt = review_prompt    
     return await reviews_vector_chain.ainvoke(query)
@@ -78,8 +78,8 @@ async def HealthcareCypher(
             input_variables=["context", "question"], template=configuration.qa_generation_prompt
         )
         hospital_cypher_chain = GraphCypherQAChain.from_llm( # 'GraphCypherQAChain' object does not support the context manager protocol"
-            cypher_llm = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider="ollama", base_url=appconfig.OLLAMA_URI, streaming=True, temperature=0),
-            qa_llm = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider="ollama", base_url=appconfig.OLLAMA_URI, streaming=True, temperature=0),
+            cypher_llm = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider="ollama", base_url=appconfig.BASE_URI, streaming=True, temperature=0),
+            qa_llm = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider="ollama", base_url=appconfig.BASE_URI, streaming=True, temperature=0),
             graph = graph,
             verbose = appconfig.LOGLEVEL == "DEBUG", # Whether intermediate steps your chain performs should be printed.
             qa_prompt = qa_generation_prompt,

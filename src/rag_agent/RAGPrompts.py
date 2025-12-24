@@ -54,3 +54,6 @@ The deadline for compliance is November 10, 2025.
 Failure to comply may result in fines of up to $25,000 per violation.
 ```
 """
+
+RAG_INSTRUCTIONS = """
+"""

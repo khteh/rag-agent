@@ -53,8 +53,8 @@ class RAGAgent():
     _healthcare_agent = None
     _ragagent = None
     _subagents = None
-    _healthcare_subagent = None
-    _rag_subagent = None
+    _healthcare_subagent: CompiledSubAgent = None
+    _rag_subagent: CompiledSubAgent = None
     _agent = None
     # Class constructor
     def __init__(self, config: RunnableConfig={}):
@@ -70,7 +70,7 @@ class RAGAgent():
         # not a vector store but a LangGraph store object. https://github.com/langchain-ai/langchain/issues/30723
         #self._in_memory_store = InMemoryStore(
         #    index={
-        #        "embed": OllamaEmbeddings(model=appconfig.EMBEDDING_MODEL, base_url=appconfig.OLLAMA_URI, num_ctx=8192, num_gpu=1, temperature=0),
+        #        "embed": OllamaEmbeddings(model=appconfig.EMBEDDING_MODEL, base_url=appconfig.BASE_URI, num_ctx=8192, num_gpu=1, temperature=0),
         #        #"dims": 1536,
         #    }
         #)
@@ -85,7 +85,11 @@ class RAGAgent():
         # Use it as a custom subagent
         #self._tools = [self._vectorStore.retriever_tool, HealthcareReview, HealthcareCypher, get_current_wait_times, get_most_available_hospital]
         self._tools = [self._vectorStore.retriever_tool]
-        self._llm = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider="ollama", base_url = appconfig.OLLAMA_URI, configurable_fields=("user_id"), streaming = True, temperature=0).bind_tools(self._tools)
+        #self._llm = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider="ollama", base_url = appconfig.BASE_URI, configurable_fields=("user_id"), streaming = True, temperature=0).bind_tools(self._tools)
+        if appconfig.BASE_URI:
+            self._llm = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider=appconfig.MODEL_PROVIDER, base_url=appconfig.BASE_URI, streaming=True, temperature=0)
+        else:
+            self._llm = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider=appconfig.MODEL_PROVIDER, streaming=True, temperature=0)
     
     async def Cleanup(self):
         logging.info(f"\n=== {self.Cleanup.__name__} ===")
@@ -121,12 +125,14 @@ class RAGAgent():
             self._rag_subagent = CompiledSubAgent(
                 name="RAG Agent",
                 description="Specialized agent which answers users' questions based on the information in the vector store",
+                system_prompt = RAG_INSTRUCTIONS,
                 runnable=self._ragagent
             )            
             self._healthcare_agent = await self._healthcare_rag.CreateGraph()
             self._healthcare_subagent = CompiledSubAgent(
                 name="Healthcare SubAgent",
                 description= "Specialized healthcare AI assistant",
+                system_prompt = HEALTHCARE_INSTRUCTIONS,
                 runnable= self._healthcare_agent
             )
             self._subagents = [self._healthcare_subagent, self._rag_subagent]

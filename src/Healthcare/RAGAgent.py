@@ -15,7 +15,7 @@ from langchain.agents import create_agent
 from psycopg_pool import AsyncConnectionPool, ConnectionPool
 from langgraph.store.postgres.aio import AsyncPostgresStore
 from .Tools import HealthcareReview, HealthcareCypher
-from src.rag_agent.Tools import upsert_memory
+from src.rag_agent.Tools import upsert_memory, think_tool
 from src.common.configuration import Configuration
 from src.utils.image import show_graph
 from src.Infrastructure.VectorStore import VectorStore
@@ -31,7 +31,6 @@ class RAGAgent():
     _prompt = "You are a helpful healthcare AI assistant named Bob. Always provide accurate answer."
     _db_pool: AsyncConnectionPool = None
     _store: AsyncPostgresStore = None   
-    _vectorStore = None
     _tools: List[Callable[..., Any]] = None
     agent: CompiledStateGraph = None
     # Class constructor
@@ -47,7 +46,7 @@ class RAGAgent():
         # not a vector store but a LangGraph store object.
         #self._in_memory_store = InMemoryStore(
         #    index={
-        #        "embed": OllamaEmbeddings(model=appconfig.EMBEDDING_MODEL, base_url=appconfig.OLLAMA_URI, num_ctx=8192, num_gpu=1, temperature=0),
+        #        "embed": OllamaEmbeddings(model=appconfig.EMBEDDING_MODEL, base_url=appconfig.BASE_URI, num_ctx=8192, num_gpu=1, temperature=0),
         #        #"dims": 1536,
         #    }
         #)
@@ -56,9 +55,12 @@ class RAGAgent():
                 max_size = appconfig.DB_MAX_CONNECTIONS,
                 kwargs = appconfig.connection_kwargs,
             )
-        self._vectorStore = VectorStore(model=appconfig.EMBEDDING_MODEL, chunk_size=1000, chunk_overlap=0)
-        self._tools = [self._vectorStore.retriever_tool, HealthcareReview, HealthcareCypher, get_current_wait_times, get_most_available_hospital, upsert_memory]
-        self._llm = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider="ollama", base_url=appconfig.OLLAMA_URI, streaming=True, temperature=0).bind_tools(self._tools)
+        self._tools = [HealthcareReview, HealthcareCypher, get_current_wait_times, get_most_available_hospital, upsert_memory, think_tool]
+        #self._llm = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider="ollama", base_url=appconfig.BASE_URI, streaming=True, temperature=0).bind_tools(self._tools)
+        if appconfig.BASE_URI:
+            self._llm = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider=appconfig.MODEL_PROVIDER, base_url=appconfig.BASE_URI, streaming=True, temperature=0)
+        else:
+            self._llm = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider=appconfig.MODEL_PROVIDER, streaming=True, temperature=0)
         # https://python.langchain.com/docs/integrations/chat/google_vertex_ai_palm/
 
     async def Cleanup(self):

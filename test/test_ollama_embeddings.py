@@ -10,7 +10,7 @@ async def test_ollam_embeddings_vector_dimension():
     https://huggingface.co/blog/matryoshka
     https://ollama.com/library/nomic-embed-text
     """
-    embeddings = OllamaEmbeddings(model=config.EMBEDDING_MODEL, base_url=config.OLLAMA_URI, num_ctx=8192, num_gpu=1, temperature=0)
+    embeddings = OllamaEmbeddings(model=config.EMBEDDING_MODEL, base_url=config.BASE_URI, num_ctx=8192, num_gpu=1, temperature=0)
     result = await embeddings.aembed_documents(["Hello how are you doing"])
     dimension = (len(result[0])) # this should output 4096
     assert dimension <= 4096

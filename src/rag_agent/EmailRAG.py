@@ -16,6 +16,7 @@ from langgraph.prebuilt import ToolNode, tools_condition
 from langgraph.graph.state import CompiledStateGraph
 from langgraph.store.postgres.aio import AsyncPostgresStore
 from psycopg_pool import AsyncConnectionPool, ConnectionPool
+from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.prompts import ChatPromptTemplate, HumanMessagePromptTemplate, PromptTemplate, SystemMessagePromptTemplate
 from typing_extensions import List, TypedDict
 from langchain_core.tools import InjectedToolArg, tool
@@ -61,11 +62,11 @@ async def email_processing_tool(
     logging.info(f"\n=== email_processing_tool ===")
     """Extract the user's state from the conversation and update the memory."""
     graph = EmailConfiguration.from_runnable_config(config).graph
-    emailState = EmailConfiguration.from_runnable_config(config).email_state
-    emailState["email"] = email
-    emailState["escalation_text_criteria"] = escalation_criteria
-    logging.debug(f"email: {email}, escalation_criteria: {escalation_criteria}, emailState:: {emailState}")
-    results = await graph.with_config(config).ainvoke(emailState)
+    state = EmailConfiguration.from_runnable_config(config).email_state
+    state["email"] = email
+    state["escalation_text_criteria"] = escalation_criteria
+    logging.debug(f"email: {email}, escalation_criteria: {escalation_criteria}, state:: {state}")
+    results = await graph.with_config(config).ainvoke(state)
     logging.debug(f"result: {results}")
     return results["extract"]
 
@@ -145,7 +146,7 @@ class EmailRAG():
         # not a vector store but a LangGraph store object. https://github.com/langchain-ai/langchain/issues/30723
         #self._in_memory_store = InMemoryStore(
         #    index={
-        #        "embed": OllamaEmbeddings(model=appconfig.EMBEDDING_MODEL, base_url=appconfig.OLLAMA_URI, num_ctx=8192, num_gpu=1, temperature=0),
+        #        "embed": OllamaEmbeddings(model=appconfig.EMBEDDING_MODEL, base_url=appconfig.BASE_URI, num_ctx=8192, num_gpu=1, temperature=0),
         #        #"dims": 1536,
         #    }
         #)
@@ -155,9 +156,15 @@ class EmailRAG():
                 kwargs = appconfig.connection_kwargs,
             )
         self._vectorStore = VectorStore(model=appconfig.EMBEDDING_MODEL, chunk_size=1000, chunk_overlap=0)
-        #self._llm = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider="ollama", base_url=appconfig.OLLAMA_URI, configurable_fields=("user_id", "graph", "email_state"), streaming=True, temperature=0).bind_tools([email_processing_tool])
-        self._llm = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider="ollama", base_url=appconfig.OLLAMA_URI, configurable_fields=("user_id", "email_state"), streaming=True, temperature=0)
-        self._chainLLM = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider="ollama", base_url=appconfig.OLLAMA_URI, temperature=0)
+        #self._llm = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider="ollama", base_url=appconfig.BASE_URI, configurable_fields=("user_id", "graph", "email_state"), streaming=True, temperature=0).bind_tools([email_processing_tool])
+        #self._llm = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider=appconfig.MODEL_PROVIDER, base_url=appconfig.BASE_URI, configurable_fields=("user_id", "email_state"), streaming=True, temperature=0)
+        #self._chainLLM = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider=appconfig.MODEL_PROVIDER, base_url=appconfig.BASE_URI, temperature=0)
+        if appconfig.BASE_URI:
+            self._llm = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider=appconfig.MODEL_PROVIDER, base_url=appconfig.BASE_URI, streaming=True, temperature=0)
+            self._chainLLM = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider=appconfig.MODEL_PROVIDER, base_url=appconfig.BASE_URI, temperature=0)
+        else:
+            self._llm = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider=appconfig.MODEL_PROVIDER, streaming=True, temperature=0)
+            self._chainLLM = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider=appconfig.MODEL_PROVIDER, temperature=0)
         self._email_parser_chain = (
             self._email_parser_prompt
             | self._chainLLM.with_structured_output(EmailModel)
@@ -181,6 +188,8 @@ class EmailRAG():
         construction site that the company works on.
         """
         logging.info(f"\n=== {self.ParseEmail.__name__} ===")
+        logging.debug(f"config: {config}")
+        state = EmailConfiguration.from_runnable_config(config).email_state
         logging.debug(f"state: {state}")
         #print(f"state: {state}, email: {state['email']}")
         state["extract"] = await self._email_parser_chain.with_config(config).ainvoke({"email": state["email"]})
@@ -193,6 +202,8 @@ class EmailRAG():
         """
         logging.info(f"\n=== {self.NeedsEscalation.__name__} ===")
         assert self._escalation_chain
+        logging.debug(f"config: {config}")
+        state = EmailConfiguration.from_runnable_config(config).email_state
         logging.debug(f"state: {state}")
         result: EscalationCheckModel = await self._escalation_chain.with_config(config).ainvoke({"email": state["email"], "escalation_criteria": state["escalation_text_criteria"]})
         logging.debug(f"result: {result}")
@@ -277,9 +288,9 @@ class EmailRAG():
         show_graph(self._parser_graph, self._graphName) # This blocks
         show_graph(self._agent, self._agentName) # This blocks
 
-    async def Chat(self, criteria, email, email_state, config: RunnableConfig) -> List[str]:
+    async def Chat(self, criteria, email_state, config: RunnableConfig) -> List[str]:
         logging.info(f"\n=== {self.Chat.__name__} ===")
-        message_with_criteria = f"The escalation criteria is: {criteria}. Here's the email: {email}"
+        message_with_criteria = f"The escalation criteria is: {criteria}. Here's the email: {email_state['email']}"
         result: List[str] = []
         async with AsyncConnectionPool(
             conninfo = appconfig.POSTGRESQL_DATABASE_URI,
@@ -319,10 +330,11 @@ async def main():
     await rag.CreateGraph()
     #rag.ShowGraph()
     email_state = {
+        "email": EMAILS[3],
         "escalation_dollar_criteria": 100_000,
         "escalation_emails": ["brog@abc.com", "bigceo@company.com"],
     }
-    result = await rag.Chat("There's an immediate risk of electrical, water, or fire damage", EMAILS[3], email_state, config)
+    result = await rag.Chat("There's an immediate risk of electrical, water, or fire damage", email_state, config)
     assert result
     ai_message = ChatMessage.from_langchain(result)
     assert not ai_message.tool_calls

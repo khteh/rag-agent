@@ -31,7 +31,7 @@ _eval_data = pandas.DataFrame(
 )
 def model(input_df):
     # For VertexAI, use VertexAIEmbeddings, model="text-embedding-005"; "gemini-2.0-flash" model_provider="google_genai"
-    model = init_chat_model(config.LLM_RAG_MODEL, model_provider="ollama", base_url=config.OLLAMA_URI, streaming=True, temperature=0)
+    model = init_chat_model(config.LLM_RAG_MODEL, model_provider="ollama", base_url=config.BASE_URI, streaming=True, temperature=0)
     vectorStore = VectorStore(model=config.EMBEDDING_MODEL, chunk_size=1000, chunk_overlap=0)
     system_prompt = (
         "Use the given context to answer the question. "

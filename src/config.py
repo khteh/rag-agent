@@ -34,9 +34,10 @@ class Config(metaclass=ConfigSingleton):
     NEO4J_USERNAME:str = None
     NEO4J_PASSWORD:str = None
     NEO4J_URI:str = None
-    OLLAMA_URI:str = None
+    BASE_URI:str = None
     GEMINI_API_KEY:str = None
     EMBEDDING_MODEL: str = None
+    MODEL_PROVIDER: str = None
     LLM_RAG_MODEL: str = None
     connection_kwargs = None
     def __new__(cls, *args, **kwargs):
@@ -57,8 +58,9 @@ class Config(metaclass=ConfigSingleton):
         self.NEO4J_USERNAME = credential[0]
         self.NEO4J_PASSWORD = credential[1]
         self.NEO4J_URI = config['NEO4J_URI']
-        self.OLLAMA_URI = config['OLLAMA_URI']
+        self.BASE_URI = config['BASE_URI']
         self.EMBEDDING_MODEL = config["EMBEDDING_MODEL"]
+        self.MODEL_PROVIDER = config["MODEL_PROVIDER"]
         self.LLM_RAG_MODEL = config["LLM_RAG_MODEL"]
         self.connection_kwargs = {
             "autocommit": True,

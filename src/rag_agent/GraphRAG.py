@@ -95,7 +95,7 @@ class GraphRAG():
         # not a vector store but a LangGraph store object. https://github.com/langchain-ai/langchain/issues/30723
         #self._in_memory_store = InMemoryStore(
         #    index={
-        #        "embed": OllamaEmbeddings(model=appconfig.EMBEDDING_MODEL, base_url=appconfig.OLLAMA_URI, num_ctx=8192, num_gpu=1, temperature=0),
+        #        "embed": OllamaEmbeddings(model=appconfig.EMBEDDING_MODEL, base_url=appconfig.BASE_URI, num_ctx=8192, num_gpu=1, temperature=0),
         #        #"dims": 1536,
         #    }
         #)
@@ -108,7 +108,7 @@ class GraphRAG():
         # .bind_tools() gives the agent LLM descriptions of each tool from their docstring and input arguments. 
         # If the agent LLM determines that its input requires a tool call, it’ll return a JSON tool message with the name of the tool it wants to use, along with the input arguments.
         # For VertexAI, use VertexAIEmbeddings, model="text-embedding-005"; "gemini-2.0-flash" model_provider="google_genai"
-        self._llm = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider="ollama", base_url=appconfig.OLLAMA_URI, streaming=True, temperature=0).bind_tools([self._vectorStore.retriever_tool])
+        self._llm = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider="ollama", base_url=appconfig.BASE_URI, streaming=True, temperature=0).bind_tools([self._vectorStore.retriever_tool])
         # https://python.langchain.com/docs/integrations/chat/google_vertex_ai_palm/
 
     async def Cleanup(self):
