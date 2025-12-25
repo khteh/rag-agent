@@ -36,7 +36,7 @@ class CustomAgentState(AgentState):
 class EmailRAGState(TypedDict):
     email: str
     extract: EmailModel | None
-    escalation_text_criteria: str
+    escalation_text_criteria: str # A text description of how to determine whether an email notice requires immediate escalation.
     escalation_dollar_criteria: float
     escalate: bool
     escalation_emails: list[EmailStr] | None

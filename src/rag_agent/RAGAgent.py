@@ -6,6 +6,7 @@ from langchain.chat_models import init_chat_model
 from langchain_core.runnables import RunnableConfig, ensure_config
 from langgraph.graph.state import CompiledStateGraph
 from langchain.agents import create_agent
+from deepagents.backends import FilesystemBackend
 from langchain_core.prompts import ChatPromptTemplate
 from langchain.messages import SystemMessage, HumanMessage
 from langgraph.store.base import BaseStore
@@ -160,6 +161,7 @@ class RAGAgent():
             self._agent = create_deep_agent(
                 model = self._llm,
                 tools = [ground_search],
+                backend=FilesystemBackend(root_dir="output", virtual_mode=True),
                 system_prompt = self._INSTRUCTIONS,
                 subagents = self._subagents
             )

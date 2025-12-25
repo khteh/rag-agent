@@ -12,6 +12,9 @@ from langgraph.graph import (
     END,
     START,
 )
+from deepagents.backends import FilesystemBackend
+from langchain.agents import create_agent
+from deepagents.middleware.subagents import SubAgentMiddleware
 from langgraph.prebuilt import ToolNode, tools_condition
 from langgraph.graph.state import CompiledStateGraph
 from langgraph.store.postgres.aio import AsyncPostgresStore
@@ -41,7 +44,7 @@ from src.Infrastructure.VectorStore import VectorStore
 from src.Infrastructure.PostgreSQLSetup import PostgreSQLCheckpointerSetup, PostgreSQLStoreSetup
 from data.sample_emails import EMAILS
 from src.common.configuration import EmailConfiguration
-
+# https://realpython.com/langgraph-python/
 # XXX: I don't think this is required any more using deepagent. The deepagent should use the custom subagent which is a CompiledStateGraph to accomplish it's objective.
 @tool
 async def email_processing_tool(
@@ -193,7 +196,7 @@ class EmailRAG():
         logging.debug(f"state: {state}")
         #print(f"state: {state}, email: {state['email']}")
         state["extract"] = await self._email_parser_chain.with_config(config).ainvoke({"email": state["email"]})
-        logging.debug(f"Extract: {state['extract']}")
+        logging.debug(f"Extract: {state["extract"]}")
         return state
 
     async def NeedsEscalation(self, state: EmailRAGState, config: RunnableConfig) -> EmailRAGState:
@@ -276,6 +279,7 @@ class EmailRAG():
             self._store = await PostgreSQLStoreSetup(self._db_pool) # store is needed when creating the ReAct agent / StateGraph for InjectedStore to work
             self._agent = create_deep_agent(
                 model = self._llm,
+                backend=FilesystemBackend(root_dir="output", virtual_mode=True),
                 #tools = tools, # XXX:
                 system_prompt = EMAIL_PROCESSING_INSTRUCTIONS,
                 subagents = self._subagents
