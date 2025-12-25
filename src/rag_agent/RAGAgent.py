@@ -31,6 +31,7 @@ from src.Healthcare.RAGAgent import RAGAgent as HealthAgent
 from src.Healthcare.prompts import HEALTHCARE_INSTRUCTIONS
 from src.rag_agent.Tools import ground_search, upsert_memory
 from src.common.configuration import Configuration
+from src.Infrastructure.Backend import composite_backend
 from src.Infrastructure.PostgreSQLSetup import PostgreSQLCheckpointerSetup, PostgreSQLStoreSetup
 class RAGAgent():
     _name:str = "RAG ReAct Agent"
@@ -161,7 +162,8 @@ class RAGAgent():
             self._agent = create_deep_agent(
                 model = self._llm,
                 tools = [ground_search],
-                backend=FilesystemBackend(root_dir="output", virtual_mode=True),
+                backend = composite_backend,
+                store = self._store,
                 system_prompt = self._INSTRUCTIONS,
                 subagents = self._subagents
             )

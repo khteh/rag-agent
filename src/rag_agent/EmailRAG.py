@@ -12,7 +12,6 @@ from langgraph.graph import (
     END,
     START,
 )
-from deepagents.backends import FilesystemBackend
 from langchain.agents import create_agent
 from deepagents.middleware.subagents import SubAgentMiddleware
 from langgraph.prebuilt import ToolNode, tools_condition
@@ -42,6 +41,7 @@ from src.models.EmailModel import EmailModel
 from src.models.EscalationModel import EscalationCheckModel
 from src.Infrastructure.VectorStore import VectorStore
 from src.Infrastructure.PostgreSQLSetup import PostgreSQLCheckpointerSetup, PostgreSQLStoreSetup
+from src.Infrastructure.Backend import composite_backend
 from data.sample_emails import EMAILS
 from src.common.configuration import EmailConfiguration
 # https://realpython.com/langgraph-python/
@@ -279,8 +279,8 @@ class EmailRAG():
             self._store = await PostgreSQLStoreSetup(self._db_pool) # store is needed when creating the ReAct agent / StateGraph for InjectedStore to work
             self._agent = create_deep_agent(
                 model = self._llm,
-                backend=FilesystemBackend(root_dir="output", virtual_mode=True),
-                #tools = tools, # XXX:
+                backend = composite_backend,
+                store = self._store,
                 system_prompt = EMAIL_PROCESSING_INSTRUCTIONS,
                 subagents = self._subagents
             )

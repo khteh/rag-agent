@@ -56,7 +56,7 @@ def ground_search(
     for answering questions about current events.
     """
     client = genai.Client(api_key=appconfig.GEMINI_API_KEY)
-    model_id = "gemini-2.5-flash"
+    model_id = appconfig.LLM_RAG_MODEL
     google_search_tool = Tool(
         google_search = GoogleSearch()
     )
