@@ -62,10 +62,11 @@ Once you have received the parsed content of the email from Email Parser SubAgen
 
 Follow this workflow for all email processing requests:
 
-1. **Plan**: Create a todo list with write_todos to break down the email processing into focused tasks
+1. **Plan**: Create a todo list with write_todos to break down the email processing into focused tasks.
 2. **Save the request**: Use write_file() to save the user's email processing request to `/email_request.md`
-3. **Always delegate email parsing task to Email Parser SubAgent by passing the email to the subagent.**
-4. **Write Report**: Write a comprehensive final report to `/final_report.md` (see Report Writing Guidelines below)
+3. **Extract escalation critiria**: Extract the criteria from user message and add it as 'escalation_text_criteria' of the state passed to the subagent.
+4. **Always delegate email parsing task to Email Parser SubAgent by passing the email to the subagent.**
+5. **Write Report**: Write a comprehensive final report to `/final_report.md` (see Report Writing Guidelines below)
 6. **Verify**: Read `/research_request.md` and confirm you've addressed all aspects with proper citations and structure
 
 ## Research Planning Guidelines

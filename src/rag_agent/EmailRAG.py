@@ -1,4 +1,5 @@
 import asyncio, logging
+from pathlib import Path
 from uuid_extensions import uuid7, uuid7str
 from typing import Annotated, Literal, Sequence
 from google.api_core.exceptions import ResourceExhausted
@@ -183,7 +184,7 @@ class EmailRAG():
         await self._db_pool.close()
         #self._in_memory_store.close()
 
-    async def ParseEmail(self, state: EmailRAGState, config: RunnableConfig) -> EmailRAGState:
+    async def ParseEmail(self, email:str, escalation_criteria:str, state: EmailRAGState, config: RunnableConfig) -> EmailRAGState:
         """
         Extract structured fields from a regulatory notice.
         This should be used when the email message comes from
@@ -292,7 +293,7 @@ class EmailRAG():
         show_graph(self._parser_graph, self._graphName) # This blocks
         show_graph(self._agent, self._agentName) # This blocks
 
-    async def Chat(self, criteria, email_state, config: RunnableConfig) -> List[str]:
+    async def Chat(self, criteria, email_state) -> List[str]:
         logging.info(f"\n=== {self.Chat.__name__} ===")
         message_with_criteria = f"The escalation criteria is: {criteria}. Here's the email: {email_state['email']}"
         result: List[str] = []
@@ -306,7 +307,7 @@ class EmailRAG():
             self._agent.checkpointer = checkpointer
             self._parser_graph.checkpointer = checkpointer
             #async for step in self._agent.with_config({"graph": self._parser_graph, "email_state": email_state, "thread_id": uuid7str()}).astream(
-            async for step in self._agent.with_config({"email_state": email_state, "thread_id": uuid7str()}).astream(
+            async for step in self._agent.with_config(self._config).astream(
                 {"messages": [{"role": "user", "content": message_with_criteria}]},
                 stream_mode="values",
                 #config = config
@@ -329,6 +330,8 @@ async def main():
     img = Image.open("/tmp/checkpoint_graph.png")
     img.show()
     """
+    Path("output/email_request.md").unlink(missing_ok=True)
+    Path("output/final_report.md").unlink(missing_ok=True)
     config = RunnableConfig(run_name="Email RAG", thread_id=uuid7str(), user_id=uuid7str())
     rag = EmailRAG(config)
     await rag.CreateGraph()
@@ -338,7 +341,7 @@ async def main():
         "escalation_dollar_criteria": 100_000,
         "escalation_emails": ["brog@abc.com", "bigceo@company.com"],
     }
-    result = await rag.Chat("There's an immediate risk of electrical, water, or fire damage", email_state, config)
+    result = await rag.Chat("There's an immediate risk of electrical, water, or fire damage", email_state)
     assert result
     ai_message = ChatMessage.from_langchain(result)
     assert not ai_message.tool_calls
