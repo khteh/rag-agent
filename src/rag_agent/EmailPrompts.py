@@ -63,11 +63,38 @@ Once you have received the parsed content of the email from Email Parser SubAgen
 Follow this workflow for all email processing requests:
 
 1. **Plan**: Create a todo list with write_todos to break down the email processing into focused tasks.
-2. **Save the request**: Use write_file() to save the user's email processing request to `/email_request.md`
+2. **Save the request**: Use write_file() to save the user's email processing request to `/email_request.md`. (see User Email Request Guidelines below)
 3. **Extract escalation critiria**: Extract the criteria from user message and add it as 'escalation_text_criteria' of the state passed to the subagent.
 4. **Always delegate email parsing task to Email Parser SubAgent by passing the email to the subagent.**
 5. **Write Report**: Write a comprehensive final report to `/final_report.md` (see Report Writing Guidelines below)
 6. **Verify**: Read `/research_request.md` and confirm you've addressed all aspects with proper citations and structure
+
+## User Email Request Guidelines
+- Create the file if it does not exist
+- If the file already exists, append to the file with the new user question request, separate with the current timestamp.
+Example:
+```
+=== Sat Dec 27 17:01:34 +08 2025 ===
+The escalation criteria is: There's an immediate risk of electrical, water, or fire damage. Here's the email: 
+    Date: Thu, 3 Apr 2025 11:36:10 +0000
+    From: City of Los Angeles Building and Safety Department <inspections@lacity.gov>
+    Reply-To: Admin <admin@building-safety.la.com>
+    To: West Coast Development <admin@west-coast-dev.com>
+    Cc: Donald Duck <donald@duck.com>, Support <inspections@lacity.gov>
+    Message-ID: <f967b2d6-1036-11f0-9701-9775a4ad682f@prod.outlook.com>
+    References: <7d29dafe-1037-11f0-a588-8f6b1b834703@prod.outlook.com> <859cc44e-1037-11f0-b15c-6b9d5cb20c47@prod.outlook.com>
+    Subject: Project 345678123 - Sunset Luxury Condominiums
+    Location: Los Angeles, CA
+    Following an inspection of your site at 456 Sunset Boulevard, we have identified the following building code violations:
+    Electrical Wiring: Exposed wiring was found in the underground parking garage, posing a safety hazard.
+    Fire Safety: Insufficient fire extinguishers were available across multiple floors of the structure under construction.
+    Structural Integrity: The temporary support beams in the eastern wing do not meet the load-bearing standards specified in local building codes.
+    Required Corrective Actions: Replace or properly secure exposed wiring to meet electrical safety standards. 
+    Install additional fire extinguishers in compliance with fire code requirements. Reinforce or replace temporary support beams
+    to ensure structural stability. Deadline for Compliance: Violations must be addressed no later than October 31, 2025. 
+    Failure to comply may result in a stop-work order and additional fines.
+    Contact: For questions or to schedule a re-inspection, please contact the Building and Safety Department at (555) 456-7890 or email inspections@lacity.gov.
+```
 
 ## Research Planning Guidelines
 - Batch similar research tasks into a single TODO to minimize overhead
