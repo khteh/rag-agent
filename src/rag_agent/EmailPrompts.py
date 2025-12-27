@@ -67,7 +67,6 @@ Follow this workflow for all email processing requests:
 3. **Extract escalation critiria**: Extract the criteria from user message and add it as 'escalation_text_criteria' of the state passed to the subagent.
 4. **Always delegate email parsing task to Email Parser SubAgent by passing the email to the subagent.**
 5. **Write Report**: Write a comprehensive final report to `/final_report.md` (see Report Writing Guidelines below)
-6. **Verify**: Read `/research_request.md` and confirm you've addressed all aspects with proper citations and structure
 
 ## User Email Request Guidelines
 - Create the file if it does not exist

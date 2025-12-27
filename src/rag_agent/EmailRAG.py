@@ -1,4 +1,5 @@
-import asyncio, logging
+import asyncio, asyncio_atexit, logging
+from datetime import datetime
 from pathlib import Path
 from uuid_extensions import uuid7, uuid7str
 from typing import Annotated, Literal, Sequence
@@ -126,6 +127,7 @@ class EmailRAG():
     # https://realpython.com/build-llm-rag-chatbot-with-langchain/#chains-and-langchain-expression-language-lcel
     _db_pool: AsyncConnectionPool = None
     _store: AsyncPostgresStore = None
+    _checkpointer = None
     _vectorStore = None
     _email_parser_chain = None
     _escalation_chain = None
@@ -140,7 +142,6 @@ class EmailRAG():
         """
         Class EmailRAG Constructor
         """
-        logging.info(f"\n=== {self.__init__.__name__} ===")
         self._config = config
         # https://python.langchain.com/api_reference/langchain/chat_models/langchain.chat_models.base.init_chat_model.html
         # https://python.langchain.com/docs/integrations/chat/google_vertex_ai_palm/
@@ -155,10 +156,12 @@ class EmailRAG():
         #        #"dims": 1536,
         #    }
         #)
+        asyncio_atexit.register(self.Cleanup)
         self._db_pool = AsyncConnectionPool(
                 conninfo = appconfig.POSTGRESQL_DATABASE_URI,
                 max_size = appconfig.DB_MAX_CONNECTIONS,
                 kwargs = appconfig.connection_kwargs,
+                open = False
             )
         self._vectorStore = VectorStore(model=appconfig.EMBEDDING_MODEL, chunk_size=1000, chunk_overlap=0)
         #self._llm = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider="ollama", base_url=appconfig.BASE_URI, configurable_fields=("user_id", "graph", "email_state"), streaming=True, temperature=0).bind_tools([email_processing_tool])
@@ -181,9 +184,7 @@ class EmailRAG():
 
     async def Cleanup(self):
         logging.info(f"\n=== {self.Cleanup.__name__} ===")
-        await self._store.close()
         await self._db_pool.close()
-        #self._in_memory_store.close()
 
     async def ParseEmail(self, state: EmailRAGState, config: RunnableConfig) -> EmailRAGState:
         """
@@ -236,7 +237,10 @@ class EmailRAG():
         try:
             cache_policy = CachePolicy(ttl=600) # 10 minutes
             await self._db_pool.open()
-            self._store = await PostgreSQLStoreSetup(self._db_pool) # store is needed when creating the ReAct agent / StateGraph for InjectedStore to work
+            if self._store is None:
+                self._store = await PostgreSQLStoreSetup(self._db_pool) # store is needed when creating the ReAct agent / StateGraph for InjectedStore to work
+            if self._checkpointer is None:
+                self._checkpointer = await PostgreSQLCheckpointerSetup(self._db_pool)
             # This should be a custom subagent.
             graph_builder = StateGraph(EmailRAGState, ContextSchema)
             graph_builder.add_node("ParseEmail", self.ParseEmail, cache_policy = cache_policy)
@@ -244,7 +248,7 @@ class EmailRAG():
             graph_builder.add_edge(START, "ParseEmail")
             graph_builder.add_edge("ParseEmail", "NeedsEscalation")
             graph_builder.add_edge("NeedsEscalation", END)
-            self._parser_graph = graph_builder.compile(name=self._graphName, cache=InMemoryCache(), store = self._store)
+            self._parser_graph = graph_builder.compile(name=self._graphName, cache=InMemoryCache(), store = self._store, checkpointer = self._checkpointer)
             # Use it as a custom subagent
             self._parser_subagent = CompiledSubAgent(
                 name = "Email Parser SubAgent",
@@ -283,7 +287,8 @@ class EmailRAG():
                 model = self._llm,
                 backend = composite_backend,
                 store = self._store,
-                system_prompt = EMAIL_PROCESSING_INSTRUCTIONS,
+                checkpointer = self._checkpointer,
+                system_prompt = EMAIL_PROCESSING_INSTRUCTIONS.format(timestamp=datetime.now()),
                 subagents = self._subagents
             )
         except ResourceExhausted as e:
@@ -298,24 +303,15 @@ class EmailRAG():
         logging.info(f"\n=== {self.Chat.__name__} ===")
         message_with_criteria = f"The escalation criteria is: {criteria}. Here's the email: {email_state['email']}"
         result: List[str] = []
-        async with AsyncConnectionPool(
-            conninfo = appconfig.POSTGRESQL_DATABASE_URI,
-            max_size = appconfig.DB_MAX_CONNECTIONS,
-            kwargs = appconfig.connection_kwargs,
-        ) as pool:
-            # Create the AsyncPostgresSaver
-            checkpointer = await PostgreSQLCheckpointerSetup(pool)
-            self._agent.checkpointer = checkpointer
-            self._parser_graph.checkpointer = checkpointer
-            #async for step in self._agent.with_config({"graph": self._parser_graph, "email_state": email_state, "thread_id": uuid7str()}).astream(
-            async for step in self._agent.with_config(self._config).astream(
-                {"messages": [{"role": "user", "content": message_with_criteria}]},
-                stream_mode="values",
-                #config = config
-            ):
-                result.append(step["messages"][-1])
-                step["messages"][-1].pretty_print()
-            return result[-1]
+        #async for step in self._agent.with_config({"graph": self._parser_graph, "email_state": email_state, "thread_id": uuid7str()}).astream(
+        async for step in self._agent.with_config(self._config).astream(
+            {"messages": [{"role": "user", "content": message_with_criteria}]},
+            stream_mode="values",
+            #config = config
+        ):
+            result.append(step["messages"][-1])
+            step["messages"][-1].pretty_print()
+        return result[-1]
 
 async def make_graph(config: RunnableConfig) -> CompiledStateGraph:
     return await EmailRAG(config).CreateGraph()
@@ -331,7 +327,7 @@ async def main():
     img = Image.open("/tmp/checkpoint_graph.png")
     img.show()
     """
-    Path("output/email_request.md").unlink(missing_ok=True)
+    #Path("output/email_request.md").unlink(missing_ok=True)
     Path("output/final_report.md").unlink(missing_ok=True)
     config = RunnableConfig(run_name="Email RAG", thread_id=uuid7str(), user_id=uuid7str())
     rag = EmailRAG(config)

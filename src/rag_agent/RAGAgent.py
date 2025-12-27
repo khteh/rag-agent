@@ -1,6 +1,7 @@
 import argparse, atexit, asyncio, logging
 from uuid_extensions import uuid7, uuid7str
 from datetime import datetime
+from pathlib import Path
 from typing import Any, Callable, List, Optional, cast
 from langchain.chat_models import init_chat_model
 from langchain_core.runnables import RunnableConfig, ensure_config
@@ -20,10 +21,10 @@ from deepagents import create_deep_agent, CompiledSubAgent
 #https://langchain-ai.github.io/langgraph/how-tos/streaming/#values
 #https://python.langchain.com/docs/how_to/configure/
 #https://langchain-ai.github.io/langgraph/how-tos/
+from src.config import config as appconfig
 from src.rag_agent.Context import Context
 from src.rag_agent.RAGPrompts import RAG_INSTRUCTIONS, SUBAGENT_DELEGATION_INSTRUCTIONS, RAG_WORKFLOW_INSTRUCTIONS
 from src.rag_agent.Tools import upsert_memory, think_tool
-from src.config import config as appconfig
 from src.Infrastructure.VectorStore import VectorStore
 from src.common.State import CustomAgentState
 from src.utils.image import show_graph
@@ -56,10 +57,9 @@ class RAGAgent():
     _max_researcher_iterations = 3
 
     # Get current date
-    _current_date = datetime.now().strftime("%Y-%m-%d")
     # Combine orchestrator instructions (RESEARCHER_INSTRUCTIONS only for sub-agents)
     _INSTRUCTIONS = (
-        RAG_WORKFLOW_INSTRUCTIONS
+        RAG_WORKFLOW_INSTRUCTIONS.format(timestamp=datetime.now())
         + "\n\n"
         + "=" * 80
         + "\n\n"
@@ -70,6 +70,7 @@ class RAGAgent():
     )
     _db_pool: AsyncConnectionPool = None
     _store: AsyncPostgresStore = None
+    _checkpointer = None
     _vectorStore = None
     _tools: List[Callable[..., Any]] = None
     _healthcare_rag: HealthAgent = None
@@ -102,6 +103,7 @@ class RAGAgent():
                 conninfo = appconfig.POSTGRESQL_DATABASE_URI,
                 max_size = appconfig.DB_MAX_CONNECTIONS,
                 kwargs = appconfig.connection_kwargs,
+                open = False
             )
         self._vectorStore = VectorStore(model=appconfig.EMBEDDING_MODEL, chunk_size=1000, chunk_overlap=0)
         # GoogleSearch ground_search works well but it will sometimes take precedence and overwrite the ingested data into Chhroma and Neo4J. So, exclude it for now until it is really needed.
@@ -113,11 +115,11 @@ class RAGAgent():
             self._llm = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider=appconfig.MODEL_PROVIDER, base_url=appconfig.BASE_URI, streaming=True, temperature=0)
         else:
             self._llm = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider=appconfig.MODEL_PROVIDER, streaming=True, temperature=0)
-    
-    async def Cleanup(self):
+
+    def Cleanup(self):
         logging.info(f"\n=== {self.Cleanup.__name__} ===")
-        await self._store.close()
-        await self._db_pool.close()
+        self._store.close()
+        self._db_pool.close()
         #self._in_memory_store.close()
 
     async def prepare_model_inputs(self, state: CustomAgentState, config: RunnableConfig, store: BaseStore):
@@ -142,8 +144,11 @@ class RAGAgent():
             # https://langchain-ai.github.io/langgraph/how-tos/cross-thread-persistence/
             # https://github.com/langchain-ai/langgraph/blob/main/libs/prebuilt/langgraph/prebuilt/chat_agent_executor.py#L241
             await self._db_pool.open()
-            self._store = await PostgreSQLStoreSetup(self._db_pool) # store is needed when creating the ReAct agent / StateGraph for InjectedStore to work
-            self._ragagent = create_agent(self._llm, self._tools, context_schema = Configuration, state_schema = CustomAgentState, name = self._name, system_prompt = RAG_INSTRUCTIONS, store = self._store)
+            if self._store is None:
+                self._store = await PostgreSQLStoreSetup(self._db_pool) # store is needed when creating the ReAct agent / StateGraph for InjectedStore to work
+            if self._checkpointer is None:
+                self._checkpointer = await PostgreSQLCheckpointerSetup(self._db_pool)
+            self._ragagent = create_agent(self._llm, self._tools, context_schema = Configuration, state_schema = CustomAgentState, name = self._name, system_prompt = RAG_INSTRUCTIONS, store = self._store, checkpointer = self._checkpointer)
             # Use it as a custom subagent
             self._rag_subagent = CompiledSubAgent(
                 name="RAG Agent",
@@ -163,6 +168,7 @@ class RAGAgent():
                 model = self._llm,
                 tools = [ground_search],
                 backend = composite_backend,
+                checkpointer = self._checkpointer, # https://github.com/langchain-ai/langgraph/blob/main/libs/langgraph/langgraph/graph/state.py#L828
                 store = self._store,
                 system_prompt = self._INSTRUCTIONS,
                 subagents = self._subagents
@@ -182,25 +188,17 @@ class RAGAgent():
         """
         logging.info(f"\n=== {self.ChatAgent.__name__} ===")
         result: List[str] = []
-        async with AsyncConnectionPool(
-            conninfo = appconfig.POSTGRESQL_DATABASE_URI,
-            max_size = appconfig.DB_MAX_CONNECTIONS,
-            kwargs = appconfig.connection_kwargs,
-        ) as pool:
-            # Create the AsyncPostgresSaver and AsyncPostgresStore
-            # https://github.com/langchain-ai/langgraph/blob/main/libs/langgraph/langgraph/graph/state.py#L828
-            self._agent.checkpointer = await PostgreSQLCheckpointerSetup(pool)
-            # https://langchain-ai.github.io/langgraph/concepts/streaming/
-            # https://langchain-ai.github.io/langgraph/how-tos/#streaming
-            # async for step in self._agent.with_config({"user_id": uuid7str()}).astream(
-            async for step in self._agent.astream(
-                {"messages": [{"role": "user", "content": message}]},
-                stream_mode="values", # Use this to stream all values in the state after each step.
-                config=config, # This is needed by Checkpointer
-            ):
-                result.append(step["messages"][-1])
-                step["messages"][-1].pretty_print()
-            return result[-1]
+        # https://langchain-ai.github.io/langgraph/concepts/streaming/
+        # https://langchain-ai.github.io/langgraph/how-tos/#streaming
+        # async for step in self._agent.with_config({"user_id": uuid7str()}).astream(
+        async for step in self._agent.astream(
+            {"messages": [{"role": "user", "content": message}]},
+            stream_mode="values", # Use this to stream all values in the state after each step.
+            config=config, # This is needed by Checkpointer
+        ):
+            result.append(step["messages"][-1])
+            step["messages"][-1].pretty_print()
+        return result[-1]
 
 async def make_graph(config: RunnableConfig) -> CompiledStateGraph:
     return await RAGAgent(config).CreateGraph()
@@ -213,7 +211,7 @@ async def main():
     parser = argparse.ArgumentParser(description='Start this LLM-RAG Agent by loading blog content from predefined URLs')
     parser.add_argument('-l', '--load-urls', action='store_true', help='Load documents from URLs')
     args = parser.parse_args()
-
+    Path("output/question_request.md").unlink(missing_ok=True)
     # httpx library is a dependency of LangGraph and is used under the hood to communicate with the AI models.
     #vertexai.init(project=os.environ.get("GOOGLE_CLOUD_PROJECT"), location=os.environ.get("GOOGLE_CLOUD_LOCATION"))
     config = RunnableConfig(run_name="RAG ReAct Agent", thread_id=uuid7str(), user_id=uuid7str())
