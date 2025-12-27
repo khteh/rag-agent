@@ -9,7 +9,7 @@ from langchain_community.vectorstores import Neo4jVector
 from langchain_ollama import OllamaEmbeddings
 from langchain_classic.chains import create_retrieval_chain
 from langchain_classic.chains.combine_documents import create_stuff_documents_chain
-from src.common.configuration import Configuration
+from src.common.Configuration import Configuration
 from src.config import config as appconfig
 from src.utils.ModelString import split_model_and_provider
 # For VertexAI, use VertexAIEmbeddings, model="text-embedding-005"; "gemini-2.0-flash" model_provider="google_genai"

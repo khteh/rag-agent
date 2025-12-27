@@ -30,7 +30,7 @@ from src.utils.image import show_graph
 from src.Healthcare.RAGAgent import RAGAgent as HealthAgent
 from src.Healthcare.prompts import HEALTHCARE_INSTRUCTIONS
 from src.rag_agent.Tools import ground_search, upsert_memory
-from src.common.configuration import Configuration
+from src.common.Configuration import Configuration
 from src.Infrastructure.Backend import composite_backend
 from src.Infrastructure.PostgreSQLSetup import PostgreSQLCheckpointerSetup, PostgreSQLStoreSetup
 class RAGAgent():

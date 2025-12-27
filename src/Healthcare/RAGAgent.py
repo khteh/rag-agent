@@ -17,7 +17,7 @@ from langgraph.store.postgres.aio import AsyncPostgresStore
 from .prompts import HEALTHCARE_INSTRUCTIONS
 from .Tools import HealthcareReview, HealthcareCypher
 from src.rag_agent.Tools import upsert_memory, think_tool
-from src.common.configuration import Configuration
+from src.common.Configuration import Configuration
 from src.utils.image import show_graph
 from src.Infrastructure.VectorStore import VectorStore
 from src.Infrastructure.PostgreSQLSetup import PostgreSQLCheckpointerSetup, PostgreSQLStoreSetup

@@ -5,7 +5,7 @@ from typing import Annotated, Optional
 from langchain_core.runnables import RunnableConfig, ensure_config
 from langchain_core.prompts import PromptTemplate
 from langgraph.graph.state import CompiledStateGraph
-from .prompts import SYSTEM_PROMPT
+from .Prompts import SYSTEM_PROMPT
 from src.Healthcare.prompts import cypher_generation_template, qa_generation_template, review_template
 from .State import EmailRAGState
 from src.Infrastructure.VectorStore import VectorStore

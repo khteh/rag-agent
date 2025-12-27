@@ -36,6 +36,7 @@ https://python.langchain.com/docs/how_to/configure/
 from src.rag_agent.EmailPrompts import EMAIL_PARSER_INSTRUCTIONS, EMAIL_PROCESSING_INSTRUCTIONS
 from src.config import config as appconfig
 from src.common.State import EmailRAGState, EmailAgentState
+from src.common.ContextSchema import ContextSchema
 from src.utils.image import show_graph
 from src.models import ChatMessage
 from src.models.EmailModel import EmailModel
@@ -44,7 +45,7 @@ from src.Infrastructure.VectorStore import VectorStore
 from src.Infrastructure.PostgreSQLSetup import PostgreSQLCheckpointerSetup, PostgreSQLStoreSetup
 from src.Infrastructure.Backend import composite_backend
 from data.sample_emails import EMAILS
-from src.common.configuration import EmailConfiguration
+from src.common.Configuration import EmailConfiguration
 # https://realpython.com/langgraph-python/
 # XXX: I don't think this is required any more using deepagent. The deepagent should use the custom subagent which is a CompiledStateGraph to accomplish it's objective.
 @tool
@@ -184,7 +185,7 @@ class EmailRAG():
         await self._db_pool.close()
         #self._in_memory_store.close()
 
-    async def ParseEmail(self, email:str, escalation_criteria:str, state: EmailRAGState, config: RunnableConfig) -> EmailRAGState:
+    async def ParseEmail(self, state: EmailRAGState, config: RunnableConfig) -> EmailRAGState:
         """
         Extract structured fields from a regulatory notice.
         This should be used when the email message comes from
@@ -192,9 +193,9 @@ class EmailRAG():
         construction site that the company works on.
         """
         logging.info(f"\n=== {self.ParseEmail.__name__} ===")
+        logging.debug(f"state: {state}")
         logging.debug(f"config: {config}")
         state = EmailConfiguration.from_runnable_config(config).email_state
-        logging.debug(f"state: {state}")
         #print(f"state: {state}, email: {state['email']}")
         state["extract"] = await self._email_parser_chain.with_config(config).ainvoke({"email": state["email"]})
         logging.debug(f"Extract: {state["extract"]}")
@@ -235,7 +236,7 @@ class EmailRAG():
         try:
             cache_policy = CachePolicy(ttl=600) # 10 minutes
             # This should be a custom subagent.
-            graph_builder = StateGraph(EmailRAGState)
+            graph_builder = StateGraph(EmailRAGState, ContextSchema)
             graph_builder.add_node("ParseEmail", self.ParseEmail, cache_policy = cache_policy)
             graph_builder.add_node("NeedsEscalation", self.NeedsEscalation, cache_policy = cache_policy)
             graph_builder.add_edge(START, "ParseEmail")

@@ -17,7 +17,7 @@ from google.genai import types
 from google.genai.types import Tool, GenerateContentConfig, GoogleSearch
 from typing_extensions import Annotated
 from uuid_extensions import uuid7, uuid7str
-from src.common.configuration import Configuration
+from src.common.Configuration import Configuration
 from src.config import config as appconfig
 from src.common.State import CustomAgentState
 from src.rag_agent.Context import Context
