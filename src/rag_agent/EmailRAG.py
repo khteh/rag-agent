@@ -235,6 +235,8 @@ class EmailRAG():
         logging.info(f"\n=== {self.CreateGraph.__name__} ===")
         try:
             cache_policy = CachePolicy(ttl=600) # 10 minutes
+            await self._db_pool.open()
+            self._store = await PostgreSQLStoreSetup(self._db_pool) # store is needed when creating the ReAct agent / StateGraph for InjectedStore to work
             # This should be a custom subagent.
             graph_builder = StateGraph(EmailRAGState, ContextSchema)
             graph_builder.add_node("ParseEmail", self.ParseEmail, cache_policy = cache_policy)
@@ -242,7 +244,7 @@ class EmailRAG():
             graph_builder.add_edge(START, "ParseEmail")
             graph_builder.add_edge("ParseEmail", "NeedsEscalation")
             graph_builder.add_edge("NeedsEscalation", END)
-            self._parser_graph = graph_builder.compile(name=self._graphName, cache=InMemoryCache())
+            self._parser_graph = graph_builder.compile(name=self._graphName, cache=InMemoryCache(), store = self._store)
             # Use it as a custom subagent
             self._parser_subagent = CompiledSubAgent(
                 name = "Email Parser SubAgent",
@@ -277,8 +279,6 @@ class EmailRAG():
             #)
             #self._subagents = [self._email_subagent, self._parser_subagent]
             self._subagents = [self._parser_subagent]
-            await self._db_pool.open()
-            self._store = await PostgreSQLStoreSetup(self._db_pool) # store is needed when creating the ReAct agent / StateGraph for InjectedStore to work
             self._agent = create_deep_agent(
                 model = self._llm,
                 backend = composite_backend,
