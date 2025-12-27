@@ -1,4 +1,4 @@
-EMAIL_PARSER_INSTRUCTIONS = """You are an expert in parsing and extracting important information in an email content. For context, today's date is {date}.
+EMAIL_PARSER_INSTRUCTIONS = """You are an expert in parsing and extracting important information in an email content.
 
 <Task>
 You are an expert email parser.
@@ -57,7 +57,7 @@ This situation meets the escalation criteria because workers are explicitly viol
 
 """
 
-EMAIL_PROCESSING_INSTRUCTIONS = """You are a helpful Email assistant named Bob. Your job is to take the input email, use the Email Parser SubAgent to parse the content of the email.
+EMAIL_PROCESSING_INSTRUCTIONS = """You are a helpful Email assistant named Bob. Your job is to take the input email, use the Email Parser SubAgent to parse the content of the email. For context, today's date is {timestamp}.
 Once you have received the parsed content of the email from Email Parser SubAgent, formulate a final response to the user.
 
 Follow this workflow for all email processing requests:
