@@ -52,7 +52,7 @@ class RAGAgent():
         #        #"dims": 1536,
         #    }
         #)
-        atexit.register(self.Cleanup)
+        #atexit.register(self.Cleanup)
         self._db_pool = AsyncConnectionPool(
                 conninfo = appconfig.POSTGRESQL_DATABASE_URI,
                 max_size = appconfig.DB_MAX_CONNECTIONS,
@@ -67,9 +67,10 @@ class RAGAgent():
             self._llm = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider=appconfig.MODEL_PROVIDER, streaming=True, temperature=0)
         # https://python.langchain.com/docs/integrations/chat/google_vertex_ai_palm/
 
-    async def Cleanup(self):
-        logging.info(f"\n=== {self.Cleanup.__name__} ===")
-        await self._db_pool.close()
+    #async def Cleanup(self):
+    #    https://github.com/minrk/asyncio-atexit/issues/11
+    #    logging.info(f"\n=== {self.Cleanup.__name__} ===")
+    #    await self._db_pool.close()
 
     async def CreateGraph(self) -> CompiledStateGraph:
         logging.debug(f"\n=== {self.CreateGraph.__name__} ===")

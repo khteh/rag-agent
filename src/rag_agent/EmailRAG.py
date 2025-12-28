@@ -1,4 +1,4 @@
-import asyncio, asyncio_atexit, logging
+import asyncio, logging
 from datetime import datetime
 from pathlib import Path
 from uuid_extensions import uuid7, uuid7str
@@ -156,7 +156,7 @@ class EmailRAG():
         #        #"dims": 1536,
         #    }
         #)
-        asyncio_atexit.register(self.Cleanup)
+        #asyncio_atexit.register(self.Cleanup)
         self._db_pool = AsyncConnectionPool(
                 conninfo = appconfig.POSTGRESQL_DATABASE_URI,
                 max_size = appconfig.DB_MAX_CONNECTIONS,
@@ -182,9 +182,10 @@ class EmailRAG():
             | self._chainLLM.with_structured_output(EscalationCheckModel)
         )
 
-    async def Cleanup(self):
-        logging.info(f"\n=== {self.Cleanup.__name__} ===")
-        await self._db_pool.close()
+    #async def Cleanup(self):
+    #    https://github.com/minrk/asyncio-atexit/issues/11
+    #    logging.info(f"\n=== {self.Cleanup.__name__} ===")
+    #    await self._db_pool.close()
 
     async def ParseEmail(self, state: EmailRAGState, config: RunnableConfig) -> EmailRAGState:
         """

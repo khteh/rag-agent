@@ -85,7 +85,7 @@ class RAGAgent():
         """
         Class RAGAgent Constructor
         """
-        atexit.register(self.Cleanup)
+        #atexit.register(self.Cleanup)
         #vertexai.init(project=os.environ.get("GOOGLE_CLOUD_PROJECT"), location=os.environ.get("GOOGLE_CLOUD_LOCATION"))
         self._config = config
         # .bind_tools() gives the agent LLM descriptions of each tool from their docstring and input arguments. 
@@ -116,10 +116,11 @@ class RAGAgent():
         else:
             self._llm = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider=appconfig.MODEL_PROVIDER, streaming=True, temperature=0)
 
-    def Cleanup(self):
-        logging.info(f"\n=== {self.Cleanup.__name__} ===")
-        self._store.close()
-        self._db_pool.close()
+    #def Cleanup(self):
+    #    https://github.com/minrk/asyncio-atexit/issues/11
+    #    logging.info(f"\n=== {self.Cleanup.__name__} ===")
+    #    self._store.close()
+    #    self._db_pool.close()
         #self._in_memory_store.close()
 
     async def prepare_model_inputs(self, state: CustomAgentState, config: RunnableConfig, store: BaseStore):
