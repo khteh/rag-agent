@@ -36,7 +36,7 @@ https://python.langchain.com/docs/how_to/configure/
 """
 from src.rag_agent.EmailPrompts import EMAIL_PARSER_INSTRUCTIONS, EMAIL_PROCESSING_INSTRUCTIONS
 from src.config import config as appconfig
-from src.common.State import EmailRAGState, EmailAgentState
+from src.common.State import EmailRAGState
 from src.common.ContextSchema import ContextSchema
 from src.utils.image import show_graph
 from src.models import ChatMessage
@@ -203,7 +203,7 @@ class EmailRAG():
                     email += l
         state["email"] = email.strip()
         logging.debug(f"state: {state}")
-        logging.debug(f"config: {config}")
+        #logging.debug(f"config: {config}")
         state["extract"] = await self._email_parser_chain.with_config(config).ainvoke({"email": state["email"]})
         logging.debug(f"Extract: {state["extract"]}")
         return state
@@ -214,23 +214,25 @@ class EmailRAG():
         """
         logging.info(f"\n=== {self.NeedsEscalation.__name__} ===")
         assert self._escalation_chain
-        logging.debug(f"config: {config}")
+        #logging.debug(f"config: {config}")
         logging.debug(f"state: {state}")
         result: EscalationCheckModel = await self._escalation_chain.with_config(config).ainvoke({"email": state["email"], "escalation_criteria": state["escalation_text_criteria"]})
         logging.debug(f"result: {result}")
         state["escalate"] = (result.needs_escalation or ("max_potential_fine" in state and state["extract"].max_potential_fine and state["extract"].max_potential_fine >= state["escalation_dollar_criteria"]))
+        logging.debug(f"state: {state}")
+        #return {"messages": [response]}
         return state
 
-    async def call_agent_model_node(self, state: EmailAgentState, config: RunnableConfig) -> dict[str, list[AIMessage]]:
-        """Node to call the email agent model"""
-        messages = state["messages"]
-        response = await self._llm.with_config(config).ainvoke(messages)
-        return {"messages": [response]}
+    #async def call_agent_model_node(self, state: EmailAgentState, config: RunnableConfig) -> dict[str, list[AIMessage]]:
+    #    """Node to call the email agent model"""
+    #    messages = state["messages"]
+    #    response = await self._llm.with_config(config).ainvoke(messages)
+    #    return {"messages": [response]}
 
-    def route_agent_graph_edge(self, state: EmailAgentState) -> str:
-        """Determine whether to call more tools or exit the graph"""
-        last_message = state["messages"][-1]
-        return "EmailTools" if last_message.tool_calls else END
+    #def route_agent_graph_edge(self, state: EmailAgentState) -> str:
+    #    """Determine whether to call more tools or exit the graph"""
+    #    last_message = state["messages"][-1]
+    #    return "EmailTools" if last_message.tool_calls else END
 
     async def CreateGraph(self) -> CompiledStateGraph:
         """
