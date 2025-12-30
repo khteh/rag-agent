@@ -181,24 +181,29 @@ class EmailRAG():
             self._escalation_prompt
             | self._chainLLM.with_structured_output(EscalationCheckModel)
         )
-
     #async def Cleanup(self):
     #    https://github.com/minrk/asyncio-atexit/issues/11
     #    logging.info(f"\n=== {self.Cleanup.__name__} ===")
     #    await self._db_pool.close()
-
     async def ParseEmail(self, state: EmailRAGState, config: RunnableConfig) -> EmailRAGState:
         """
         Extract structured fields from a regulatory notice.
         This should be used when the email message comes from
         a regulatory body or auditor regarding a property or
         construction site that the company works on.
+        https://github.com/langchain-ai/deepagents/issues/613
         """
         logging.info(f"\n=== {self.ParseEmail.__name__} ===")
+        with open("output/email_request.md", 'r') as f:
+            email:str = ""
+            for l in f:
+                if "Escalation Criteria:" in l:
+                    state["escalation_text_criteria"] = l.split(":")[1].strip()
+                elif l is not None and l != "":
+                    email += l
+        state["email"] = email.strip()
         logging.debug(f"state: {state}")
         logging.debug(f"config: {config}")
-        state = EmailConfiguration.from_runnable_config(config).email_state
-        #print(f"state: {state}, email: {state['email']}")
         state["extract"] = await self._email_parser_chain.with_config(config).ainvoke({"email": state["email"]})
         logging.debug(f"Extract: {state["extract"]}")
         return state
@@ -210,7 +215,6 @@ class EmailRAG():
         logging.info(f"\n=== {self.NeedsEscalation.__name__} ===")
         assert self._escalation_chain
         logging.debug(f"config: {config}")
-        state = EmailConfiguration.from_runnable_config(config).email_state
         logging.debug(f"state: {state}")
         result: EscalationCheckModel = await self._escalation_chain.with_config(config).ainvoke({"email": state["email"], "escalation_criteria": state["escalation_text_criteria"]})
         logging.debug(f"result: {result}")
@@ -328,7 +332,7 @@ async def main():
     img = Image.open("/tmp/checkpoint_graph.png")
     img.show()
     """
-    #Path("output/email_request.md").unlink(missing_ok=True)
+    Path("output/email_request.md").unlink(missing_ok=True)
     Path("output/final_report.md").unlink(missing_ok=True)
     config = RunnableConfig(run_name="Email RAG", thread_id=uuid7str(), user_id=uuid7str())
     rag = EmailRAG(config)
