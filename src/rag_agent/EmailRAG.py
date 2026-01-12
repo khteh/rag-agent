@@ -197,8 +197,12 @@ class EmailRAG():
         with open("output/email_request.md", 'r') as f:
             email:str = ""
             for l in f:
-                if "Escalation Criteria:" in l:
+                if "escalation criteria:" in l.lower():
                     state["escalation_text_criteria"] = l.split(":")[1].strip()
+                elif "escalation dollar criteria:" in l.lower():
+                    state["escalation_dollar_criteria"] = l.split(":")[1].strip()
+                elif "escalation emails:" in l.lower():
+                    state["escalation_emails"] = l.split(":")[1].strip()
                 elif l is not None and l != "":
                     email += l
         state["email"] = email.strip()
@@ -220,7 +224,7 @@ class EmailRAG():
         logging.debug(f"result: {result}")
         state["escalate"] = (result.needs_escalation or ("max_potential_fine" in state and state["extract"].max_potential_fine and state["extract"].max_potential_fine >= state["escalation_dollar_criteria"]))
         logging.debug(f"state: {state}")
-        #return {"messages": [response]}
+        state["messages"].append(f"This email warrant an escalation")
         return state
 
     #async def call_agent_model_node(self, state: EmailAgentState, config: RunnableConfig) -> dict[str, list[AIMessage]]:
@@ -308,11 +312,16 @@ class EmailRAG():
 
     async def Chat(self, criteria, email_state) -> List[str]:
         logging.info(f"\n=== {self.Chat.__name__} ===")
-        message_with_criteria = f"The escalation criteria is: {criteria}. Here's the email: {email_state['email']}"
+        message = f"The escalation criteria is: {criteria}\n"
+        if "escalation_dollar_criteria" in email_state:
+            message += f"The escalation dollar criteria is: {email_state['escalation_dollar_criteria']}\n"
+        if "escalation_emails" in email_state:
+            message += f"Escalation emails: {', '.join(email_state['escalation_emails'])}\n"
+        message += f"Here's the email: {email_state['email']}"
         result: List[str] = []
         #async for step in self._agent.with_config({"graph": self._parser_graph, "email_state": email_state, "thread_id": uuid7str()}).astream(
         async for step in self._agent.with_config(self._config).astream(
-            {"messages": [{"role": "user", "content": message_with_criteria}]},
+            {"messages": [{"role": "user", "content": message}]},
             stream_mode="values",
             #config = config
         ):

@@ -24,7 +24,7 @@ class State(TypedDict):
     answer: str
     # The add_messages function defines how an update should be processed
     # Default is to replace. add_messages says "append"
-    messages: Annotated[Sequence[BaseMessage], add_messages]    
+    messages: Annotated[Sequence[BaseMessage], add_messages]
     is_last_step: IsLastStep
 
 # https://github.com/langchain-ai/langgraph/blob/62b2580ad5101cf55da0b6bebcd09913d2512022/libs/prebuilt/langgraph/prebuilt/chat_agent_executor.py#L57
@@ -42,6 +42,7 @@ class EmailRAGState(TypedDict):
     escalation_emails: list[EmailStr] | None
     follow_ups: dict[str, bool] | None
     current_follow_up: str | None
+    messages: Annotated[Sequence[BaseMessage], add_messages]
 
 @dataclass
 class EmailAgentState(AgentState):
