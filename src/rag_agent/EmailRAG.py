@@ -255,6 +255,7 @@ class EmailRAG():
                 system_prompt = EMAIL_PROCESSING_INSTRUCTIONS.format(timestamp=datetime.now()),
                 subagents = self._subagents
             )
+            # self.ShowGraph()
         except ResourceExhausted as e:
             logging.exception(f"google.api_core.exceptions.ResourceExhausted")
         return self._agent
@@ -300,7 +301,6 @@ async def main():
     config = RunnableConfig(run_name="Email RAG", thread_id=uuid7str(), user_id=uuid7str())
     rag = EmailRAG(config)
     await rag.CreateGraph()
-    # rag.ShowGraph()
     email_state = {
         "email": EMAILS[3],
         "escalation_dollar_criteria": 100_000,

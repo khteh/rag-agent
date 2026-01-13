@@ -1,3 +1,4 @@
+import logging
 from langchain_core.tools import InjectedToolArg, tool
 from typing_extensions import Annotated
 from langchain_core.runnables import RunnableConfig
@@ -25,6 +26,7 @@ from src.utils.ModelString import split_model_and_provider
 async def HealthcareReview(
     query: str, *, config: Annotated[RunnableConfig, InjectedToolArg]
 ) -> dict[str, float]:
+    logging.info(f"\n=== {HealthcareReview.__name__} ===")
     neo4j_vector_index = Neo4jVector.from_existing_graph(
         embedding = OllamaEmbeddings(model=appconfig.EMBEDDING_MODEL, base_url=appconfig.BASE_URI, num_ctx=8192, num_gpu=1, temperature=0),
         url = appconfig.NEO4J_URI,
@@ -65,6 +67,7 @@ async def HealthcareReview(
 async def HealthcareCypher(
     query: str, *, config: Annotated[RunnableConfig, InjectedToolArg]
 ) -> dict[str, float]:
+    logging.info(f"\n=== {HealthcareCypher.__name__} ===")
     with Neo4jGraph(
         url = appconfig.NEO4J_URI,
         username = appconfig.NEO4J_USERNAME,

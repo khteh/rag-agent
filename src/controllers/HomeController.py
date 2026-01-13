@@ -133,7 +133,7 @@ async def invoke():
     # Expect a single string.
     if isinstance(user_input["message"], (list, tuple)):
         user_input["message"] = user_input["message"][-1]
-    config = RunnableConfig(run_name="RAG ReAct Agent /invoke", thread_id = session["thread_id"], user_id =  session["user_id"])
+    config = RunnableConfig(run_name="RAG Deep Agent /invoke", thread_id = session["thread_id"], user_id =  session["user_id"])
     result: List[str] = []
     logging.debug(f"/invoke message: {user_input['message']}")
     for attempt in range(3):
@@ -251,7 +251,7 @@ async def stream_agent(): #user_input: StreamInput):
         session["user_id"] = uuid7str()
     if "thread_id" not in session or not session["thread_id"]:
         session["thread_id"] = uuid7str()
-    config = RunnableConfig(run_name="RAG ReAct Agent /invoke", thread_id = session["thread_id"], user_id =  session["user_id"])
+    config = RunnableConfig(run_name="RAG Deep Agent /invoke", thread_id = session["thread_id"], user_id =  session["user_id"])
     logging.info(f"/stream session {session['thread_id']} {session['user_id']}")
     user_input: UserInput = await ProcessCurlInput()
     """

@@ -169,10 +169,89 @@ $ c3 -v https://localhost:4433/healthcare/invoke -m 300 -X POST -d '{"message": 
 
 - `uv run python -m langgraph_cli dev`
 
-## ReAct Agent answers question using Google Search and Vector Database
+## RAG Deep Agent answers question using Vector and Graph Database
 
 ![ReAct Agent with Checkpoint](images/agent_graph.png?raw=true "ReAct Agent with Checkpoint")
 ![ReAct Agent UI](images/rag-agent.png?raw=true "ReAct Agent UI")
+
+### Main Agent Outputs:
+
+- `output/question_request.md`:
+
+```
+=== 2026-01-13 15:27:10.954390 ===
+What is task decomposition?
+What is the standard method for Task Decomposition?
+Once you get the answer, look up common extensions of that method.
+```
+
+- `output/final_answer.md`:
+
+```
+## Task Decomposition: Methods, Extensions, and Practical Guidance
+
+Task decomposition is the systematic process of breaking a complex goal or problem into smaller, manageable components. It is foundational to project management, software engineering, algorithm design, and many other disciplines. The following report summarizes the most widely adopted decomposition methods, common extensions, and guidance on selecting the appropriate approach for a given context.
+
+### 1. Overview of Task Decomposition
+
+Task decomposition transforms a high‑level objective into a hierarchy of sub‑tasks that can be assigned, scheduled, and executed. It clarifies responsibilities, exposes dependencies, and enables parallel work streams. The choice of decomposition technique depends on factors such as project size, domain, constraints, and team culture.
+
+### 2. Standard Decomposition Methods
+
+| # | Method | Core Idea | Typical Use‑Case | Key Source |
+|---|--------|-----------|------------------|------------|
+| 1 | **Hierarchical (Work‑Breakdown) Decomposition** | Breaks a goal into progressively finer sub‑tasks, forming a tree. | Large‑scale engineering, construction, program management. | [1] |
+| 2 | **Functional Decomposition** | Splits a system into functions or modules, each handling a distinct responsibility. | Software architecture, system design, modular programming. | [2] |
+| 3 | **Divide‑and‑Conquer** | Recursively splits a problem into independent sub‑problems, solves them, and merges results. | Algorithms, computational geometry, parallel computing. | [3] |
+| 4 | **Agile Story/Task Decomposition** | Epic → Feature → User Story → Task; each level is more concrete and testable. | Scrum, Kanban, product backlog grooming. | [4] |
+| 5 | **Goal‑Oriented Decomposition (Goal‑Tree)** | Starts with high‑level goals, then decomposes into sub‑goals and actions. | AI planning, robotics, strategic business planning. | [5] |
+| 6 | **Decomposition with Constraints** | Adds resource, time, or risk constraints to each sub‑task during decomposition. | Resource‑constrained project scheduling, risk‑aware planning. | [6] |
+| 7 | **Iterative Refinement Decomposition** | Begins with coarse tasks, then iteratively refines them as more information becomes available. | Agile development, prototyping, research projects. | [7] |
+| 8 | **Decomposition by Domain Expertise** | Uses domain knowledge to group related tasks (e.g., safety, performance, usability). | Safety‑critical systems, UX design, regulatory compliance. | [8] |
+| 9 | **Decomposition with Cost‑Benefit Analysis** | Each sub‑task is evaluated for ROI before commitment. | Capital projects, product feature prioritization. | [9] |
+|10 | **Decomposition via Dependency Graphs** | Tasks are nodes; edges represent dependencies. Decomposition follows topological order. | Build systems, CI/CD pipelines, software release planning. | [10] |
+
+### 3. Common Extensions to Decomposition
+
+| Extension | What It Adds | Practical Rationale | Supporting Source |
+|-----------|--------------|---------------------|-------------------|
+| **Risk‑Based Decomposition** | Prioritizes tasks that mitigate high‑impact risks first. | Projects with significant uncertainty or safety concerns. | [1] |
+| **Time‑Boxed Decomposition** | Assigns fixed time windows to each sub‑task, useful in sprints. | Agile teams, time‑constrained deliverables. | [4] |
+| **Modular Decomposition** | Groups tasks into reusable modules or components. | Software reuse, component‑based engineering. | [2] |
+| **Stakeholder‑Driven Decomposition** | Aligns sub‑tasks with stakeholder priorities or value streams. | Product management, value‑stream mapping. | [4] |
+
+### 4. How to Choose a Decomposition Method
+
+1. **Scope & Scale** – For very large, multi‑disciplinary projects, a hierarchical WBS (#1) is often most effective. For smaller, iterative work, Agile story decomposition (#4) or iterative refinement (#7) may be preferable.
+2. **Nature of Work** – Algorithmic or computational problems benefit from divide‑and‑conquer (#3). System‑level design favors functional decomposition (#2).
+3. **Constraints** – Tight resource limits or high risk suggest constraint‑based (#6) or risk‑based extensions.
+4. **Team & Process Culture** – Agile teams naturally adopt epic‑story‑task decomposition (#4). Traditional project managers may lean toward WBS (#1).
+
+### 5. Practical Tips for Implementing Decomposition
+
+- **Start with a clear high‑level goal** and document it before any breakdown.
+- **Identify dependencies early**; a dependency graph (#10) helps visualize sequencing.
+- **Iteratively refine**: Treat decomposition as a living artifact that evolves with new insights.
+- **Incorporate constraints**: Use resource‑constraint tools or risk registers to keep decomposition realistic.
+- **Align with stakeholder value**: Prioritize tasks that deliver the most business or user value.
+
+### 6. Conclusion
+
+Task decomposition is not a one‑size‑fits‑all technique. The table above captures the core, industry‑validated methods, while the extensions illustrate how practitioners tailor decomposition to real‑world constraints such as risk, time, and stakeholder priorities. Selecting the right method—and augmenting it with appropriate extensions—ensures that complex objectives become actionable, traceable, and deliverable.
+
+### Sources
+
+[1] PMI Learning Library: Work‑Breakdown Structure – Importance and Implementation. https://www.pmi.org/learning/library/work-breakdown-structure-importance-implementation-10773
+[2] Wikipedia: Functional Decomposition. https://en.wikipedia.org/wiki/Functional_decomposition
+[3] Wikipedia: Divide‑and‑Conquer Algorithm. https://en.wikipedia.org/wiki/Divide-and-conquer_algorithm
+[4] Atlassian: Scrum Epics. https://www.atlassian.com/agile/scrum/epics
+[5] Wikipedia: Goal‑Oriented Action Planning. https://en.wikipedia.org/wiki/Goal-oriented_action_planning
+[6] ResearchGate: Constraint‑Based Task Decomposition. https://www.researchgate.net/publication/220411748_Constraint-based_task_decomposition
+[7] Scrum.org: Iterative Refinement. https://www.scrum.org/resources/iterative-refinement
+[8] ISO 63554: Decomposition by Domain Expertise. https://www.iso.org/standard/63554.html
+[9] McKinsey: Cost‑Benefit Analysis. https://www.mckinsey.com/business-functions/strategy-and-corporate-finance/our-insights/the-cost-benefit-analysis
+[10] Wikipedia: Dependency Graph. https://en.wikipedia.org/wiki/Dependency_graph
+```
 
 ```
 $ p -m src.rag_agent.RAGAgent
@@ -510,7 +589,7 @@ Task decomposition can be done (1) by LLM with simple prompting like "Steps for 
 - Takes about 8 minutes to run.
 
 ```
-$ up src.rag_agent.EmailRAG
+$ uv run python -m src.rag_agent.EmailRAG
 ```
 
 ### Main Agent Outputs:

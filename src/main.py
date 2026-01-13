@@ -86,9 +86,9 @@ async def create_app() -> Quart:
     from src.rag_agent.RAGAgent import make_graph
     from src.rag_agent.GraphRAG import make_graph as graph_rag_make_graph
     from src.Healthcare.RAGAgent import make_graph as healthcare_make_graph
-    config = RunnableConfig(run_name="RAG ReAct Agent", thread_id=uuid7str())
-    grapg_rag_config = RunnableConfig(run_name="RAG ReAct Agent", thread_id=uuid7str())
-    healthcare_config = RunnableConfig(run_name="Healthcare ReAct Agent", thread_id=uuid7str())
+    config = RunnableConfig(run_name="RAG Deep Agent", thread_id=uuid7str())
+    grapg_rag_config = RunnableConfig(run_name="RAG Deep Agent", thread_id=uuid7str())
+    healthcare_config = RunnableConfig(run_name="Healthcare Sub-Agent", thread_id=uuid7str())
     app.agent = await make_graph(config)
     app.graph_rag = await graph_rag_make_graph(grapg_rag_config)
     app.healthcare_agent = await healthcare_make_graph(healthcare_config)

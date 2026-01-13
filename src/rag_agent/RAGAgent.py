@@ -35,7 +35,7 @@ from src.common.Configuration import Configuration
 from src.Infrastructure.Backend import composite_backend
 from src.Infrastructure.PostgreSQLSetup import PostgreSQLCheckpointerSetup, PostgreSQLStoreSetup
 class RAGAgent():
-    _name:str = "RAG ReAct Agent"
+    _name:str = "RAG Deep Agent"
     _llm = None
     _config = None
     _urls = [
@@ -122,7 +122,6 @@ class RAGAgent():
     #    self._store.close()
     #    self._db_pool.close()
         #self._in_memory_store.close()
-
     async def prepare_model_inputs(self, state: CustomAgentState, config: RunnableConfig, store: BaseStore):
         # Retrieve user memories and add them to the system message
         # This function is called **every time** the model is prompted. It converts the state to a prompt
@@ -152,14 +151,14 @@ class RAGAgent():
             self._ragagent = create_agent(self._llm, self._tools, context_schema = Configuration, state_schema = CustomAgentState, name = self._name, system_prompt = RAG_INSTRUCTIONS, store = self._store, checkpointer = self._checkpointer)
             # Use it as a custom subagent
             self._rag_subagent = CompiledSubAgent(
-                name="RAG Agent",
+                name="RAG Sub-Agent",
                 description="Specialized agent which answers users' questions based on the information in the vector store",
                 system_prompt = RAG_INSTRUCTIONS,
                 runnable=self._ragagent
             )            
             self._healthcare_agent = await self._healthcare_rag.CreateGraph()
             self._healthcare_subagent = CompiledSubAgent(
-                name="Healthcare SubAgent",
+                name="Healthcare Sub-Agent",
                 description= "Specialized healthcare AI assistant",
                 system_prompt = HEALTHCARE_INSTRUCTIONS,
                 runnable= self._healthcare_agent
@@ -167,14 +166,15 @@ class RAGAgent():
             self._subagents = [self._healthcare_subagent, self._rag_subagent]
             self._agent = create_deep_agent(
                 model = self._llm,
-                tools = [ground_search],
+                #tools = [ground_search],
+                tools = [upsert_memory, think_tool],
                 backend = composite_backend,
                 checkpointer = self._checkpointer, # https://github.com/langchain-ai/langgraph/blob/main/libs/langgraph/langgraph/graph/state.py#L828
                 store = self._store,
                 system_prompt = self._INSTRUCTIONS,
                 subagents = self._subagents
             )
-            #self.ShowGraph() # This blocks
+            # self.ShowGraph() # This blocks
         except Exception as e:
             logging.exception(f"Exception! {e}")
         return self._agent
@@ -211,11 +211,17 @@ async def main():
     """
     parser = argparse.ArgumentParser(description='Start this LLM-RAG Agent by loading blog content from predefined URLs')
     parser.add_argument('-l', '--load-urls', action='store_true', help='Load documents from URLs')
+    parser.add_argument('-g', '--general', action='store_true', help='Ask general question')
+    parser.add_argument('-n', '--neo4j-graph', action='store_true', help='Ask question with answer in Neo4J graph database store')
+    parser.add_argument('-v', '--neo4j-vector', action='store_true', help='Ask question with answers in Neo4J vector store')
+    parser.add_argument('-b', '--neo4j', action='store_true', help='Ask question with answers in both Neo4J vector and graph stores')
+    parser.add_argument('-w', '--wait-time', action='store_true', help='Ask hospital waiting time using answer from mock API endpoint')
     args = parser.parse_args()
     Path("output/question_request.md").unlink(missing_ok=True)
+    Path("output/final_answer.md").unlink(missing_ok=True)
     # httpx library is a dependency of LangGraph and is used under the hood to communicate with the AI models.
     #vertexai.init(project=os.environ.get("GOOGLE_CLOUD_PROJECT"), location=os.environ.get("GOOGLE_CLOUD_LOCATION"))
-    config = RunnableConfig(run_name="RAG ReAct Agent", thread_id=uuid7str(), user_id=uuid7str())
+    config = RunnableConfig(run_name="RAG Deep Agent", thread_id=uuid7str(), user_id=uuid7str())
     rag = RAGAgent(config)
     await rag.CreateGraph()
     """
@@ -229,7 +235,17 @@ async def main():
     print(f"args: {args}")
     if args.load_urls:
         await rag.LoadDocuments()
-    input_message: str = ("What is task decomposition?\n" "What is the standard method for Task Decomposition?\n" "Once you get the answer, look up common extensions of that method.")
+    input_message: str = ""
+    if args.general:
+        input_message = ("What is task decomposition?\n" "What is the standard method for Task Decomposition?\n" "Once you get the answer, look up common extensions of that method.")
+    elif args.wait_time:
+        input_message = "Which hospital has the shortest wait time?"
+    elif args.neo4j_graph:
+        input_message = "Which physician has treated the most patients covered by Cigna?"
+    elif args.neo4j_vector:
+        input_message = "What have patients said about hospital efficiency? Mention details from specific reviews."
+    elif args.neo4j:
+        input_message = "Query the graph database to show me the reviews written by patient 7674"
     #print(f"typeof input_message: {type(input_message)}")
     await rag.ChatAgent(config, input_message)
 

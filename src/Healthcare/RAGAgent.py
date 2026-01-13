@@ -1,4 +1,5 @@
 import asyncio, atexit, logging
+from datetime import datetime
 from uuid_extensions import uuid7, uuid7str
 from src.config import config as appconfig
 from typing_extensions import List, TypedDict
@@ -23,7 +24,7 @@ from src.Infrastructure.VectorStore import VectorStore
 from src.Infrastructure.PostgreSQLSetup import PostgreSQLCheckpointerSetup, PostgreSQLStoreSetup
 from src.common.State import CustomAgentState
 class RAGAgent():
-    _name:str = "Healthcare ReAct Agent"
+    _name:str = "Healthcare Sub-Agent"
     _llm = None
     _config = None
     # placeholder:
@@ -85,14 +86,14 @@ class RAGAgent():
             if self._checkpointer is None:
                 self._checkpointer = await PostgreSQLCheckpointerSetup(self._db_pool)
             self._store = await PostgreSQLStoreSetup(self._db_pool) # store is needed when creating the ReAct agent / StateGraph for InjectedStore to work
-            self._agent = create_agent(self._llm, self._tools, context_schema = Configuration, state_schema=CustomAgentState, name=self._name, system_prompt=HEALTHCARE_INSTRUCTIONS, store = self._store, checkpointer = self._checkpointer)
-            #self.ShowGraph() # This blocks
+            self._agent = create_agent(self._llm, self._tools, context_schema = Configuration, state_schema=CustomAgentState, name=self._name, system_prompt=HEALTHCARE_INSTRUCTIONS.format(timestamp=datetime.now()), store = self._store, checkpointer = self._checkpointer)
+            # self.ShowGraph() # This blocks
         except Exception as e:
             logging.exception(f"Exception! {e}")
-        return self.agent
-
+        return self._agent
+    
     def ShowGraph(self):
-        show_graph(self.agent, self._name) # This blocks
+        show_graph(self._agent, self._name) # This blocks
 
     async def ChatAgent(self, config, message: str):
         logging.info(f"\n=== {self.ChatAgent.__name__} ===")
@@ -112,7 +113,7 @@ async def make_graph(config: RunnableConfig) -> CompiledStateGraph:
 async def main():
     # httpx library is a dependency of LangGraph and is used under the hood to communicate with the AI models.
     #vertexai.init(project=os.environ.get("GOOGLE_CLOUD_PROJECT"), location=os.environ.get("GOOGLE_CLOUD_LOCATION"))
-    config = RunnableConfig(run_name="Healthcare ReAct Agent", thread_id=uuid7str(), user_id=uuid7str())
+    config = RunnableConfig(run_name="Healthcare Sub-Agent", thread_id=uuid7str(), user_id=uuid7str())
     rag = RAGAgent(config)
     await rag.CreateGraph()
     """

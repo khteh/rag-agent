@@ -30,7 +30,7 @@ async def GraphRAGFixture():
 async def RAGAgentFixture():
     logging.basicConfig(format='%(asctime)s %(levelname)-8s %(message)s', level=logging.DEBUG, datefmt='%Y-%m-%d %H:%M:%S')
     #vertexai.init(project=os.environ.get("GOOGLE_CLOUD_PROJECT"), location=os.environ.get("GOOGLE_CLOUD_LOCATION"))
-    config = RunnableConfig(run_name="RAG ReAct Agent", thread_id=uuid7str())
+    config = RunnableConfig(run_name="RAG Deep Agent", thread_id=uuid7str())
     from src.rag_agent.RAGAgent import RAGAgent
     rag = RAGAgent(config)
     await rag.CreateGraph()
@@ -40,7 +40,7 @@ async def RAGAgentFixture():
 async def HealthcareRAGFixture() -> CompiledStateGraph:
     logging.basicConfig(format='%(asctime)s %(levelname)-8s %(message)s', level=logging.DEBUG, datefmt='%Y-%m-%d %H:%M:%S')
     #vertexai.init(project=os.environ.get("GOOGLE_CLOUD_PROJECT"), location=os.environ.get("GOOGLE_CLOUD_LOCATION"))
-    config = RunnableConfig(run_name="Healthcare ReAct Agent", thread_id=uuid7str())
+    config = RunnableConfig(run_name="Healthcare Deep Agent", thread_id=uuid7str())
     from src.Healthcare.RAGAgent import RAGAgent
     rag = RAGAgent(config)
     await rag.CreateGraph()
