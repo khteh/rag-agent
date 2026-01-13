@@ -495,10 +495,10 @@ Content: Tree of Thoughts (Yao et al. 2023) extends CoT by exploring multiple re
 Task decomposition can be done (1) by LLM with simple prompting like "Steps for XYZ.\n1.", "What are the subgoals for achieving XYZ?", (2) by using task-specific instructions; e.g. "Write a story outline." for writing a novel, or (3) with human inputs.
 ```
 
-## Email RAG StateGraph with Checkpoint
+## Email RAG Deep Agent
 
-![Email RAG StateGraph with Checkpoint](images/Email RAG StateGraph.png?raw=true "Email RAG StateGraph with Checkpoint")
-![Email RAG Agent with Checkpoint](images/Email RAG Agent.png?raw=true "Email RAG Agent with Checkpoint")
+![Email RAG StateGraph with Checkpoint](images/EmailRAGStateGraph.png?raw=true "Email RAG StateGraph with Checkpoint")
+![Email RAG Agent with Checkpoint](images/EmailRAGAgent.png?raw=true "Email RAG Agent with Checkpoint")
 
 ### Run:
 
@@ -527,9 +527,9 @@ Following an inspection of your site at 456 Sunset Boulevard, we have identified
 Electrical Wiring: Exposed wiring was found in the underground parking garage, posing a safety hazard.
 Fire Safety: Insufficient fire extinguishers were available across multiple floors of the structure under construction.
 Structural Integrity: The temporary support beams in the eastern wing do not meet the load-bearing standards specified in local building codes.
-Required Corrective Actions: Replace or properly secure exposed wiring to meet electrical safety standards. 
+Required Corrective Actions: Replace or properly secure exposed wiring to meet electrical safety standards.
 Install additional fire extinguishers in compliance with fire code requirements. Reinforce or replace temporary support beams
-to ensure structural stability. Deadline for Compliance: Violations must be addressed no later than October 31, 2025. 
+to ensure structural stability. Deadline for Compliance: Violations must be addressed no later than October 31, 2025.
 Failure to comply may result in a stop-work order and additional fines.
 Contact: For questions or to schedule a re-inspection, please contact the Building and Safety Department at (555) 456-7890 or email inspections@lacity.gov.
 Timestamp: 2026-01-13 12:00:33.057986
