@@ -3,12 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field, fields
 from typing import Annotated, Optional
 from langchain_core.runnables import RunnableConfig, ensure_config
-from langchain_core.prompts import PromptTemplate
-from langgraph.graph.state import CompiledStateGraph
 from .Prompts import SYSTEM_PROMPT
 from src.Healthcare.prompts import cypher_generation_template, qa_generation_template, review_template
-from .State import EmailRAGState
-from src.Infrastructure.VectorStore import VectorStore
 @dataclass(kw_only=True)
 class Configuration:
     """The configuration for the agent."""
@@ -62,9 +58,3 @@ class Configuration:
         _fields = {f.name for f in fields(cls) if f.init}
          # Using a double asterisk before the argument will allow you to pass a variable number of keyword parameters in the function
         return cls(**{k: v for k, v in configurable.items() if k in _fields})
-
-@dataclass(kw_only=True)
-class EmailConfiguration(Configuration):
-    """The configuration for the email agent."""
-    graph: CompiledStateGraph = None
-    email_state: EmailRAGState = None

@@ -1,12 +1,10 @@
-import asyncio, logging, json
+import asyncio, logging
 from datetime import datetime
 from pathlib import Path
 from uuid_extensions import uuid7, uuid7str
-from typing import Annotated, Literal, Sequence
 from google.api_core.exceptions import ResourceExhausted
 from langchain.chat_models import init_chat_model
 from langchain_core.runnables import RunnableConfig
-from langchain_core.messages import AIMessage, SystemMessage, HumanMessage
 from langgraph.graph import StateGraph, MessagesState
 from langgraph.types import CachePolicy
 from langgraph.cache.memory import InMemoryCache
@@ -14,16 +12,11 @@ from langgraph.graph import (
     END,
     START,
 )
-from langchain.agents import create_agent
-from deepagents.middleware.subagents import SubAgentMiddleware
-from langgraph.prebuilt import ToolNode, tools_condition
 from langgraph.graph.state import CompiledStateGraph
 from langgraph.store.postgres.aio import AsyncPostgresStore
 from psycopg_pool import AsyncConnectionPool, ConnectionPool
-from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.prompts import ChatPromptTemplate, HumanMessagePromptTemplate, PromptTemplate, SystemMessagePromptTemplate
 from typing_extensions import List, TypedDict
-from langchain_core.tools import InjectedToolArg, tool
 from deepagents import create_deep_agent, CompiledSubAgent
 """
 https://langchain-ai.github.io/langgraph/tutorials/rag/langgraph_agentic_rag/
@@ -46,7 +39,6 @@ from src.Infrastructure.VectorStore import VectorStore
 from src.Infrastructure.PostgreSQLSetup import PostgreSQLCheckpointerSetup, PostgreSQLStoreSetup
 from src.Infrastructure.Backend import composite_backend
 from data.sample_emails import EMAILS
-from src.common.Configuration import EmailConfiguration
 # https://realpython.com/langgraph-python/
 
 class EmailRAG():
@@ -89,14 +81,6 @@ class EmailRAG():
             #("placeholder", "{email}"), #should be a list of base messages
         ]
     )
-    _prompt = ChatPromptTemplate.from_messages([
-                ("system", """You are a helpful Email assistant named Bob. Your job is to use the available tools
-                                to extract structured fields from an input email and determine if the email needs escalation.
-                                escalation_criteria is a description which helps determine if the email needs immediate escalation.
-                                After you have received the escalate state from tools, you should stop processing and return an answer with the structured fields extracted from the email."""),
-                ("placeholder", "{email}"), #should be a list of base messages
-                ("user", "Remember, always provide accurate answer!"),
-        ])
     # https://realpython.com/build-llm-rag-chatbot-with-langchain/#chains-and-langchain-expression-language-lcel
     _db_pool: AsyncConnectionPool = None
     _store: AsyncPostgresStore = None
@@ -137,9 +121,6 @@ class EmailRAG():
                 open = False
             )
         self._vectorStore = VectorStore(model=appconfig.EMBEDDING_MODEL, chunk_size=1000, chunk_overlap=0)
-        #self._llm = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider="ollama", base_url=appconfig.BASE_URI, configurable_fields=("user_id", "graph", "email_state"), streaming=True, temperature=0).bind_tools([email_processing_tool])
-        #self._llm = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider=appconfig.MODEL_PROVIDER, base_url=appconfig.BASE_URI, configurable_fields=("user_id", "email_state"), streaming=True, temperature=0)
-        #self._chainLLM = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider=appconfig.MODEL_PROVIDER, base_url=appconfig.BASE_URI, temperature=0)
         if appconfig.BASE_URI:
             self._llm = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider=appconfig.MODEL_PROVIDER, base_url=appconfig.BASE_URI, streaming=True, temperature=0)
             self._chainLLM = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider=appconfig.MODEL_PROVIDER, base_url=appconfig.BASE_URI, temperature=0)
@@ -201,6 +182,7 @@ class EmailRAG():
     
     async def ParseEmailSummarizer(self, state: EmailRAGState, config: RunnableConfig) -> EmailRAGState:
         """
+        Provides result summary of this subagent in the following format
         {
             'date_str': "The date of the email reformatted to match dd-mm-YYYY. This is usually found in the Date: field in the email. Ignore the timestamp and timezone part of the Date:",
             'name': "The name of the email sender. This is usually found in the From: field in the email formatted as name <email>",
@@ -225,16 +207,7 @@ class EmailRAG():
             f.write(messages)
         logging.debug(f"state: {state}")
         return state
-    #async def call_agent_model_node(self, state: EmailAgentState, config: RunnableConfig) -> dict[str, list[AIMessage]]:
-    #    """Node to call the email agent model"""
-    #    messages = state["messages"]
-    #    response = await self._llm.with_config(config).ainvoke(messages)
-    #    return {"messages": [response]}
 
-    #def route_agent_graph_edge(self, state: EmailAgentState) -> str:
-    #    """Determine whether to call more tools or exit the graph"""
-    #    last_message = state["messages"][-1]
-    #    return "EmailTools" if last_message.tool_calls else END
     async def CreateGraph(self) -> CompiledStateGraph:
         """
         Compile application and test
@@ -273,25 +246,6 @@ class EmailRAG():
                 system_prompt = EMAIL_PARSER_INSTRUCTIONS,
                 runnable = self._parser_graph
             )
-            # https://langchain-ai.github.io/langgraph/reference/prebuilt/#langgraph.prebuilt.chat_agent_executor.create_react_agent
-            #self._agent = create_agent(self._llm, [email_processing_tool], store=self._in_memory_store, config_schema=EmailConfiguration, state_schema=EmailAgentState, name=self._name, system_prompt=self._prompt) This doesn't work well as the LLM preprocess the input email instead of passing it through to email_processing_tool as is done in call_agent_model_node
-            #graph_builder = StateGraph(EmailAgentState)
-            #graph_builder.add_node("EmailAgent", self.call_agent_model_node, cache_policy = cache_policy)
-            #graph_builder.add_node("EmailTools", ToolNode([email_processing_tool]), cache_policy = cache_policy)
-            #graph_builder.add_edge(START, "EmailAgent")
-            #graph_builder.add_conditional_edges(
-                # if the EmailAgent node returns a tool message, your graph moves to the EmailTools node to call the respective tool.
-            #    "EmailAgent", self.route_agent_graph_edge, ["EmailTools", END]
-            #)
-            #graph_builder.add_edge("EmailTools", "EmailAgent")
-            #self._email_graph = graph_builder.compile(name=self._agentName, cache=InMemoryCache(), store = self._store)
-            #self._email_subagent = CompiledSubAgent(
-            #    name = "Email SubAgent",
-            #    description = """Extract structured fields from an input email and determine if the email needs escalation.
-            #                    escalation_criteria is a description which helps determine if the email needs immediate escalation.
-            #                    After you have received the escalate state from tools, you should stop processing and return an answer with the structured fields extracted from the email.""",
-            #)
-            #self._subagents = [self._email_subagent, self._parser_subagent]
             self._subagents = [self._parser_subagent]
             self._agent = create_deep_agent(
                 model = self._llm,
@@ -318,7 +272,6 @@ class EmailRAG():
             message += f"Escalation emails: {', '.join(email_state['escalation_emails'])}\n"
         message += f"Here's the email: {email_state['email']}"
         result: List[str] = []
-        #async for step in self._agent.with_config({"graph": self._parser_graph, "email_state": email_state, "thread_id": uuid7str()}).astream(
         async for step in self._agent.with_config(self._config).astream(
             {"messages": [{"role": "user", "content": message}]},
             stream_mode="values",
@@ -333,7 +286,6 @@ async def make_graph(config: RunnableConfig) -> CompiledStateGraph:
 
 async def main():
     # httpx library is a dependency of LangGraph and is used under the hood to communicate with the AI models.
-    #vertexai.init(project=os.environ.get("GOOGLE_CLOUD_PROJECT"), location=os.environ.get("GOOGLE_CLOUD_LOCATION"))
     """
     graph = checkpoint_graph.get_graph().draw_mermaid_png()
     # Save the PNG data to a file
