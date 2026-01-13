@@ -511,10 +511,9 @@ Task decomposition can be done (1) by LLM with simple prompting like "Steps for 
 $ up src.rag_agent.EmailRAG
 ```
 
-### Outputs:
+### Main Agent Outputs:
 
 - `output/email_request.md`:
-- Produced by the main agent.
 
 ```
 Escalation Criteria: There's an immediate risk of electrical, water, or fire damage
@@ -541,15 +540,7 @@ Failure to comply may result in a stop-work order and additional fines.
 Contact: For questions or to schedule a re-inspection, please contact the Building and Safety Department at (555) 456-7890 or email inspections@lacity.gov.
 ```
 
-- `output/email_extract.md`:
-- Produced by the sub-agent.
-
-```
-
-```
-
 - `output/final_report.md`:
-- Produced by the main agent.
 
 ```
 ## Key Findings
@@ -580,6 +571,26 @@ Failure to comply may result in a stop‑work order and additional fines. Given 
 
 ### Contact
 For questions or to schedule a re‑inspection, contact the Building and Safety Department at (555) 456‑7890 or email inspections@lacity.gov.
+```
+
+### Sub-agent Outputs:
+
+- `output/email_extract.md`:
+
+```
+{
+    "name": "City of Los Angeles Building and Safety Department",
+    "phone": null,
+    "email": "inspections@lacity.gov",
+    "project_id": 345678123,
+    "site_location": "456 Sunset Boulevard, Los Angeles, CA",
+    "violation_type": "Electrical Wiring, Fire Safety, Structural Integrity",
+    "required_changes": "Replace or properly secure exposed wiring to meet electrical safety standards; Install additional fire extinguishers in compliance with fire code requirements; Reinforce or replace temporary support beams to ensure structural stability",
+    "max_potential_fine": null,
+    "date_of_email": "2025-04-03",
+    "compliance_deadline": "2025-10-31"
+}
+This email warrants an escalation
 ```
 
 ## LangSmith Application trace
