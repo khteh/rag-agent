@@ -497,150 +497,75 @@ Task decomposition can be done (1) by LLM with simple prompting like "Steps for 
 
 ## Email RAG StateGraph with Checkpoint
 
-![Email RAG StateGraph with Checkpoint](./EmailRAGStateGraph.png?raw=true "Email RAG StateGraph with Checkpoint")
-![Email RAG Agent with Checkpoint](./EmailRAGAgent.png?raw=true "Email RAG Agent with Checkpoint")
+![Email RAG StateGraph with Checkpoint](images/Email RAG StateGraph.png?raw=true "Email RAG StateGraph with Checkpoint")
+![Email RAG Agent with Checkpoint](images/Email RAG Agent.png?raw=true "Email RAG Agent with Checkpoint")
+
+### Run:
 
 ```
-$ pp src.rag_agent.EmailRAG
-2025-04-02 18:22:31 INFO
-=== __init__ ===
-2025-04-02 18:22:31 INFO
-=== CreateGraph ===
-2025-04-02 18:22:31 DEBUG    Starting new HTTPS connection (1): mermaid.ink:443
-2025-04-02 18:22:32 DEBUG    https://mermaid.ink:443 "GET /img/LS0tCmNvbmZpZzoKICBmbG93Y2hhcnQ6CiAgICBjdXJ2ZTogbGluZWFyCi0tLQpncmFwaCBURDsKCV9fc3RhcnRfXyhbPHA+X19zdGFydF9fPC9wPl0pOjo6Zmlyc3QKCVBhcnNlRW1haWwoUGFyc2VFbWFpbCkKCU5lZWRzRXNjYWxhdGlvbihOZWVkc0VzY2FsYXRpb24pCglfX2VuZF9fKFs8cD5fX2VuZF9fPC9wPl0pOjo6bGFzdAoJTmVlZHNFc2NhbGF0aW9uIC0tPiBfX2VuZF9fOwoJUGFyc2VFbWFpbCAtLT4gTmVlZHNFc2NhbGF0aW9uOwoJX19zdGFydF9fIC0tPiBQYXJzZUVtYWlsOwoJY2xhc3NEZWYgZGVmYXVsdCBmaWxsOiNmMmYwZmYsbGluZS1oZWlnaHQ6MS4yCgljbGFzc0RlZiBmaXJzdCBmaWxsLW9wYWNpdHk6MAoJY2xhc3NEZWYgbGFzdCBmaWxsOiNiZmI2ZmMK?type=png&bgColor=!white HTTP/1.1" 200 9617
-2025-04-02 18:22:32 DEBUG    STREAM b'IHDR' 16 13
-2025-04-02 18:22:32 DEBUG    STREAM b'sRGB' 41 1
-2025-04-02 18:22:32 DEBUG    STREAM b'IDAT' 54 8192
-2025-04-02 18:22:35 DEBUG    Starting new HTTPS connection (1): mermaid.ink:443
-2025-04-02 18:22:35 DEBUG    https://mermaid.ink:443 "GET /img/LS0tCmNvbmZpZzoKICBmbG93Y2hhcnQ6CiAgICBjdXJ2ZTogbGluZWFyCi0tLQpncmFwaCBURDsKCV9fc3RhcnRfXyhbPHA+X19zdGFydF9fPC9wPl0pOjo6Zmlyc3QKCUVtYWlsQWdlbnQoRW1haWxBZ2VudCkKCUVtYWlsVG9vbHMoRW1haWxUb29scykKCV9fZW5kX18oWzxwPl9fZW5kX188L3A+XSk6OjpsYXN0CglFbWFpbFRvb2xzIC0tPiBFbWFpbEFnZW50OwoJX19zdGFydF9fIC0tPiBFbWFpbEFnZW50OwoJRW1haWxBZ2VudCAtLi0+IEVtYWlsVG9vbHM7CglFbWFpbEFnZW50IC0uLT4gX19lbmRfXzsKCWNsYXNzRGVmIGRlZmF1bHQgZmlsbDojZjJmMGZmLGxpbmUtaGVpZ2h0OjEuMgoJY2xhc3NEZWYgZmlyc3QgZmlsbC1vcGFjaXR5OjAKCWNsYXNzRGVmIGxhc3QgZmlsbDojYmZiNmZjCg==?type=png&bgColor=!white HTTP/1.1" 200 10010
-2025-04-02 18:22:35 DEBUG    STREAM b'IHDR' 16 13
-2025-04-02 18:22:35 DEBUG    STREAM b'sRGB' 41 1
-2025-04-02 18:22:35 DEBUG    STREAM b'IDAT' 54 8192
-2025-04-02 18:22:36 INFO
-=== Chat ===
-2025-04-02 18:22:36 DEBUG    Starting new HTTPS connection (1): api.smith.langchain.com:443
-================================ Human Message =================================
+$ up src.rag_agent.EmailRAG
+```
 
-The escalation criteria is: "There's an immediate risk of electrical, water, or fire damage". Here's the email: "
-    Date: January 10, 2025
-    From: City of Los Angeles Building and Safety Department
-    To: West Coast Development, project 345678123 - Sunset Luxury
-    Condominiums
-    Location: Los Angeles, CA
-    Following an inspection of your site at 456 Sunset Boulevard, we have
-    identified the following building code violations:
-    Electrical Wiring: Exposed wiring was found in the underground parking
-    garage, posing a safety hazard. Fire Safety: Insufficient fire
-    extinguishers were available across multiple floors of the structure
-    under construction.
-    Structural Integrity: The temporary support beams in the eastern wing
-    do not meet the load-bearing standards specified in local building
-    codes.
-    Required Corrective Actions:
-    Replace or properly secure exposed wiring to meet electrical safety
-    standards. Install additional fire extinguishers in compliance with
-    fire code requirements. Reinforce or replace temporary support beams
-    to ensure structural stability. Deadline for Compliance: Violations
-    must be addressed no later than February 5,
-    2025. Failure to comply may result in
-    a stop-work order and additional fines.
-    Contact: For questions or to schedule a re-inspection, please contact
-    the Building and Safety Department at
-    (555) 456-7890 or email inspections@lacity.gov.
-    "
-2025-04-02 18:22:36 DEBUG    connect_tcp.started host='127.0.0.1' port=11434 local_address=None timeout=None socket_options=None
-2025-04-02 18:22:36 DEBUG    connect_tcp.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x7ff93ca387d0>
-2025-04-02 18:22:36 DEBUG    send_request_headers.started request=<Request [b'POST']>
-2025-04-02 18:22:36 DEBUG    send_request_headers.complete
-2025-04-02 18:22:36 DEBUG    send_request_body.started request=<Request [b'POST']>
-2025-04-02 18:22:36 DEBUG    send_request_body.complete
-2025-04-02 18:22:36 DEBUG    receive_response_headers.started request=<Request [b'POST']>
-2025-04-02 18:22:37 DEBUG    https://api.smith.langchain.com:443 "GET /info HTTP/1.1" 200 672
-2025-04-02 18:22:37 DEBUG    https://api.smith.langchain.com:443 "POST /runs/multipart HTTP/1.1" 202 34
-2025-04-02 18:22:40 DEBUG    receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Content-Type', b'application/x-ndjson'), (b'Date', b'Wed, 02 Apr 2025 10:22:40 GMT'), (b'Transfer-Encoding', b'chunked')])
-2025-04-02 18:22:40 DEBUG    receive_response_body.started request=<Request [b'POST']>
-2025-04-02 18:22:40 DEBUG    receive_response_body.complete
-2025-04-02 18:22:40 DEBUG    response_closed.started
-2025-04-02 18:22:40 DEBUG    response_closed.complete
-================================== Ai Message ==================================
-Tool Calls:
-  email_processing_tool (edf51167-3128-4083-9513-d4d7850c6878)
- Call ID: edf51167-3128-4083-9513-d4d7850c6878
-  Args:
-    email: Following an inspection of your site at 456 Sunset Boulevard, we have identified the following building code violations: Electrical Wiring: Exposed wiring was found in the underground parking garage, posing a safety hazard. Fire Safety: Insufficient fire extinguishers were available across multiple floors of the structure under construction. Structural Integrity: The temporary support beams in the eastern wing do not meet the load-bearing standards specified in local building codes.
-    escalation_criteria: There
-2025-04-02 18:22:40 INFO
-=== email_processing_tool ===
-2025-04-02 18:22:40 DEBUG    email: Following an inspection of your site at 456 Sunset Boulevard, we have identified the following building code violations: Electrical Wiring: Exposed wiring was found in the underground parking garage, posing a safety hazard. Fire Safety: Insufficient fire extinguishers were available across multiple floors of the structure under construction. Structural Integrity: The temporary support beams in the eastern wing do not meet the load-bearing standards specified in local building codes., escalation_criteria: There, emailState:: {'escalation_dollar_criteria': 100000, 'escalation_emails': ['brog@abc.com', 'bigceo@company.com'], 'email': 'Following an inspection of your site at 456 Sunset Boulevard, we have identified the following building code violations: Electrical Wiring: Exposed wiring was found in the underground parking garage, posing a safety hazard. Fire Safety: Insufficient fire extinguishers were available across multiple floors of the structure under construction. Structural Integrity: The temporary support beams in the eastern wing do not meet the load-bearing standards specified in local building codes.', 'escalation_text_criteria': 'There'}
-2025-04-02 18:22:40 INFO
-=== ParseEmail ===
-2025-04-02 18:22:40 DEBUG    state: {'email': 'Following an inspection of your site at 456 Sunset Boulevard, we have identified the following building code violations: Electrical Wiring: Exposed wiring was found in the underground parking garage, posing a safety hazard. Fire Safety: Insufficient fire extinguishers were available across multiple floors of the structure under construction. Structural Integrity: The temporary support beams in the eastern wing do not meet the load-bearing standards specified in local building codes.', 'escalation_text_criteria': 'There', 'escalation_dollar_criteria': 100000, 'escalation_emails': ['brog@abc.com', 'bigceo@company.com']}
-2025-04-02 18:22:40 DEBUG    connect_tcp.started host='127.0.0.1' port=11434 local_address=None timeout=None socket_options=None
-2025-04-02 18:22:40 DEBUG    connect_tcp.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x7ff93cab2210>
-2025-04-02 18:22:40 DEBUG    send_request_headers.started request=<Request [b'POST']>
-2025-04-02 18:22:40 DEBUG    send_request_headers.complete
-2025-04-02 18:22:40 DEBUG    send_request_body.started request=<Request [b'POST']>
-2025-04-02 18:22:40 DEBUG    send_request_body.complete
-2025-04-02 18:22:40 DEBUG    receive_response_headers.started request=<Request [b'POST']>
-2025-04-02 18:22:40 DEBUG    receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Content-Type', b'application/x-ndjson'), (b'Date', b'Wed, 02 Apr 2025 10:22:40 GMT'), (b'Transfer-Encoding', b'chunked')])
-2025-04-02 18:22:40 DEBUG    receive_response_body.started request=<Request [b'POST']>
-2025-04-02 18:22:41 DEBUG    https://api.smith.langchain.com:443 "POST /runs/multipart HTTP/1.1" 202 34
-2025-04-02 18:22:42 DEBUG    receive_response_body.complete
-2025-04-02 18:22:42 DEBUG    response_closed.started
-2025-04-02 18:22:42 DEBUG    response_closed.complete
-2025-04-02 18:22:42 DEBUG    Extract: name=None phone=None email=None project_id=1234 site_location=None violation_type='Electrical Wiring' required_changes='Replace with approved conduit and secure all exposed wiring.' max_potential_fine=250000.0 date_of_notice=None compliance_deadline=None
-2025-04-02 18:22:42 INFO
-=== NeedsEscalation ===
-2025-04-02 18:22:42 DEBUG    state: {'email': 'Following an inspection of your site at 456 Sunset Boulevard, we have identified the following building code violations: Electrical Wiring: Exposed wiring was found in the underground parking garage, posing a safety hazard. Fire Safety: Insufficient fire extinguishers were available across multiple floors of the structure under construction. Structural Integrity: The temporary support beams in the eastern wing do not meet the load-bearing standards specified in local building codes.', 'extract': EmailModel(name=None, phone=None, email=None, project_id=1234, site_location=None, violation_type='Electrical Wiring', required_changes='Replace with approved conduit and secure all exposed wiring.', max_potential_fine=250000.0, date_of_notice=None, compliance_deadline=None), 'escalation_text_criteria': 'There', 'escalation_dollar_criteria': 100000, 'escalation_emails': ['brog@abc.com', 'bigceo@company.com']}
-2025-04-02 18:22:42 DEBUG    connect_tcp.started host='127.0.0.1' port=11434 local_address=None timeout=None socket_options=None
-2025-04-02 18:22:42 DEBUG    connect_tcp.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x7ff93c440ec0>
-2025-04-02 18:22:42 DEBUG    send_request_headers.started request=<Request [b'POST']>
-2025-04-02 18:22:42 DEBUG    send_request_headers.complete
-2025-04-02 18:22:42 DEBUG    send_request_body.started request=<Request [b'POST']>
-2025-04-02 18:22:42 DEBUG    send_request_body.complete
-2025-04-02 18:22:42 DEBUG    receive_response_headers.started request=<Request [b'POST']>
-2025-04-02 18:22:42 DEBUG    receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Content-Type', b'application/x-ndjson'), (b'Date', b'Wed, 02 Apr 2025 10:22:42 GMT'), (b'Transfer-Encoding', b'chunked')])
-2025-04-02 18:22:42 DEBUG    receive_response_body.started request=<Request [b'POST']>
-2025-04-02 18:22:42 DEBUG    receive_response_body.complete
-2025-04-02 18:22:42 DEBUG    response_closed.started
-2025-04-02 18:22:42 DEBUG    response_closed.complete
-2025-04-02 18:22:42 DEBUG    result: needs_escalation=True
-2025-04-02 18:22:42 DEBUG    result: {'email': 'Following an inspection of your site at 456 Sunset Boulevard, we have identified the following building code violations: Electrical Wiring: Exposed wiring was found in the underground parking garage, posing a safety hazard. Fire Safety: Insufficient fire extinguishers were available across multiple floors of the structure under construction. Structural Integrity: The temporary support beams in the eastern wing do not meet the load-bearing standards specified in local building codes.', 'extract': EmailModel(name=None, phone=None, email=None, project_id=1234, site_location=None, violation_type='Electrical Wiring', required_changes='Replace with approved conduit and secure all exposed wiring.', max_potential_fine=250000.0, date_of_notice=None, compliance_deadline=None), 'escalation_text_criteria': 'There', 'escalation_dollar_criteria': 100000, 'escalate': True, 'escalation_emails': ['brog@abc.com', 'bigceo@company.com']}
-strptime() argument 1 must be str, not None
-unconverted data remains: T16:30:00
-================================= Tool Message =================================
-Name: email_processing_tool
+### Outputs:
 
-name=None phone=None email=None project_id=1234 site_location=None violation_type='Electrical Wiring' required_changes='Replace with approved conduit and secure all exposed wiring.' max_potential_fine=250000.0 date_of_notice=None compliance_deadline=None
-2025-04-02 18:22:42 DEBUG    connect_tcp.started host='127.0.0.1' port=11434 local_address=None timeout=None socket_options=None
-2025-04-02 18:22:42 DEBUG    connect_tcp.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x7ff93c9e6150>
-2025-04-02 18:22:42 DEBUG    send_request_headers.started request=<Request [b'POST']>
-2025-04-02 18:22:42 DEBUG    send_request_headers.complete
-2025-04-02 18:22:42 DEBUG    send_request_body.started request=<Request [b'POST']>
-2025-04-02 18:22:42 DEBUG    send_request_body.complete
-2025-04-02 18:22:42 DEBUG    receive_response_headers.started request=<Request [b'POST']>
-2025-04-02 18:22:43 DEBUG    https://api.smith.langchain.com:443 "POST /runs/multipart HTTP/1.1" 202 34
-2025-04-02 18:22:45 DEBUG    receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Content-Type', b'application/x-ndjson'), (b'Date', b'Wed, 02 Apr 2025 10:22:45 GMT'), (b'Transfer-Encoding', b'chunked')])
-2025-04-02 18:22:45 DEBUG    receive_response_body.started request=<Request [b'POST']>
-2025-04-02 18:22:45 DEBUG    receive_response_body.complete
-2025-04-02 18:22:45 DEBUG    response_closed.started
-2025-04-02 18:22:45 DEBUG    response_closed.complete
-================================== Ai Message ==================================
+- `output/email_request.md`:
 
-The situation at the Sunset Luxury Condominiums project (Project ID: 345678123) poses an immediate risk of electrical, water, or fire damage due to building code violations identified during a recent inspection.
+```
+Escalation Criteria: There's an immediate risk of electrical, water, or fire damage
+Escalation Dollar Criteria: 100000
+Escalation Emails: brog@abc.com, bigceo@company.com
+Date: Thu, 3 Apr 2025 11:36:10 +0000
+From: City of Los Angeles Building and Safety Department <inspections@lacity.gov>
+Reply-To: Admin <admin@building-safety.la.com>
+To: West Coast Development <admin@west-coast-dev.com>
+Cc: Donald Duck <donald@duck.com>, Support <inspections@lacity.gov>
+Message-ID: <f967b2d6-1036-11f0-9701-9775a4ad682f@prod.outlook.com>
+References: <7d29dafe-1037-11f0-a588-8f6b1b834703@prod.outlook.com> <859cc44e-1037-11f0-b15c-6b9d5cb20c47@prod.outlook.com>
+Subject: Project 345678123 - Sunset Luxury Condominiums
+Location: Los Angeles, CA
+Following an inspection of your site at 456 Sunset Boulevard, we have identified the following building code violations:
+Electrical Wiring: Exposed wiring was found in the underground parking garage, posing a safety hazard.
+Fire Safety: Insufficient fire extinguishers were available across multiple floors of the structure under construction.
+Structural Integrity: The temporary support beams in the eastern wing do not meet the load-bearing standards specified in local building codes.
+Required Corrective Actions: Replace or properly secure exposed wiring to meet electrical safety standards. 
+Install additional fire extinguishers in compliance with fire code requirements. Reinforce or replace temporary support beams
+to ensure structural stability. Deadline for Compliance: Violations must be addressed no later than October 31, 2025. 
+Failure to comply may result in a stop-work order and additional fines.
+Contact: For questions or to schedule a re-inspection, please contact the Building and Safety Department at (555) 456-7890 or email inspections@lacity.gov.
+Timestamp: 2026-01-13 12:00:33.057986
+```
 
-To address these concerns, the following actions must be taken:
+- `output/final_report.md`:
 
-* Replace or properly secure exposed wiring in the underground parking garage to meet electrical safety standards.
-* Install additional fire extinguishers across multiple floors of the structure in compliance with fire code requirements.
-* Reinforce or replace temporary support beams in the eastern wing to ensure structural stability.
+```
+## Key Findings
 
-These corrective actions must be completed by February 5, 2025. Failure to comply may result in a stop-work order and additional fines.
+The email from the City of Los Angeles Building and Safety Department to West Coast Development identifies several building code violations at the Sunset Luxury Condominiums site located at 456 Sunset Boulevard, Los Angeles, CA.
 
-If you have any questions or need to schedule a re-inspection, please contact the City of Los Angeles Building and Safety Department at (555) 456-7890 or email inspections@lacity.gov.
-2025-04-02 18:22:46 DEBUG    https://api.smith.langchain.com:443 "POST /runs/multipart HTTP/1.1" 202 34
-2025-04-02 18:22:46 DEBUG    Closing Client.session
-2025-04-02 18:22:46 DEBUG    Closing Client.session
+### Violations
+[1] **Electrical Wiring**: Exposed wiring was found in the underground parking garage, posing an immediate electrical hazard.
+[2] **Fire Safety**: Insufficient fire extinguishers were available across multiple floors of the structure under construction.
+[3] **Structural Integrity**: The temporary support beams in the eastern wing do not meet the load‑bearing standards specified in local building codes.
+
+### Corrective Actions
+To rectify these violations, the following actions are required:
+[1] Replace or properly secure exposed wiring to meet electrical safety standards.
+[2] Install additional fire extinguishers in compliance with fire code requirements.
+[3] Reinforce or replace temporary support beams to ensure structural stability.
+
+### Deadline
+The deadline for compliance is **October 31, 2025**.
+
+### Fines and Penalties
+Failure to comply may result in a stop‑work order and additional fines. Given the escalation dollar criteria of $100,000 and the immediate risk of electrical, water, or fire damage, the situation warrants escalation.
+
+### Escalation
+- **Escalation Criteria**: Immediate risk of electrical, water, or fire damage.
+- **Escalation Dollar Criteria**: $100,000.
+- **Escalation Emails**: brog@abc.com, bigceo@company.com.
+
+### Contact
+For questions or to schedule a re‑inspection, contact the Building and Safety Department at (555) 456‑7890 or email inspections@lacity.gov.
 ```
 
 ## LangSmith Application trace

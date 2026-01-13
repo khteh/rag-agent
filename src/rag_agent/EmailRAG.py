@@ -48,33 +48,6 @@ from src.Infrastructure.Backend import composite_backend
 from data.sample_emails import EMAILS
 from src.common.Configuration import EmailConfiguration
 # https://realpython.com/langgraph-python/
-# XXX: I don't think this is required any more using deepagent. The deepagent should use the custom subagent which is a CompiledStateGraph to accomplish it's objective.
-@tool
-async def email_processing_tool(
-    email: str, escalation_criteria: str,
-    config: Annotated[RunnableConfig, InjectedToolArg]
-) -> EmailModel:
-    """
-    Extract structured fields from a regulatory email.
-    This should be used when the email message comes from
-    a regulatory body or auditor regarding a property or
-    construction site that the company works on.
-
-    escalation_criteria is a description of which kinds of
-    notices require immediate escalation.
-
-    After calling this tool, you don't need to call any others.
-    """
-    logging.info(f"\n=== email_processing_tool ===")
-    """Extract the user's state from the conversation and update the memory."""
-    graph = EmailConfiguration.from_runnable_config(config).graph
-    state = EmailConfiguration.from_runnable_config(config).email_state
-    state["email"] = email
-    state["escalation_text_criteria"] = escalation_criteria
-    logging.debug(f"email: {email}, escalation_criteria: {escalation_criteria}, state:: {state}")
-    results = await graph.with_config(config).ainvoke(state)
-    logging.debug(f"result: {results}")
-    return results["extract"]
 
 class EmailRAG():
     _graphName :str = "Email RAG StateGraph"
@@ -224,7 +197,10 @@ class EmailRAG():
         logging.debug(f"result: {result}")
         state["escalate"] = (result.needs_escalation or ("max_potential_fine" in state and state["extract"].max_potential_fine and state["extract"].max_potential_fine >= state["escalation_dollar_criteria"]))
         logging.debug(f"state: {state}")
-        state["messages"].append(f"This email warrant an escalation")
+        if state["escalate"]:
+            state["messages"].append(f"This email warrants an escalation")
+        else:
+            state["messages"].append(f"This email does NOT warrant an escalation")
         return state
 
     #async def call_agent_model_node(self, state: EmailAgentState, config: RunnableConfig) -> dict[str, list[AIMessage]]:
