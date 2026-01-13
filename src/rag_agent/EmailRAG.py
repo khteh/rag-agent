@@ -1,4 +1,4 @@
-import asyncio, logging
+import asyncio, logging, json
 from datetime import datetime
 from pathlib import Path
 from uuid_extensions import uuid7, uuid7str
@@ -197,12 +197,34 @@ class EmailRAG():
         logging.debug(f"result: {result}")
         state["escalate"] = (result.needs_escalation or ("max_potential_fine" in state and state["extract"].max_potential_fine and state["extract"].max_potential_fine >= state["escalation_dollar_criteria"]))
         logging.debug(f"state: {state}")
-        if state["escalate"]:
-            state["messages"].append(f"This email warrants an escalation")
-        else:
-            state["messages"].append(f"This email does NOT warrant an escalation")
         return state
-
+    
+    async def ParseEmailSummarizer(self, state: EmailRAGState, config: RunnableConfig) -> EmailRAGState:
+        """
+        {
+            'date_str': "The date of the email reformatted to match dd-mm-YYYY. This is usually found in the Date: field in the email. Ignore the timestamp and timezone part of the Date:",
+            'name': "The name of the email sender. This is usually found in the From: field in the email formatted as name <email>",
+            'phone': "The phone number of the email sender (if present in the message). This is usually found in the signature at the end of the email body.",
+            'email': "The email addreess of the email sender (if present in the message). This is usually found in the From: field in the email formatted as name <email>",
+            'project_id': "The project ID (if present in the message) - must be an integer. This is usually found in the Subject: field or email body text",
+            'site_location': "The site location of the project (if present in the message). Use the full address if possible.",
+            'violation_type': "The type of violation (if present in the message)",
+            'required_changes': "The required changes specified by the email (if present in the message)",
+            'compliance_deadline_str': "The date that the company must comply (if any) reformatted to match dd-mm-YYYY",
+            'max_potential_fine': "The maximum potential fine (if any) - must be a float."
+        }
+        """
+        logging.info(f"\n=== {self.ParseEmailSummarizer.__name__} ===")
+        messages = state["extract"].model_dump_json(indent=4)
+        if state["escalate"]:
+            messages += f"\nThis email warrants an escalation"
+        else:
+            messages += f"\nThis email does NOT warrant an escalation"
+        state["messages"].append(messages)
+        with open("output/email_extract.md", 'w+') as f:
+            f.write(messages)
+        logging.debug(f"state: {state}")
+        return state
     #async def call_agent_model_node(self, state: EmailAgentState, config: RunnableConfig) -> dict[str, list[AIMessage]]:
     #    """Node to call the email agent model"""
     #    messages = state["messages"]
@@ -213,7 +235,6 @@ class EmailRAG():
     #    """Determine whether to call more tools or exit the graph"""
     #    last_message = state["messages"][-1]
     #    return "EmailTools" if last_message.tool_calls else END
-
     async def CreateGraph(self) -> CompiledStateGraph:
         """
         Compile application and test
@@ -232,9 +253,11 @@ class EmailRAG():
             graph_builder = StateGraph(EmailRAGState, ContextSchema)
             graph_builder.add_node("ParseEmail", self.ParseEmail, cache_policy = cache_policy)
             graph_builder.add_node("NeedsEscalation", self.NeedsEscalation, cache_policy = cache_policy)
+            graph_builder.add_node("ParseEmailSummarizer", self.ParseEmailSummarizer, cache_policy = cache_policy)
             graph_builder.add_edge(START, "ParseEmail")
             graph_builder.add_edge("ParseEmail", "NeedsEscalation")
-            graph_builder.add_edge("NeedsEscalation", END)
+            graph_builder.add_edge("NeedsEscalation", "ParseEmailSummarizer")
+            graph_builder.add_edge("ParseEmailSummarizer", END)
             self._parser_graph = graph_builder.compile(name=self._graphName, cache=InMemoryCache(), store = self._store, checkpointer = self._checkpointer)
             # Use it as a custom subagent
             self._parser_subagent = CompiledSubAgent(
@@ -320,11 +343,12 @@ async def main():
     img.show()
     """
     Path("output/email_request.md").unlink(missing_ok=True)
+    Path("output/email_extract.md").unlink(missing_ok=True)
     Path("output/final_report.md").unlink(missing_ok=True)
     config = RunnableConfig(run_name="Email RAG", thread_id=uuid7str(), user_id=uuid7str())
     rag = EmailRAG(config)
     await rag.CreateGraph()
-    #rag.ShowGraph()
+    # rag.ShowGraph()
     email_state = {
         "email": EMAILS[3],
         "escalation_dollar_criteria": 100_000,

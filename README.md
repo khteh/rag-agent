@@ -507,6 +507,8 @@ Task decomposition can be done (1) by LLM with simple prompting like "Steps for 
 
 ### Run:
 
+- Takes about 8 minutes to run.
+
 ```
 $ up src.rag_agent.EmailRAG
 ```
