@@ -497,8 +497,13 @@ Task decomposition can be done (1) by LLM with simple prompting like "Steps for 
 
 ## Email RAG Deep Agent
 
-![Email RAG StateGraph with Checkpoint](images/EmailRAGStateGraph.png?raw=true "Email RAG StateGraph with Checkpoint")
+### Main Agent:
+
 ![Email RAG Agent with Checkpoint](images/EmailRAGAgent.png?raw=true "Email RAG Agent with Checkpoint")
+
+### Sub-Agent:
+
+![Email RAG StateGraph with Checkpoint](images/EmailRAGStateGraph.png?raw=true "Email RAG StateGraph with Checkpoint")
 
 ### Run:
 
