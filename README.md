@@ -514,6 +514,7 @@ $ up src.rag_agent.EmailRAG
 ### Outputs:
 
 - `output/email_request.md`:
+- Produced by the main agent.
 
 ```
 Escalation Criteria: There's an immediate risk of electrical, water, or fire damage
@@ -540,7 +541,15 @@ Failure to comply may result in a stop-work order and additional fines.
 Contact: For questions or to schedule a re-inspection, please contact the Building and Safety Department at (555) 456-7890 or email inspections@lacity.gov.
 ```
 
+- `output/email_extract.md`:
+- Produced by the sub-agent.
+
+```
+
+```
+
 - `output/final_report.md`:
+- Produced by the main agent.
 
 ```
 ## Key Findings
