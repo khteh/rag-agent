@@ -171,8 +171,8 @@ $ c3 -v https://localhost:4433/healthcare/invoke -m 300 -X POST -d '{"message": 
 
 ## ReAct Agent answers question using Google Search and Vector Database
 
-![ReAct Agent with Checkpoint](./agent_graph.png?raw=true "ReAct Agent with Checkpoint")
-![ReAct Agent UI](./rag-agent.png?raw=true "ReAct Agent UI")
+![ReAct Agent with Checkpoint](images/agent_graph.png?raw=true "ReAct Agent with Checkpoint")
+![ReAct Agent UI](images/rag-agent.png?raw=true "ReAct Agent UI")
 
 ```
 $ p -m src.rag_agent.RAGAgent
@@ -442,7 +442,7 @@ All reviews express a positive overall experience, with some mentioning specific
 
 ## StateGraph with Checkpoint
 
-![StateGraph with Checkpoint](./checkpoint_graph.png?raw=true "StateGraph with Checkpoint")
+![StateGraph with Checkpoint](images/checkpoint_graph.png?raw=true "StateGraph with Checkpoint")
 
 ```
 $ p -m src.rag_agent.CheckpointedRAG
@@ -514,6 +514,7 @@ $ up src.rag_agent.EmailRAG
 Escalation Criteria: There's an immediate risk of electrical, water, or fire damage
 Escalation Dollar Criteria: 100000
 Escalation Emails: brog@abc.com, bigceo@company.com
+
 Date: Thu, 3 Apr 2025 11:36:10 +0000
 From: City of Los Angeles Building and Safety Department <inspections@lacity.gov>
 Reply-To: Admin <admin@building-safety.la.com>
@@ -532,7 +533,6 @@ Install additional fire extinguishers in compliance with fire code requirements.
 to ensure structural stability. Deadline for Compliance: Violations must be addressed no later than October 31, 2025.
 Failure to comply may result in a stop-work order and additional fines.
 Contact: For questions or to schedule a re-inspection, please contact the Building and Safety Department at (555) 456-7890 or email inspections@lacity.gov.
-Timestamp: 2026-01-13 12:00:33.057986
 ```
 
 - `output/final_report.md`:
