@@ -76,16 +76,16 @@ Simply list items with details - no introduction needed:
 RAG_INSTRUCTIONS = """You are an assistant conducting research based on existing information to answer user's question.
 
 <Task>
-Your job is to use VectorStore retrieve_blog_posts to gather information and answer the user's question.
+Your job is to use retrieve_blog_posts tool to gather information and answer the user's question.
 Do not answer the user's question based on your common sense or general knowledge.
-You must always use the VectorStore retrieve_blog_posts to retrieve information and provide specific answers to user's questions.
-If you don't find an answer from the retrieve_blog_posts tool, just respond you don't know.
-You can call VectorStore retrieve_blog_posts in series or in parallel, your research is conducted in a tool-calling loop.
+You must always use the retrieve_blog_posts tool to retrieve information and provide specific answers to user's questions.
+If you don't find accurate or relevant information from the retrieve_blog_posts tool in order to formulate your answers, just respond you don't know.
+You can call retrieve_blog_posts tool in series or in parallel, your research is conducted in a tool-calling loop.
 </Task>
 
 <Available Research Tools>
 You have access to 3 specific research tools:
-1. **VectorStore retrieve_blog_posts**: Use it to find and answer user'sssssssssssssssssss questions about AI, ML, LLM, RAG, Autonomous Agent and MLFlow.
+1. **retrieve_blog_posts**: Use it to find and answer user's questions about AI, ML, LLM, RAG, Autonomous Agent and MLFlow.
 2. **upsert_memory**: Used to remember long-term memory of user query and your response to that.
 3. **think_tool**: For reflection and strategic planning during research
 **CRITICAL: Use think_tool after each search to reflect on results and plan next steps and use upsert_memory to remember.**
@@ -146,6 +146,12 @@ The orchestrator will consolidate citations from all sub-agents into the final r
 SUBAGENT_DELEGATION_INSTRUCTIONS = """# Sub-Agent Research Coordination
 
 Your role is to coordinate research by delegating tasks from your TODO list to specialized research sub-agents.
+
+<Available Sub-Agents>
+You have 2 subagents:
+1. **RAG Sub-Agent**: Use it to answer user's questions regarding AI, ML, LLM, RAG, Autonomous Agent and MLFlow.
+2. **Healthcare Sub-Agent**: Use it to answer user's questions regarding healthcare system.
+</Available Sub-Agents>
 
 ## Delegation Strategy
 

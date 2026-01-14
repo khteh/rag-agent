@@ -1,4 +1,4 @@
-import logging
+import logging, numpy
 from typing_extensions import Annotated
 from langchain_core.runnables import RunnableConfig, ensure_config
 from langchain_core.tools import InjectedToolArg, tool, Tool
@@ -39,7 +39,7 @@ def _get_current_wait_time_minutes(hospital: str) -> int:
         """)
 def get_current_wait_times(query: str, *, config: Annotated[RunnableConfig, InjectedToolArg]) -> str:
     """Get the current wait time at a hospital formatted as a string."""
-    logging.info(f"\n=== {get_current_wait_times.__name__} ===")
+    logging.info(f"\n=== get_current_wait_times ===")
     wait_time_in_minutes = _get_current_wait_time_minutes(query)
     if wait_time_in_minutes == -1:
         return f"Hospital '{query}' does not exist."
@@ -57,12 +57,12 @@ def get_current_wait_times(query: str, *, config: Annotated[RunnableConfig, Inje
         """)
 def get_most_available_hospital(query: str, *, config: Annotated[RunnableConfig, InjectedToolArg]) -> dict[str, float]:
     """Find the hospital with the shortest wait time."""
-    logging.info(f"\n=== {get_most_available_hospital.__name__} ===")
+    logging.info(f"\n=== get_most_available_hospital ===")
     current_hospitals = _get_current_hospitals()
     current_wait_times = [
         _get_current_wait_time_minutes(h) for h in current_hospitals
     ]
-    best_time_idx = np.argmin(current_wait_times)
+    best_time_idx = numpy.argmin(current_wait_times)
     best_hospital = current_hospitals[best_time_idx]
     best_wait_time = current_wait_times[best_time_idx]
     return {best_hospital: best_wait_time}
