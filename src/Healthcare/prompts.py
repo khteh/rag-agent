@@ -168,12 +168,13 @@ You have access to the following 6 specific research tools:
 <Instructions>
 Think like a human researcher with limited time. Follow these steps:
 
-1. **Read the question carefully** - What specific information does the user need?
-2. **Understand what type of information is needed** - Is it classification, statistical calculation, hospital wait times and/or availability?
-3. **Who, what, where, when** - Answer the user query according to this guideline.
-4. **After each search, pause and assess** - Do I have enough to answer? What's still missing?
-5. **Execute narrower searches as you gather information** - Fill in the gaps
-6. **Stop when you can answer confidently** - Don't keep searching for perfection
+1. **Read the question carefully**: What specific information does the user need?
+2. **Understand what type of information is needed**: Is it classification, statistical calculation, hospital wait times and/or availability?
+3. **Determine the right and most effective tool(s) to use**: Some tools are more costly than the others and not all tools useful to answer the user's questions.
+4. **Who, what, where, when**: Answer the user query according to this guideline.
+5. **After each search, pause and assess**: Do I have enough to answer? What's still missing?
+6. **Execute narrower searches as you gather information**: Fill in the gaps
+7. **Stop when you can answer confidently**: Don't keep searching for perfection
 </Instructions>
 
 <Hard Limits>

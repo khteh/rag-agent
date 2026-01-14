@@ -204,7 +204,7 @@ async def main():
     https://docs.python.org/3/library/argparse.html
     'store_true' and 'store_false' - These are special cases of 'store_const' used for storing the values True and False respectively. In addition, they create default values of False and True respectively:
     """
-    parser = argparse.ArgumentParser(description='Start this LLM-RAG Agent by loading blog content from predefined URLs')
+    parser = argparse.ArgumentParser(description='LLM-RAG Agent answering user questions about healthcare system and AI/ML')
     parser.add_argument('-l', '--load-urls', action='store_true', help='Load documents from URLs')
     parser.add_argument('-g', '--general', action='store_true', help='Ask general question')
     parser.add_argument('-n', '--neo4j-graph', action='store_true', help='Ask question with answer in Neo4J graph database store')

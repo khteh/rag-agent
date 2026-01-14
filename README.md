@@ -174,12 +174,29 @@ $ c3 -v https://localhost:4433/healthcare/invoke -m 300 -X POST -d '{"message": 
 ![ReAct Agent with Checkpoint](images/agent_graph.png?raw=true "ReAct Agent with Checkpoint")
 ![ReAct Agent UI](images/rag-agent.png?raw=true "ReAct Agent UI")
 
-### Main Agent Outputs:
-
-- `output/question_request.md`:
+### Run:
 
 ```
-=== 2026-01-13 15:27:10.954390 ===
+$ uv run python -m src.rag_agent.RAGAgent -h
+usage: RAGAgent.py [-h] [-l] [-g] [-n] [-v] [-b] [-w]
+
+LLM-RAG Agent answering user questions about healthcare system and AI/ML
+
+options:
+  -h, --help          show this help message and exit
+  -l, --load-urls     Load documents from URLs
+  -g, --general       Ask general question
+  -n, --neo4j-graph   Ask question with answer in Neo4J graph database store
+  -v, --neo4j-vector  Ask question with answers in Neo4J vector store
+  -b, --neo4j         Ask question with answers in both Neo4J vector and graph stores
+  -w, --wait-time     Ask hospital waiting time using answer from mock API endpoint
+```
+
+### Main Agent Outputs:
+
+- `output/user_questions.md`:
+
+```
 What is task decomposition?
 What is the standard method for Task Decomposition?
 Once you get the answer, look up common extensions of that method.
@@ -188,160 +205,39 @@ Once you get the answer, look up common extensions of that method.
 - `output/final_answer.md`:
 
 ```
-## Task Decomposition: Methods, Extensions, and Practical Guidance
+## Task Decomposition Overview
 
-Task decomposition is the systematic process of breaking a complex goal or problem into smaller, manageable components. It is foundational to project management, software engineering, algorithm design, and many other disciplines. The following report summarizes the most widely adopted decomposition methods, common extensions, and guidance on selecting the appropriate approach for a given context.
+Task decomposition is the process of breaking a complex goal or problem into smaller, more manageable sub‑tasks that can be tackled sequentially or in parallel. This technique is fundamental in both human problem‑solving and in the design of autonomous agents and large language model (LLM) pipelines.
 
-### 1. Overview of Task Decomposition
+## Standard Method: Chain of Thought (CoT)
 
-Task decomposition transforms a high‑level objective into a hierarchy of sub‑tasks that can be assigned, scheduled, and executed. It clarifies responsibilities, exposes dependencies, and enables parallel work streams. The choice of decomposition technique depends on factors such as project size, domain, constraints, and team culture.
+The most widely adopted standard for task decomposition in LLMs is the **Chain of Thought (CoT)** prompting strategy. In CoT, the model is explicitly asked to *think step by step* before producing a final answer. This encourages the generation of an intermediate reasoning chain that naturally decomposes the problem into a linear sequence of sub‑steps.
 
-### 2. Standard Decomposition Methods
+- **Prompt example**: "Think step by step to solve X."
+- **Result**: A linear list of sub‑tasks that the model can execute or reason about.
 
-| # | Method | Core Idea | Typical Use‑Case | Key Source |
-|---|--------|-----------|------------------|------------|
-| 1 | **Hierarchical (Work‑Breakdown) Decomposition** | Breaks a goal into progressively finer sub‑tasks, forming a tree. | Large‑scale engineering, construction, program management. | [1] |
-| 2 | **Functional Decomposition** | Splits a system into functions or modules, each handling a distinct responsibility. | Software architecture, system design, modular programming. | [2] |
-| 3 | **Divide‑and‑Conquer** | Recursively splits a problem into independent sub‑problems, solves them, and merges results. | Algorithms, computational geometry, parallel computing. | [3] |
-| 4 | **Agile Story/Task Decomposition** | Epic → Feature → User Story → Task; each level is more concrete and testable. | Scrum, Kanban, product backlog grooming. | [4] |
-| 5 | **Goal‑Oriented Decomposition (Goal‑Tree)** | Starts with high‑level goals, then decomposes into sub‑goals and actions. | AI planning, robotics, strategic business planning. | [5] |
-| 6 | **Decomposition with Constraints** | Adds resource, time, or risk constraints to each sub‑task during decomposition. | Resource‑constrained project scheduling, risk‑aware planning. | [6] |
-| 7 | **Iterative Refinement Decomposition** | Begins with coarse tasks, then iteratively refines them as more information becomes available. | Agile development, prototyping, research projects. | [7] |
-| 8 | **Decomposition by Domain Expertise** | Uses domain knowledge to group related tasks (e.g., safety, performance, usability). | Safety‑critical systems, UX design, regulatory compliance. | [8] |
-| 9 | **Decomposition with Cost‑Benefit Analysis** | Each sub‑task is evaluated for ROI before commitment. | Capital projects, product feature prioritization. | [9] |
-|10 | **Decomposition via Dependency Graphs** | Tasks are nodes; edges represent dependencies. Decomposition follows topological order. | Build systems, CI/CD pipelines, software release planning. | [10] |
+CoT has become the baseline for many downstream techniques because it is simple to implement and works well across a wide range of domains.
 
-### 3. Common Extensions to Decomposition
+## Common Extensions of CoT
 
-| Extension | What It Adds | Practical Rationale | Supporting Source |
-|-----------|--------------|---------------------|-------------------|
-| **Risk‑Based Decomposition** | Prioritizes tasks that mitigate high‑impact risks first. | Projects with significant uncertainty or safety concerns. | [1] |
-| **Time‑Boxed Decomposition** | Assigns fixed time windows to each sub‑task, useful in sprints. | Agile teams, time‑constrained deliverables. | [4] |
-| **Modular Decomposition** | Groups tasks into reusable modules or components. | Software reuse, component‑based engineering. | [2] |
-| **Stakeholder‑Driven Decomposition** | Aligns sub‑tasks with stakeholder priorities or value streams. | Product management, value‑stream mapping. | [4] |
+| Extension | How it Builds on CoT | Typical Use‑Case |
+|-----------|----------------------|------------------|
+| **Tree of Thoughts (ToT)** | Generates multiple possible next steps at each node, forming a tree that can be searched with BFS/DFS. | Complex reasoning where multiple reasoning paths need exploration, such as puzzle solving or creative writing. |
+| **LLM + Planner (LLM+P)** | The LLM translates the problem into a PDDL description, a classical planner generates a plan, and the LLM converts the plan back to natural language. | Long‑horizon planning tasks in robotics, logistics, or any domain with a formal planning representation. |
+| **Tool‑Augmented Decomposition** | The LLM delegates sub‑tasks that exceed its internal knowledge to external tools (calculators, APIs, databases). | Tasks that require precise arithmetic, up‑to‑date data, or specialized computations. |
+| **Human‑in‑the‑Loop** | A human reviews, refines, or reorders the decomposed steps. | Domains where domain expertise is critical or where the LLM’s confidence is low. |
 
-### 4. How to Choose a Decomposition Method
+## Practical Take‑aways
 
-1. **Scope & Scale** – For very large, multi‑disciplinary projects, a hierarchical WBS (#1) is often most effective. For smaller, iterative work, Agile story decomposition (#4) or iterative refinement (#7) may be preferable.
-2. **Nature of Work** – Algorithmic or computational problems benefit from divide‑and‑conquer (#3). System‑level design favors functional decomposition (#2).
-3. **Constraints** – Tight resource limits or high risk suggest constraint‑based (#6) or risk‑based extensions.
-4. **Team & Process Culture** – Agile teams naturally adopt epic‑story‑task decomposition (#4). Traditional project managers may lean toward WBS (#1).
+1. **CoT** remains the simplest and most widely used standard for decomposing tasks in LLMs.
+2. **ToT** adds breadth, allowing exploration of alternative reasoning paths.
+3. **LLM+P** is powerful for domains where a formal planner exists.
+4. **Tool‑augmented** approaches extend the LLM’s reach beyond its internal knowledge base.
 
-### 5. Practical Tips for Implementing Decomposition
-
-- **Start with a clear high‑level goal** and document it before any breakdown.
-- **Identify dependencies early**; a dependency graph (#10) helps visualize sequencing.
-- **Iteratively refine**: Treat decomposition as a living artifact that evolves with new insights.
-- **Incorporate constraints**: Use resource‑constraint tools or risk registers to keep decomposition realistic.
-- **Align with stakeholder value**: Prioritize tasks that deliver the most business or user value.
-
-### 6. Conclusion
-
-Task decomposition is not a one‑size‑fits‑all technique. The table above captures the core, industry‑validated methods, while the extensions illustrate how practitioners tailor decomposition to real‑world constraints such as risk, time, and stakeholder priorities. Selecting the right method—and augmenting it with appropriate extensions—ensures that complex objectives become actionable, traceable, and deliverable.
+These methods collectively provide a toolkit for turning a single, complex instruction into a sequence of actionable sub‑tasks that an LLM or an autonomous agent can execute.
 
 ### Sources
-
-[1] PMI Learning Library: Work‑Breakdown Structure – Importance and Implementation. https://www.pmi.org/learning/library/work-breakdown-structure-importance-implementation-10773
-[2] Wikipedia: Functional Decomposition. https://en.wikipedia.org/wiki/Functional_decomposition
-[3] Wikipedia: Divide‑and‑Conquer Algorithm. https://en.wikipedia.org/wiki/Divide-and-conquer_algorithm
-[4] Atlassian: Scrum Epics. https://www.atlassian.com/agile/scrum/epics
-[5] Wikipedia: Goal‑Oriented Action Planning. https://en.wikipedia.org/wiki/Goal-oriented_action_planning
-[6] ResearchGate: Constraint‑Based Task Decomposition. https://www.researchgate.net/publication/220411748_Constraint-based_task_decomposition
-[7] Scrum.org: Iterative Refinement. https://www.scrum.org/resources/iterative-refinement
-[8] ISO 63554: Decomposition by Domain Expertise. https://www.iso.org/standard/63554.html
-[9] McKinsey: Cost‑Benefit Analysis. https://www.mckinsey.com/business-functions/strategy-and-corporate-finance/our-insights/the-cost-benefit-analysis
-[10] Wikipedia: Dependency Graph. https://en.wikipedia.org/wiki/Dependency_graph
-```
-
-```
-$ p -m src.rag_agent.RAGAgent
-=== CreateGraph ===
-
-=== LoadDocuments ===
-Total characters: 43130
-
-=== _SplitDocuments ===
-Split blog post into 66 sub-documents.
-
-=== _IndexChunks ===
-66 documents added successfully!
-
-=== ChatAgent ===
-================================ Human Message =================================
-
-['What is the standard method for Task Decomposition?', 'Once you get the answer, look up common extensions of that method.']
-================================== Ai Message ==================================
-Name: RAG ReAct Agent
-Tool Calls:
-  retrieve (485afded-5e53-4c71-8783-b90f6db287b7)
- Call ID: 485afded-5e53-4c71-8783-b90f6db287b7
-  Args:
-    query: standard method for Task Decomposition
-
-=== asimilarity_search ===
-Retrying vertexai.language_models._language_models._TextEmbeddingModel.get_embeddings in 4.0 seconds as it raised ResourceExhausted: 429 Quota exceeded for aiplatform.googleapis.com/online_prediction_requests_per_base_model with base model: textembedding-gecko. Please submit a quota increase request. https://cloud.google.com/vertex-ai/docs/generative-ai/quotas-genai..
-Retrying vertexai.language_models._language_models._TextEmbeddingModel.get_embeddings in 4.0 seconds as it raised ResourceExhausted: 429 Quota exceeded for aiplatform.googleapis.com/online_prediction_requests_per_base_model with base model: textembedding-gecko. Please submit a quota increase request. https://cloud.google.com/vertex-ai/docs/generative-ai/quotas-genai..
-================================= Tool Message =================================
-Name: retrieve
-
-Source: {'source': 'https://lilianweng.github.io/posts/2023-06-23-agent/'}
-Content: Fig. 1. Overview of a LLM-powered autonomous agent system.
-Component One: Planning#
-A complicated task usually involves many steps. An agent needs to know what they are and plan ahead.
-Task Decomposition#
-Chain of thought (CoT; Wei et al. 2022) has become a standard prompting technique for enhancing model performance on complex tasks. The model is instructed to “think step by step” to utilize more test-time computation to decompose hard tasks into smaller and simpler steps. CoT transforms big tasks into multiple manageable tasks and shed lights into an interpretation of the model’s thinking process.
-
-Source: {'source': 'https://lilianweng.github.io/posts/2023-06-23-agent/'}
-Content: (3) Task execution: Expert models execute on the specific tasks and log results.
-Instruction:
-
-With the input and the inference results, the AI assistant needs to describe the process and results. The previous stages can be formed as - User Input: {{ User Input }}, Task Planning: {{ Tasks }}, Model Selection: {{ Model Assignment }}, Task Execution: {{ Predictions }}. You must first answer the user's request in a straightforward manner. Then describe the task process and show your analysis and model inference results to the user in the first person. If inference results contain a file path, must tell the user the complete file path.
-================================== Ai Message ==================================
-Name: RAG ReAct Agent
-
-Okay, I will strive to provide accurate answers. Based on the information I have, Chain of Thought (CoT) prompting is becoming a standard technique for task decomposition, where the model is instructed to "think step by step" to break down complex tasks into smaller, simpler steps.
-
-Now I will search for common extensions of the Chain of Thought method.
-Tool Calls:
-  ground_search (6e940bcb-73df-4951-a3b7-18e1cb8c373d)
- Call ID: 6e940bcb-73df-4951-a3b7-18e1cb8c373d
-  Args:
-    query: common extensions of Chain of Thought prompting
-================================= Tool Message =================================
-Name: ground_search
-
-Chain of Thought (CoT) prompting has evolved into various extensions and variations that aim to improve its performance, address specific challenges, and broaden its applicability. Here are some common extensions of Chain of Thought prompting:
-
-*   **Zero-Shot CoT:** This approach leverages the inherent knowledge within models to tackle problems without requiring prior specific examples or fine-tuning. It typically involves adding the phrase "Let's think step by step" to the prompt.
-*   **Automatic Chain of Thought (Auto-CoT):** This method automatically generates intermediate reasoning steps, further automating the prompting process. It uses techniques like clustering questions based on semantic similarity to ensure diverse reasoning patterns are covered.
-*   **Contrastive Chain-of-Thought:** This extends the standard CoT by providing examples of both positive and negative answers in the context. This helps the model learn what mistakes to avoid, potentially leading to fewer errors.
-*   **Multimodal CoT:** Traditional CoT focuses on the language modality. Multimodal CoT incorporates text and vision into a two-stage framework. The first step involves rationale generation based on multimodal information.
-*   **Program of Thoughts (PoT):** In Chain-of-Thought (CoT) Prompting, LLMs perform both reasoning and computations. The LLM generates mathematical expressions as a reasoning step and then solves it to get the final answer. However, LLMs are not the ideal candidate for solving mathematical expressions as they are not capable of solving complex mathematical expressions and are inefficient for performing iterative numerical computations. Program of Thoughts (PoT) prompting technique delegates the computation steps to an external language interpreter such as a python to get accurate response.
-*   **Tree of Thoughts (ToT):** ToT extends CoT by exploring multiple reasoning possibilities at each step. It decomposes the problem into multiple thought steps and generates multiple thoughts per step, creating a tree structure. The search process can be BFS or DFS while each state is evaluated by a classifier (via a prompt) or majority vote.
-*   **Graph of Thoughts (GoT):** This extension requires building a graph framework through LLMs. The GoT architecture includes a set of interacting modules consisting of a prompter, parser, scoring module, and controller.
-*   **Self-Consistency:** This technique improves performance by sampling multiple, diverse chains of thought for the same problem and then selecting the most consistent answer from these chains.
-*   **Active Prompting with Chain-of-Thought:** This involves actively selecting the most informative examples to include in the prompt, which can improve the model's performance and data efficiency.
-
-These extensions demonstrate the ongoing research and development in the field of chain-of-thought prompting, with the goal of enhancing the reasoning and problem-solving capabilities of large language models.
-
-================================== Ai Message ==================================
-Name: RAG ReAct Agent
-
-Okay, I will strive to provide accurate answers. Based on the information I have:
-
-The standard method for task decomposition is Chain of Thought (CoT) prompting, where the model is instructed to "think step by step" to break down complex tasks into smaller, simpler steps.
-
-Common extensions of Chain of Thought prompting include:
-
-*   **Zero-Shot CoT:** Adding "Let's think step by step" to the prompt.
-*   **Automatic Chain of Thought (Auto-CoT):** Automatically generates intermediate reasoning steps.
-*   **Contrastive Chain-of-Thought:** Providing examples of both positive and negative answers.
-*   **Multimodal CoT:** Incorporates text and vision.
-*   **Program of Thoughts (PoT):** Delegates computation steps to an external language interpreter.
-*   **Tree of Thoughts (ToT):** Explores multiple reasoning possibilities at each step, creating a tree structure.
-*   **Graph of Thoughts (GoT):** Builds a graph framework.
-*   **Self-Consistency:** Samples multiple chains of thought and selects the most consistent answer.
-*   **Active Prompting with Chain-of-Thought:** Actively selects informative examples to include in the prompt.
+[1] Task decomposition blog post – discusses CoT, ToT, LLM+P, and tool use.
 ```
 
 ## ReAct Agent answer question using Neo4J Vector and Graph DB

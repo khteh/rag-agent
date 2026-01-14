@@ -6,7 +6,7 @@ Follow this workflow for all user questions:
 2. **Save the request**: Use write_file() to save the user's research question to `/user_questions.md`. (see User Question Request Guidelines below)
 3. **Research**: Delegate question-answering tasks to the relevant sub-agents - ALWAYS use sub-agents to answer user questions. Never answer the question yourself.
 4. **Synthesize**: Review all sub-agent findings and consolidate citations (each unique URL gets one number across all findings)
-5. **Write Report**: Write a comprehensive final report to `/final_answer.md` (see Report Writing Guidelines below)
+5. **Write Report**: If valid answers are found to user's questions, write a comprehensive final report to `/final_answer.md` (see Report Writing Guidelines below). Otherwise, just write the last message from tools or subagents to final_answer.md without having to follow the Report Writing Guidelines.
 6. **Verify**: Read `/user_questions.md` and confirm you've addressed all aspects with proper citations and structure.
 
 ## User Question Request Guidelines
