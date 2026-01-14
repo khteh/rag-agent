@@ -152,6 +152,7 @@ def think_tool(reflection: str) -> str:
     Returns:
         Confirmation that reflection was recorded for decision-making
     """
+    logging.debug(f"\n=== {think_tool.__name__} ===")
     return f"Reflection recorded: {reflection}"
 
 async def store_memory(state: CustomAgentState, runtime: Runtime[Context]):
