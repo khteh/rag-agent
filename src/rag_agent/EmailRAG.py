@@ -91,7 +91,6 @@ class EmailRAG():
     _parser_graph: CompiledStateGraph = None
     _email_graph: CompiledStateGraph = None
     _parser_subagent: CompiledSubAgent = None
-    _email_subagent: CompiledSubAgent = None
     _subagents = None
     _agent: CompiledStateGraph = None
     # Class constructor

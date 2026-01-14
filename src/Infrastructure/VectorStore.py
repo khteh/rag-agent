@@ -25,8 +25,9 @@ class VectorStoreSingleton(type): # Inherit from "type" in order to gain access 
 class VectorStore(): #metaclass=VectorStoreSingleton):
     """
     Class constructor
-    https://python.langchain.com/api_reference/_modules/langchain_core/vectorstores/in_memory.html#InMemoryVectorStore
+    https://python.langchain.com/api_reference/_modules/langchain_core/vectorstores/in_memory.html
     https://cloud.google.com/vertex-ai/generative-ai/docs/embeddings/get-text-embeddings
+    https://docs.langchain.com/oss/python/integrations/vectorstores/pgvector
     """
     _model: str = None
     _embeddings: OllamaEmbeddings = None
@@ -123,7 +124,10 @@ class VectorStore(): #metaclass=VectorStoreSingleton):
     #        adminClient.create_database(name=self._database, tenant=self._tenant)
 
     async def LoadDocuments(self, urls: List[str]) -> int:
-        # Load and chunk contents of the blog
+        """
+        Load and chunk contents of the blog
+        https://docs.langchain.com/oss/python/langchain/rag
+        """
         count: int = 0
         for url in urls:
             if url not in self._docs:
@@ -169,7 +173,7 @@ class VectorStore(): #metaclass=VectorStoreSingleton):
         unique_docs = [doc for doc, id in zip(subdocs, ids) if id not in seen_ids and (seen_ids.add(id) or True)]
         ids = []
         if len(unique_docs) and len(unique_ids) and len(unique_docs) == len(unique_ids):
-            ids = await self.vector_store.aadd_documents(documents = unique_docs, ids = unique_ids)
+            ids = await self.vector_store.aadd_documents(unique_docs, ids = unique_ids)
             logging.debug(f"{len(ids)} documents added successfully!")
         return len(ids)
     

@@ -1,4 +1,4 @@
-import argparse, atexit, asyncio, logging
+import argparse, atexit, asyncio, logging, sys
 from uuid_extensions import uuid7, uuid7str
 from datetime import datetime
 from pathlib import Path
@@ -7,9 +7,6 @@ from langchain.chat_models import init_chat_model
 from langchain_core.runnables import RunnableConfig, ensure_config
 from langgraph.graph.state import CompiledStateGraph
 from langchain.agents import create_agent
-from deepagents.backends import FilesystemBackend
-from langchain_core.prompts import ChatPromptTemplate
-from langchain.messages import SystemMessage, HumanMessage
 from langgraph.store.base import BaseStore
 from langgraph.store.postgres.aio import AsyncPostgresStore
 from psycopg_pool import AsyncConnectionPool, ConnectionPool
@@ -22,7 +19,6 @@ from deepagents import create_deep_agent, CompiledSubAgent
 #https://python.langchain.com/docs/how_to/configure/
 #https://langchain-ai.github.io/langgraph/how-tos/
 from src.config import config as appconfig
-from src.rag_agent.Context import Context
 from src.rag_agent.RAGPrompts import RAG_INSTRUCTIONS, SUBAGENT_DELEGATION_INSTRUCTIONS, RAG_WORKFLOW_INSTRUCTIONS
 from src.rag_agent.Tools import upsert_memory, think_tool
 from src.Infrastructure.VectorStore import VectorStore
@@ -55,7 +51,6 @@ class RAGAgent():
     # Limits
     _max_concurrent_research_units = 3
     _max_researcher_iterations = 3
-
     # Get current date
     # Combine orchestrator instructions (RESEARCHER_INSTRUCTIONS only for sub-agents)
     _INSTRUCTIONS = (
@@ -216,8 +211,11 @@ async def main():
     parser.add_argument('-v', '--neo4j-vector', action='store_true', help='Ask question with answers in Neo4J vector store')
     parser.add_argument('-b', '--neo4j', action='store_true', help='Ask question with answers in both Neo4J vector and graph stores')
     parser.add_argument('-w', '--wait-time', action='store_true', help='Ask hospital waiting time using answer from mock API endpoint')
+    if len(sys.argv) == 1:
+        parser.print_help(sys.stderr)
+        sys.exit(1)
     args = parser.parse_args()
-    Path("output/question_request.md").unlink(missing_ok=True)
+    Path("output/user_questions.md").unlink(missing_ok=True)
     Path("output/final_answer.md").unlink(missing_ok=True)
     # httpx library is a dependency of LangGraph and is used under the hood to communicate with the AI models.
     #vertexai.init(project=os.environ.get("GOOGLE_CLOUD_PROJECT"), location=os.environ.get("GOOGLE_CLOUD_LOCATION"))
