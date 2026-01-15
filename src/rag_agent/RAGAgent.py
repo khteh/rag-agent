@@ -35,13 +35,13 @@ class RAGAgent():
     _llm = None
     _config = None
     _urls = [
-        "https://lilianweng.github.io/posts/2023-06-23-agent/",
-        "https://lilianweng.github.io/posts/2023-03-15-prompt-engineering/",
-        "https://lilianweng.github.io/posts/2023-10-25-adv-attack-llm/",
-        "https://mlflow.org/docs/latest/index.html",
-        "https://mlflow.org/docs/latest/tracking/autolog.html",
-        "https://mlflow.org/docs/latest/getting-started/tracking-server-overview/index.html",
-        "https://mlflow.org/docs/latest/python_api/mlflow.deployments.html",        
+        {"url": "https://lilianweng.github.io/posts/2023-06-23-agent/", "type": "class", "filter": ("post-content", "post-title", "post-header")},
+        {"url": "https://lilianweng.github.io/posts/2023-03-15-prompt-engineering/", "type": "class", "filter": ("post-content", "post-title", "post-header")},
+        {"url": "https://lilianweng.github.io/posts/2023-10-25-adv-attack-llm/", "type": "class", "filter": ("post-content", "post-title", "post-header")},
+        {"url": "https://mlflow.org/docs/latest/ml/", "type": "class", "filter": ("theme-doc-markdown markdown")},
+        {"url": "https://mlflow.org/docs/latest/tracking/autolog.html", "type": "class", "filter": ("theme-doc-markdown markdown")},
+        {"url": "https://mlflow.org/docs/latest/getting-started/tracking-server-overview/index.html", "type": "class", "filter": ("theme-doc-markdown markdown")},
+        {"url": "https://mlflow.org/docs/latest/python_api/mlflow.deployments.html", "type": "class", "filter": ("theme-doc-markdown markdown")}
     ]
     # https://langchain-ai.github.io/langgraph/reference/prebuilt/#langgraph.prebuilt.chat_agent_executor.create_react_agent
     #placeholder:

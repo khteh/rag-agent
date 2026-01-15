@@ -122,30 +122,33 @@ class VectorStore(): #metaclass=VectorStoreSingleton):
     #        adminClient.get_database(name=self._database, tenant=self._tenant)
     #    except Exception:
     #        adminClient.create_database(name=self._database, tenant=self._tenant)
-
-    async def LoadDocuments(self, urls: List[str]) -> int:
+    async def LoadDocuments(self, urls: List[dict]) -> int:
         """
         Load and chunk contents of the blog
         https://docs.langchain.com/oss/python/langchain/rag
         """
         count: int = 0
         for url in urls:
-            if url not in self._docs:
-                logging.info(f"\n=== {self.LoadDocuments.__name__} loading {url}... ===")
-                loader = WebBaseLoader(
-                    web_paths=(url,),
-                    bs_kwargs=dict(
-                        parse_only=bs4.SoupStrainer(
-                            class_=("post-content", "post-title", "post-header")
-                        )
-                    ),
-                )
-                docs = loader.load()
-                assert len(docs) == 1
-                logging.debug(f"Total characters: {len(docs[0].page_content)}")
-                subdocs = self._SplitDocuments(docs)
-                count += await self._IndexChunks(subdocs)
-                self._docs.add(url)
+            if url["url"] not in self._docs:
+                logging.info(f"\n=== {self.LoadDocuments.__name__} loading {url["url"]}... ===")
+                if url["type"] == "class":
+                    loader = WebBaseLoader(
+                        web_paths=(url["url"],),
+                        bs_kwargs=dict(
+                            parse_only=bs4.SoupStrainer(
+                                #class_=("post-content", "post-title", "post-header")
+                                class_ = url["filter"]
+                            )
+                        ),
+                    )
+                if loader:
+                    docs = loader.load()
+                    assert len(docs) == 1
+                    logging.debug(f"Total characters: {len(docs[0].page_content)}")
+                    if len(docs[0].page_content):
+                        subdocs = self._SplitDocuments(docs)
+                        count += await self._IndexChunks(subdocs)
+                        self._docs.add(url["url"])
         return count
 
     def _SplitDocuments(self, docs):
