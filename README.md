@@ -178,14 +178,15 @@ $ c3 -v https://localhost:4433/healthcare/invoke -m 300 -X POST -d '{"message": 
 
 ```
 $ uv run python -m src.rag_agent.RAGAgent -h
-usage: RAGAgent.py [-h] [-l] [-g] [-n] [-v] [-b] [-w]
+usage: RAGAgent.py [-h] [-l] [-a] [-m] [-n] [-v] [-b] [-w]
 
-LLM-RAG Agent answering user questions about healthcare system and AI/ML
+LLM-RAG deep agent answering user questions about healthcare system and AI/ML
 
 options:
   -h, --help          show this help message and exit
   -l, --load-urls     Load documents from URLs
-  -g, --general       Ask general question
+  -a, --ai-ml         Ask questions regarding AI/ML which should be answered based on Lilian's blog
+  -m, --mlflow        Ask questions regarding MLFlow
   -n, --neo4j-graph   Ask question with answer in Neo4J graph database store
   -v, --neo4j-vector  Ask question with answers in Neo4J vector store
   -b, --neo4j         Ask question with answers in both Neo4J vector and graph stores
