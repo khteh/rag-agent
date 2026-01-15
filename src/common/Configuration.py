@@ -32,11 +32,11 @@ class Configuration:
     review_prompt: str = field(
         default = review_template,
         metadata = {
-            "description": "the prompt to use patient reviews to answer questions about their experience at a hospital."
+            "description": "The prompt to use patient reviews to answer questions about their experience at a hospital."
         }
     )
     model: Annotated[str, {"__template_metadata__": {"kind": "llm"}}] = field(
-        default= "ollama/llama3.3", #"google_genai/gemini-2.0-flash",
+        default= "ollama/gpt-oss",
         metadata={
             "description": "The name of the language model to use for the agent's main interactions. "
             "Should be in the form: provider/model-name."

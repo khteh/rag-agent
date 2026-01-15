@@ -12,7 +12,6 @@ from langchain_classic.chains import create_retrieval_chain
 from langchain_classic.chains.combine_documents import create_stuff_documents_chain
 from src.common.Configuration import Configuration
 from src.config import config as appconfig
-from src.utils.ModelString import split_model_and_provider
 # For VertexAI, use VertexAIEmbeddings, model="text-embedding-005"; "gemini-2.0-flash" model_provider="google_genai"
 @tool(description ="""Useful when you need to answer questions
         about patient experiences, feelings, or any other qualitative
@@ -47,16 +46,24 @@ async def HealthcareReview(
         prompt=PromptTemplate(input_variables=["context"], template=configuration.review_prompt)
     )
     review_human_prompt = HumanMessagePromptTemplate(
-        prompt=PromptTemplate(input_variables=["question"], template="{question}")
+        prompt=PromptTemplate(input_variables=["input"], template="{input}")
     )
     messages = [review_system_prompt, review_human_prompt]
     review_prompt = ChatPromptTemplate(
-        input_variables=["context", "question"], messages=messages
+        input_variables=["context", "input"], messages=messages
     )
-    question_answer_chain = create_stuff_documents_chain(init_chat_model(appconfig.LLM_RAG_MODEL, model_provider="ollama", base_url=appconfig.BASE_URI, streaming=True, temperature=0), review_prompt)
+    if appconfig.BASE_URI:
+        llm = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider=appconfig.MODEL_PROVIDER, base_url=appconfig.BASE_URI, streaming=True, temperature=0)
+    else:
+        llm = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider=appconfig.MODEL_PROVIDER, streaming=True, temperature=0)
+    #create_stuff_documents_chain():
+    #    prompt: Prompt template. Must contain input variable `"context"` (override by
+    #    setting document_variable), which will be used for passing in the formatted
+    #    documents.
+    question_answer_chain = create_stuff_documents_chain(llm, review_prompt)
     reviews_vector_chain = create_retrieval_chain(neo4j_vector_index.as_retriever(k=3), question_answer_chain)
-    reviews_vector_chain.combine_documents_chain.llm_chain.prompt = review_prompt    
-    return await reviews_vector_chain.ainvoke(query)
+    logging.debug(f"query: {query}")
+    return await reviews_vector_chain.ainvoke({"input": query})
 
 @tool(description="""Useful for answering questions about patients,
         physicians, hospitals, insurance payers, patient review
@@ -80,9 +87,13 @@ async def HealthcareCypher(
         qa_generation_prompt = PromptTemplate(
             input_variables=["context", "question"], template=configuration.qa_generation_prompt
         )
+        if appconfig.BASE_URI:
+            llm = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider=appconfig.MODEL_PROVIDER, base_url=appconfig.BASE_URI, streaming=True, temperature=0)
+        else:
+            llm = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider=appconfig.MODEL_PROVIDER, streaming=True, temperature=0)
         hospital_cypher_chain = GraphCypherQAChain.from_llm( # 'GraphCypherQAChain' object does not support the context manager protocol"
-            cypher_llm = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider="ollama", base_url=appconfig.BASE_URI, streaming=True, temperature=0),
-            qa_llm = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider="ollama", base_url=appconfig.BASE_URI, streaming=True, temperature=0),
+            cypher_llm = llm,
+            qa_llm = llm,
             graph = graph,
             verbose = appconfig.LOGLEVEL == "DEBUG", # Whether intermediate steps your chain performs should be printed.
             qa_prompt = qa_generation_prompt,

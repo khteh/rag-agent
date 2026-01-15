@@ -169,7 +169,7 @@ $ c3 -v https://localhost:4433/healthcare/invoke -m 300 -X POST -d '{"message": 
 
 - `uv run python -m langgraph_cli dev`
 
-## RAG Deep Agent answers question using Vector and Graph Database
+## RAG Deep Agent answers question from Vector and Graph Database
 
 ![ReAct Agent with Checkpoint](images/agent_graph.png?raw=true "ReAct Agent with Checkpoint")
 ![ReAct Agent UI](images/rag-agent.png?raw=true "ReAct Agent UI")
@@ -192,7 +192,7 @@ options:
   -w, --wait-time     Ask hospital waiting time using answer from mock API endpoint
 ```
 
-### Main Agent Outputs:
+### Answering question from Postgres Vector Store:
 
 - `output/user_questions.md`:
 
@@ -240,9 +240,15 @@ These methods collectively provide a toolkit for turning a single, complex instr
 [1] Task decomposition blog post – discusses CoT, ToT, LLM+P, and tool use.
 ```
 
-## ReAct Agent answer question using Neo4J Vector and Graph DB
+### Answering question from Neo4J graph DB
 
-### Answering query using Neo4J graph DB
+- `output/user_questions.md`:
+
+```
+Which physician has treated the most patients covered by Cigna?
+```
+
+- `output/final_answer.md`:
 
 ```
 ================================ Human Message =================================
@@ -312,71 +318,58 @@ Name: RAG ReAct Agent
 The average visit duration for emergency visits in North Carolina is approximately 160 minutes (or around 2.67 hours).
 ```
 
-### Answering query using Neo4J graph AND vector DB
+### Answering question from Neo4J graph AND vector DB
+
+- `output/user_questions.md`:
 
 ```
-================================ Human Message =================================
-
 Query the graph database to show me the reviews written by patient 7674
-================================== Ai Message ==================================
-Name: RAG ReAct Agent
-Tool Calls:
-  HealthcareCypher (142b0de5-214a-43b1-8b57-f30703763f6f)
- Call ID: 142b0de5-214a-43b1-8b57-f30703763f6f
-  Args:
-    query: Show me the reviews written by patient 7674
+```
 
+- `output/final_answer.md`:
 
-> Entering new GraphCypherQAChain chain...
-Generated Cypher:
-cypher
-MATCH (r:Review)<-[:WRITES]-(v:Visit)<-[:HAS]-(p:Patient)
-WHERE p.id = 7674
-RETURN r.text AS review_text,
-       r.physician_name AS physician_name,
-       r.hospital_name AS hospital_name
+```
+## Reviews Written by Patient 7674
 
-Full Context:
-[{'review_text': 'The hospital provided exceptional care, but the billing process was confusing and frustrating. Clearer communication about costs would have been appreciated.', 'physician_name': 'Sandra Porter', 'hospital_name': 'Jones, Brown and Murray'}]
+The following table summarizes the review(s) authored by patient **7674** in the healthcare graph database:
 
-> Finished chain.
-================================= Tool Message =================================
-Name: HealthcareCypher
+| Review ID | Hospital | Physician | Review Text |
+|-----------|----------|-----------|-------------|
+| 644 | Jones, Brown and Murray | Sandra Porter | “The hospital provided exceptional care, but the billing process was confusing and frustrating. Clearer communication about costs would have been appreciated.” |
 
-{"query": "Show me the reviews written by patient 7674", "result": "Patient 7674 wrote a review stating that they received exceptional care from Dr. Sandra Porter at Jones, Brown and Murray hospital, but had a negative experience with the billing process, finding it confusing and frustrating, and wished for clearer communication about costs."}
-================================== Ai Message ==================================
-Name: RAG ReAct Agent
-
-The reviews written by patient 7674 are as follows: Patient 7674 wrote a review stating that they received exceptional care from Dr. Sandra Porter at Jones, Brown and Murray hospital, but had a negative experience with the billing process, finding it confusing and frustrating, and wished for clearer communication about costs.
+### Sources
+[1] HealthcareCypher query “reviews written by patient 7674”
 ```
 
 ### Answering query using Neo4J vector DB
 
+- `output/user_questions.md`:
+
 ```
-================================ Human Message =================================
-
 What have patients said about hospital efficiency? Mention details from specific reviews.
-================================== Ai Message ==================================
-Name: RAG ReAct Agent
-Tool Calls:
-  HealthcareReview (2437db21-0be3-4cb1-a5e5-f76f4ffc413b)
- Call ID: 2437db21-0be3-4cb1-a5e5-f76f4ffc413b
-  Args:
-    query: What have patients said about hospital efficiency? Mention details from specific reviews.
-================================= Tool Message =================================
-Name: HealthcareReview
+```
 
-{"query": "What have patients said about hospital efficiency? Mention details from specific reviews.", "result": "Patients haven't directly mentioned hospital efficiency in their reviews. However, some comments can be indirectly related to efficiency. For example, Gary Cook mentioned that the doctors at Jordan Inc \"seemed rushed during consultations\", which could imply that the hospital's scheduling or workflow might be inefficient, leading to doctors having limited time with patients.\n\nOn the other hand, Douglas Myers' review of Vaughn PLC and Jonathan Bryant's review of Taylor and Sons don't mention any issues related to efficiency. In fact, they both had positive experiences with the medical care and staff attentiveness, which could suggest that these hospitals are managing their workflows effectively.\n\nChristopher Day's review of Pearson LLC also doesn't mention any efficiency-related concerns, but like Gary Cook, he did comment on the outdated magazines in the waiting area, which might be a minor issue related to hospital maintenance or attention to detail.\n\nOverall, while patients haven't explicitly discussed hospital efficiency, some comments hint at potential issues with scheduling or workflow, particularly at Jordan Inc. However, more information would be needed to make a definitive assessment of hospital efficiency."}
-================================== Ai Message ==================================
-Name: RAG ReAct Agent
+- `output/final_answer.md`:
 
-Patients haven't directly mentioned hospital efficiency in their reviews. However, some comments can be indirectly related to efficiency. For example, Gary Cook mentioned that the doctors at Jordan Inc "seemed rushed during consultations", which could imply that the hospital's scheduling or workflow might be inefficient, leading to doctors having limited time with patients.
+```
+## Patient Perspectives on Hospital Efficiency
 
-On the other hand, Douglas Myers' review of Vaughn PLC and Jonathan Bryant's review of Taylor and Sons don't mention any issues related to efficiency. In fact, they both had positive experiences with the medical care and staff attentiveness, which could suggest that these hospitals are managing their workflows effectively.
+Patients consistently highlight several aspects of hospital operations that contribute to a perception of efficiency:
 
-Christopher Day's review of Pearson LLC also doesn't mention any efficiency-related concerns, but like Gary Cook, he did comment on the outdated magazines in the waiting area, which might be a minor issue related to hospital maintenance or attention to detail.
+- **Clear and thorough communication** – *"The medical staff took the time to explain procedures thoroughly."* (Justin Peterson, Burke, Griffin and Cooper)
+- **Prompt service** – *"The hospital staff was friendly and efficient. I appreciated the prompt service and the clean environment."* (Karen Fox, Schultz‑Powers)
+- **Strict hygiene protocols** – *"The hygiene protocols were strictly followed, which gave me peace of mind."* (Michael Caldwell, Wheeler, Bryant and Johns)
+- **Clean and well‑maintained facilities** – *"The medical team was efficient, and the facilities were clean and well‑maintained."* (Marisa Jennings, Wheeler, Bryant and Johns)
 
-Overall, while patients haven't explicitly discussed hospital efficiency, some comments hint at potential issues with scheduling or workflow, particularly at Jordan Inc. However, more information would be needed to make a definitive assessment of hospital efficiency.
+1. **Clear and thorough communication** – Reviewers note that staff took the time to explain procedures, which reduces confusion and streamlines care.
+2. **Prompt service** – Multiple comments praise the speed of service, indicating well‑coordinated workflows and minimal wait times.
+3. **Strict hygiene protocols** – Patients appreciate consistently applied cleanliness standards, reflecting disciplined operational procedures.
+4. **Clean and well‑maintained facilities** – A tidy environment is repeatedly mentioned, suggesting effective facility management.
+
+These observations collectively suggest that the hospitals in question maintain organized workflows, reliable communication, and high standards of cleanliness—all key indicators of efficient hospital operations.
+
+### Sources
+No external URLs were provided by the sub‑agent. The findings are based on the patient reviews supplied by the Healthcare Sub‑Agent.
 ```
 
 ```

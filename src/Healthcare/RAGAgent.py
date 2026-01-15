@@ -85,7 +85,6 @@ class RAGAgent():
                 self._store = await PostgreSQLStoreSetup(self._db_pool) # store is needed when creating the ReAct agent / StateGraph for InjectedStore to work
             if self._checkpointer is None:
                 self._checkpointer = await PostgreSQLCheckpointerSetup(self._db_pool)
-            self._store = await PostgreSQLStoreSetup(self._db_pool) # store is needed when creating the ReAct agent / StateGraph for InjectedStore to work
             self._agent = create_agent(self._llm, self._tools, context_schema = Configuration, state_schema=CustomAgentState, name=self._name, system_prompt=HEALTHCARE_INSTRUCTIONS.format(timestamp=datetime.now()), store = self._store, checkpointer = self._checkpointer)
             # self.ShowGraph() # This blocks
         except Exception as e:

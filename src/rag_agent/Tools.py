@@ -44,7 +44,7 @@ https://github.com/langchain-ai/langchain/discussions/30282
 https://ai.google.dev/gemini-api/docs/text-generation?lang=python
 @tool gives the function’s docstring to the agent’s LLM, helping it determine whether that particular tool is relevant to the task at hand.
 """
-@tool
+@tool(parse_docstring=True)
 def ground_search(
     query: str, *, config: Annotated[RunnableConfig, InjectedToolArg]
 )-> Optional[str]: #Optional[list[str]]
@@ -54,6 +54,9 @@ def ground_search(
     This function performs a search using the Google search engine, which is designed
     to provide comprehensive, accurate, and trusted results. It's particularly useful
     for answering questions about current events.
+
+    Args:
+        query: Search string
     """
     client = genai.Client(api_key=appconfig.GEMINI_API_KEY)
     model_id = "gemini-3-flash-preview"
@@ -115,16 +118,15 @@ async def upsert_memory(
         memory_id: ONLY PROVIDE IF UPDATING AN EXISTING MEMORY.
         The memory to overwrite.
     """
-    logging.debug(f"upsert_memory content: {content}, context: {context}, memory_id: {memory_id}")
+    logging.info(f"\n=== upsert_memory ===")
     mem_id = memory_id or uuid7str()
     user_id = Configuration.from_runnable_config(config).user_id
-    logging.debug(f"upsert_memory user_id: {user_id}")
+    logging.debug(f"content: {content}, context: {context}, memory_id: {memory_id} {mem_id}, user_id: {user_id}")
     await store.aput(
         ("memories", user_id),
         key=str(mem_id),
         value={"content": content, "context": context},
     )
-    logging.debug(f"upsert_memory mem_id: {mem_id}")
     return f"Stored memory {mem_id}"
 
 @tool(parse_docstring=True)
