@@ -35,6 +35,7 @@ class RAGAgent():
     _llm = None
     _config = None
     _urls = [
+        {"url": "https://lilianweng.github.io/", "type": "article"},
         {"url": "https://lilianweng.github.io/posts/2023-06-23-agent/", "type": "article", "filter": ("post-content", "post-title", "post-header")},
         {"url": "https://lilianweng.github.io/posts/2023-03-15-prompt-engineering/", "type": "article", "filter": ("post-content", "post-title", "post-header")},
         {"url": "https://lilianweng.github.io/posts/2023-10-25-adv-attack-llm/", "type": "article", "filter": ("post-content", "post-title", "post-header")},
