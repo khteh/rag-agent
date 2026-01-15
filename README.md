@@ -193,7 +193,23 @@ options:
   -w, --wait-time     Ask hospital waiting time using answer from mock API endpoint
 ```
 
-### Answering question from Postgres Vector Store:
+### Answering questions from mocked-up API call:
+
+- `output/user_questions.md`:
+
+```
+Which hospital has the shortest wait time?
+```
+
+- `output/final_answer.md`:
+
+```
+## Shortest Wait Time Hospital
+
+The hospital with the shortest current wait time is **SHEA LLC**, with a wait time of **3 minutes**.
+```
+
+### Answering questions from Postgres Vector Store:
 
 - `output/user_questions.md`:
 
