@@ -245,7 +245,8 @@ async def main():
     elif args.neo4j:
         input_message = "Query the graph database to show me the reviews written by patient 7674"
     #print(f"typeof input_message: {type(input_message)}")
-    await rag.ChatAgent(config, input_message)
+    if not args.load_urls:
+        await rag.ChatAgent(config, input_message)
 
 if __name__ == "__main__":
     asyncio.run(main())

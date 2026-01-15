@@ -240,6 +240,37 @@ These methods collectively provide a toolkit for turning a single, complex instr
 [1] Task decomposition blog post – discusses CoT, ToT, LLM+P, and tool use.
 ```
 
+### Answering query using Neo4J vector DB
+
+- `output/user_questions.md`:
+
+```
+What have patients said about hospital efficiency? Mention details from specific reviews.
+```
+
+- `output/final_answer.md`:
+
+```
+## Patient Perspectives on Hospital Efficiency
+
+Patients consistently highlight several aspects of hospital operations that contribute to a perception of efficiency:
+
+- **Clear and thorough communication** – *"The medical staff took the time to explain procedures thoroughly."* (Justin Peterson, Burke, Griffin and Cooper)
+- **Prompt service** – *"The hospital staff was friendly and efficient. I appreciated the prompt service and the clean environment."* (Karen Fox, Schultz‑Powers)
+- **Strict hygiene protocols** – *"The hygiene protocols were strictly followed, which gave me peace of mind."* (Michael Caldwell, Wheeler, Bryant and Johns)
+- **Clean and well‑maintained facilities** – *"The medical team was efficient, and the facilities were clean and well‑maintained."* (Marisa Jennings, Wheeler, Bryant and Johns)
+
+1. **Clear and thorough communication** – Reviewers note that staff took the time to explain procedures, which reduces confusion and streamlines care.
+2. **Prompt service** – Multiple comments praise the speed of service, indicating well‑coordinated workflows and minimal wait times.
+3. **Strict hygiene protocols** – Patients appreciate consistently applied cleanliness standards, reflecting disciplined operational procedures.
+4. **Clean and well‑maintained facilities** – A tidy environment is repeatedly mentioned, suggesting effective facility management.
+
+These observations collectively suggest that the hospitals in question maintain organized workflows, reliable communication, and high standards of cleanliness—all key indicators of efficient hospital operations.
+
+### Sources
+No external URLs were provided by the sub‑agent. The findings are based on the patient reviews supplied by the Healthcare Sub‑Agent.
+```
+
 ### Answering question from Neo4J graph DB
 
 - `output/user_questions.md`:
@@ -251,37 +282,12 @@ Which physician has treated the most patients covered by Cigna?
 - `output/final_answer.md`:
 
 ```
-================================ Human Message =================================
+## Final Answer
 
-Which physician has treated the most patients covered by Cigna?
-================================== Ai Message ==================================
-Name: RAG ReAct Agent
-Tool Calls:
-  HealthcareCypher (aae8614e-3a43-40ec-882f-20ee0b411c31)
- Call ID: aae8614e-3a43-40ec-882f-20ee0b411c31
-  Args:
-    query: Which physician has treated the most patients covered by Cigna?
+The physician who has treated the most patients covered by Cigna is **Kayla Lawson**, who has treated **10** Cigna patients.
 
-
-> Entering new GraphCypherQAChain chain...
-Generated Cypher:
-MATCH (p:Payer {name: 'Cigna'})<-[:COVERED_BY]-(v:Visit)-[:TREATS]-(phy:Physician)
-WITH phy, COUNT(DISTINCT v) AS patient_count
-RETURN phy.name AS physician_name, patient_count
-ORDER BY patient_count DESC
-LIMIT 1
-Full Context:
-[{'physician_name': 'Kayla Lawson', 'patient_count': 10}]
-
-> Finished chain.
-================================= Tool Message =================================
-Name: HealthcareCypher
-
-{"query": "Which physician has treated the most patients covered by Cigna?", "result": "According to our records, Kayla Lawson has treated the most patients covered by Cigna, with a total of 10 patients under her care."}
-================================== Ai Message ==================================
-Name: RAG ReAct Agent
-
-According to our records, Kayla Lawson has treated the most patients covered by Cigna, with a total of 10 patients under her care.
+### Sources
+No external sources were cited in the sub‑agent’s response.
 ```
 
 ```
@@ -339,37 +345,6 @@ The following table summarizes the review(s) authored by patient **7674** in the
 
 ### Sources
 [1] HealthcareCypher query “reviews written by patient 7674”
-```
-
-### Answering query using Neo4J vector DB
-
-- `output/user_questions.md`:
-
-```
-What have patients said about hospital efficiency? Mention details from specific reviews.
-```
-
-- `output/final_answer.md`:
-
-```
-## Patient Perspectives on Hospital Efficiency
-
-Patients consistently highlight several aspects of hospital operations that contribute to a perception of efficiency:
-
-- **Clear and thorough communication** – *"The medical staff took the time to explain procedures thoroughly."* (Justin Peterson, Burke, Griffin and Cooper)
-- **Prompt service** – *"The hospital staff was friendly and efficient. I appreciated the prompt service and the clean environment."* (Karen Fox, Schultz‑Powers)
-- **Strict hygiene protocols** – *"The hygiene protocols were strictly followed, which gave me peace of mind."* (Michael Caldwell, Wheeler, Bryant and Johns)
-- **Clean and well‑maintained facilities** – *"The medical team was efficient, and the facilities were clean and well‑maintained."* (Marisa Jennings, Wheeler, Bryant and Johns)
-
-1. **Clear and thorough communication** – Reviewers note that staff took the time to explain procedures, which reduces confusion and streamlines care.
-2. **Prompt service** – Multiple comments praise the speed of service, indicating well‑coordinated workflows and minimal wait times.
-3. **Strict hygiene protocols** – Patients appreciate consistently applied cleanliness standards, reflecting disciplined operational procedures.
-4. **Clean and well‑maintained facilities** – A tidy environment is repeatedly mentioned, suggesting effective facility management.
-
-These observations collectively suggest that the hospitals in question maintain organized workflows, reliable communication, and high standards of cleanliness—all key indicators of efficient hospital operations.
-
-### Sources
-No external URLs were provided by the sub‑agent. The findings are based on the patient reviews supplied by the Healthcare Sub‑Agent.
 ```
 
 ```
