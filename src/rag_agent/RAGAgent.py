@@ -35,13 +35,13 @@ class RAGAgent():
     _llm = None
     _config = None
     _urls = [
-        {"url": "https://lilianweng.github.io/posts/2023-06-23-agent/", "type": "class", "filter": ("post-content", "post-title", "post-header")},
-        {"url": "https://lilianweng.github.io/posts/2023-03-15-prompt-engineering/", "type": "class", "filter": ("post-content", "post-title", "post-header")},
-        {"url": "https://lilianweng.github.io/posts/2023-10-25-adv-attack-llm/", "type": "class", "filter": ("post-content", "post-title", "post-header")},
-        {"url": "https://mlflow.org/docs/latest/ml/", "type": "class", "filter": ("theme-doc-markdown markdown")},
-        {"url": "https://mlflow.org/docs/latest/tracking/autolog.html", "type": "class", "filter": ("theme-doc-markdown markdown")},
-        {"url": "https://mlflow.org/docs/latest/getting-started/tracking-server-overview/index.html", "type": "class", "filter": ("theme-doc-markdown markdown")},
-        {"url": "https://mlflow.org/docs/latest/python_api/mlflow.deployments.html", "type": "class", "filter": ("theme-doc-markdown markdown")}
+        {"url": "https://lilianweng.github.io/posts/2023-06-23-agent/", "type": "article", "filter": ("post-content", "post-title", "post-header")},
+        {"url": "https://lilianweng.github.io/posts/2023-03-15-prompt-engineering/", "type": "article", "filter": ("post-content", "post-title", "post-header")},
+        {"url": "https://lilianweng.github.io/posts/2023-10-25-adv-attack-llm/", "type": "article", "filter": ("post-content", "post-title", "post-header")},
+        {"url": "https://mlflow.org/docs/latest/ml/", "type": "article", "filter": ("theme-doc-markdown markdown")},
+        {"url": "https://mlflow.org/docs/latest/ml/tracking/autolog/", "type": "article", "filter": ("theme-doc-markdown markdown")},
+        {"url": "https://mlflow.org/docs/latest/ml/tracking/", "type": "article", "filter": ("theme-doc-markdown markdown")},
+        {"url": "https://mlflow.org/docs/latest/python_api/mlflow.deployments.html", "type": "class", "filter": ("section")}
     ]
     # https://langchain-ai.github.io/langgraph/reference/prebuilt/#langgraph.prebuilt.chat_agent_executor.create_react_agent
     #placeholder:
@@ -206,7 +206,8 @@ async def main():
     """
     parser = argparse.ArgumentParser(description='LLM-RAG deep agent answering user questions about healthcare system and AI/ML')
     parser.add_argument('-l', '--load-urls', action='store_true', help='Load documents from URLs')
-    parser.add_argument('-g', '--general', action='store_true', help='Ask general question')
+    parser.add_argument('-a', '--ai-ml', action='store_true', help="Ask questions regarding AI/ML which should be answered based on Lilian's blog")
+    parser.add_argument('-m', '--mlflow', action='store_true', help="Ask questions regarding MLFlow")
     parser.add_argument('-n', '--neo4j-graph', action='store_true', help='Ask question with answer in Neo4J graph database store')
     parser.add_argument('-v', '--neo4j-vector', action='store_true', help='Ask question with answers in Neo4J vector store')
     parser.add_argument('-b', '--neo4j', action='store_true', help='Ask question with answers in both Neo4J vector and graph stores')
@@ -234,8 +235,10 @@ async def main():
     if args.load_urls:
         await rag.LoadDocuments()
     input_message: str = ""
-    if args.general:
+    if args.ai_ml:
         input_message = ("What is task decomposition?\n" "What is the standard method for Task Decomposition?\n" "Once you get the answer, look up common extensions of that method.")
+    elif args.mlflow:
+        input_message = "What is MLFLow?"
     elif args.wait_time:
         input_message = "Which hospital has the shortest wait time?"
     elif args.neo4j_graph:

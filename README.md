@@ -240,6 +240,45 @@ These methods collectively provide a toolkit for turning a single, complex instr
 [1] Task decomposition blog post – discusses CoT, ToT, LLM+P, and tool use.
 ```
 
+- `output/user_questions.md`:
+
+```
+What is MLFLow?
+```
+
+- `output/final_answer.md`:
+
+```
+# MLflow Overview
+
+## Purpose
+MLflow is an open‑source platform designed to manage the end‑to‑end machine‑learning lifecycle. It provides tools for experiment tracking, reproducibility, model versioning, and deployment, enabling teams to collaborate efficiently and maintain traceability across projects.
+
+## Core Components
+1. **Tracking** – Log parameters, metrics, artifacts, and code versions; visualize results via UI or APIs.
+2. **Projects** – Package code in a reproducible format (Python, R, Docker) for consistent execution.
+3. **Models** – Standardize model packaging and serve models across multiple frameworks.
+4. **Model Registry** – Centralized version control, stage management (Staging, Production, Archived), and lineage tracking.
+
+## Typical Use Cases
+- **Experiment Management** – Run, compare, and reproduce experiments across teams.
+- **Model Versioning & Lineage** – Track model evolution, promote models through stages, and maintain audit trails.
+- **Deployment** – Deploy models to local servers, cloud services, or Kubernetes via MLflow’s REST API or native integrations.
+- **Evaluation & Validation** – Automate metric calculation, compare models side‑by‑side, and validate against reproducible datasets.
+
+## Key Benefits
+- **Reproducibility** – All code, data, and environment details are logged automatically.
+- **Collaboration** – Shared UI and APIs allow teams to view, compare, and comment on experiments.
+- **Automation** – Autologging for popular libraries (Scikit‑learn, XGBoost, TensorFlow, PyTorch) reduces manual logging.
+- **Scalability** – Works locally, on‑prem clusters, cloud platforms, or managed services; supports Kubernetes and native cloud deployments.
+- **Vendor‑Neutral** – Open‑source and framework‑agnostic, enabling integration with any ML stack.
+
+### Sources
+[1] MLflow: A Tool for Managing the Machine Learning Lifecycle – https://mlflow.org/docs/latest/index.html
+[2] MLflow Tracking – https://mlflow.org/docs/latest/tracking.html
+[3] MLflow Model Registry – https://mlflow.org/docs/latest/model-registry.html
+```
+
 ### Answering query using Neo4J vector DB
 
 - `output/user_questions.md`:

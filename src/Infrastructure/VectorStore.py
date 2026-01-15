@@ -141,6 +141,11 @@ class VectorStore(): #metaclass=VectorStoreSingleton):
                             )
                         ),
                     )
+                elif url["type"] == "article":
+                    loader = WebBaseLoader(
+                        web_paths=(url["url"],),
+                        bs_kwargs=dict(
+                            parse_only=bs4.SoupStrainer("article")))
                 if loader:
                     docs = loader.load()
                     assert len(docs) == 1
