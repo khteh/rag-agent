@@ -37,6 +37,7 @@ dependencies = [
     "psycopg[binary,pool]",
     "deepagents>=0.3.0",
     "google-api-core>=2.28.1",
+    "grpcio-status>=1.76.0",
 ]
 
 [dependency-groups]

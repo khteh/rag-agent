@@ -54,12 +54,6 @@ class RAGAgent():
         #    }
         #)
         #atexit.register(self.Cleanup)
-        self._db_pool = AsyncConnectionPool(
-                conninfo = appconfig.POSTGRESQL_DATABASE_URI,
-                max_size = appconfig.DB_MAX_CONNECTIONS,
-                kwargs = appconfig.connection_kwargs,
-                open = False
-            )
         self._tools = [HealthcareReview, HealthcareCypher, get_current_wait_times, get_most_available_hospital, upsert_memory, think_tool]
         #self._llm = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider="ollama", base_url=appconfig.BASE_URI, streaming=True, temperature=0).bind_tools(self._tools)
         if appconfig.BASE_URI:
@@ -73,14 +67,21 @@ class RAGAgent():
     #    logging.info(f"\n=== {self.Cleanup.__name__} ===")
     #    await self._db_pool.close()
 
-    async def CreateGraph(self) -> CompiledStateGraph:
+    async def CreateGraph(self, db_pool: AsyncConnectionPool = None) -> CompiledStateGraph:
         logging.debug(f"\n=== {self.CreateGraph.__name__} ===")
         try:
             # https://langchain-ai.github.io/langgraph/reference/prebuilt/#langgraph.prebuilt.chat_agent_executor.create_react_agent
             # https://github.com/langchain-ai/langchain/issues/30723
             # https://langchain-ai.github.io/langgraph/how-tos/cross-thread-persistence/
             # https://github.com/langchain-ai/langgraph/blob/main/libs/prebuilt/langgraph/prebuilt/chat_agent_executor.py#L241
-            await self._db_pool.open()
+            if self._db_pool is None:
+                self._db_pool = db_pool or AsyncConnectionPool(
+                        conninfo = appconfig.POSTGRESQL_DATABASE_URI,
+                        max_size = appconfig.DB_MAX_CONNECTIONS,
+                        kwargs = appconfig.connection_kwargs,
+                        open = False
+                    )
+                await self._db_pool.open()
             if self._store is None:
                 self._store = await PostgreSQLStoreSetup(self._db_pool) # store is needed when creating the ReAct agent / StateGraph for InjectedStore to work
             if self._checkpointer is None:
