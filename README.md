@@ -1,6 +1,6 @@
-# LLM-RAG ReAct agent using LangChain, LangGraph, LangSmith
+# LLM-RAG Deep Agent using LangChain, LangGraph, LangSmith
 
-Python LLM-RAG ReAct agent using LangChain, LangGraph and LangSmith built on Quart web microframework and served using Hypercorn ASGI and WSGI web server.
+Python LLM-RAG deep agent using LangChain, LangGraph and LangSmith built on Quart web microframework and served using Hypercorn ASGI and WSGI web server.
 
 ## Infrastructure components:
 
@@ -68,7 +68,7 @@ $ curl -fsSL https://ollama.com/install.sh | sh
 - Run the app with a model:
 
 ```
-$ ollama run llama3.3
+$ ollama run gpt-oss
 ```
 
 ## Google VertexAI / GenAI
