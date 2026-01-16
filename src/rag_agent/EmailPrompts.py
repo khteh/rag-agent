@@ -8,6 +8,7 @@ Follow this workflow for all email processing requests:
 3. **Extract escalation critiria**: Extract the criteria from user message and add it as 'escalation_text_criteria' of the state passed to the subagent.
 4. **Always delegate email parsing task to Email Parser SubAgent by passing the email to the subagent.**
 5. **Write Report**: Write a comprehensive final report to `/final_report.md` based on the EmailRAGState returned especially the 'extract' information of the dictionary (see Report Writing Guidelines below)
+6. **Response**: Respond to the user with the content of the final report.
 
 ## User Email Request Guidelines
 - Create the file if it does not exist

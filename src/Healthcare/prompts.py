@@ -175,7 +175,7 @@ Think like a human researcher with limited time. Follow these steps:
 4. **Who, what, where, when**: Answer the user query according to this guideline.
 5. **After each search, pause and assess**: Do I have enough to answer? What's still missing?
 6. **Execute narrower searches as you gather information**: Fill in the gaps
-7. **Stop when you can answer confidently**: Don't keep searching for perfection
+7. **Stop when you can answer confidently or you don't find an answer**: Don't keep searching for perfection
 </Instructions>
 
 <Hard Limits>
@@ -187,7 +187,7 @@ Think like a human researcher with limited time. Follow these steps:
 **Stop Immediately When**:
 - You can answer the user's question comprehensively
 - You have 3+ relevant examples/sources for the question.
-- Your last 2 searches returned similar information
+- Your last 3 searches returned similar information or do NOT find any relevant information.
 </Hard Limits>
 
 <Show Your Thinking>
