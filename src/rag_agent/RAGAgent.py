@@ -55,7 +55,7 @@ class RAGAgent():
     # Get current date
     # Combine orchestrator instructions (RESEARCHER_INSTRUCTIONS only for sub-agents)
     _INSTRUCTIONS = (
-        RAG_WORKFLOW_INSTRUCTIONS.format(timestamp=datetime.now())
+        RAG_WORKFLOW_INSTRUCTIONS
         + "\n\n"
         + "=" * 80
         + "\n\n"
@@ -187,9 +187,8 @@ class RAGAgent():
         result: List[str] = []
         # https://langchain-ai.github.io/langgraph/concepts/streaming/
         # https://langchain-ai.github.io/langgraph/how-tos/#streaming
-        # async for step in self._agent.with_config({"user_id": uuid7str()}).astream(
         async for step in self._agent.astream(
-            {"messages": [{"role": "user", "content": message}]},
+            {"messages": [{"role": "user", "content": message}], "timestamp": datetime.now()},
             stream_mode="values", # Use this to stream all values in the state after each step.
             config=config, # This is needed by Checkpointer
         ):

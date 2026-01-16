@@ -1,5 +1,4 @@
 import re, asyncio, json, jsonpickle, logging, jsonpickle, pickle
-from pprint import pprint
 from uuid_extensions import uuid7, uuid7str
 from typing import AsyncGenerator, Dict, Any, Tuple
 from quart import (
@@ -14,16 +13,13 @@ from quart import (
     render_template,
     session
 )
-from quart.formparser import FormDataParser
 from datetime import datetime, timezone
 from werkzeug.exceptions import HTTPException
-from contextlib import asynccontextmanager
 from quart.helpers import stream_with_context
 from src.common.Authentication import Authentication
 from src.models.schema import ChatMessage, UserInput, StreamInput
 from langchain_core.messages import HumanMessage, AIMessage, ToolMessage, SystemMessage, ToolCall
 from langchain_core.callbacks import AsyncCallbackHandler
-from langgraph.graph.state import CompiledStateGraph
 from langchain_core.runnables import RunnableConfig
 from urllib.parse import urlparse, parse_qs
 from typing_extensions import List, TypedDict
@@ -110,7 +106,6 @@ async def ProcessCurlInput() -> UserInput:
 async def invoke():
     """
     Invoke the agent with user input to retrieve a final response.
-
     Use thread_id to persist and continue a multi-turn conversation.
     """
     if "user_id" not in session or not session["user_id"]:
@@ -139,7 +134,7 @@ async def invoke():
     for attempt in range(3):
         try:
             async for step in current_app.agent.astream(
-                {"messages": [{"role": "user", "content": user_input['message']}]},
+                {"messages": [{"role": "user", "content": user_input['message']}], "timestamp": datetime.now()},
                 stream_mode="values", # Use this to stream all values in the state after each step.
                 config = config, # This is needed by Checkpointer
             ):
