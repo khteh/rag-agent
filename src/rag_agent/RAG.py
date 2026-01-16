@@ -93,16 +93,23 @@ async def Invoke(graph, question):
 async def Stream(graph, question):
     logging.info(f"\n=== {Stream.__name__} ===")
     logging.debug(f"Question: {question}")
-    async for step in graph.astream(
-        {"question": question}, stream_mode="updates"
+    # https://docs.langchain.com/oss/python/langchain/streaming/overview#streaming-from-sub-agents
+    async for _, stream_mode, data in graph.astream(
+        {"question": question}, 
+        stream_mode="updates",
+        subgraphs=True,
     ):
-        logging.debug(f"{step}\n\n----------------\n")
+        if stream_mode == "updates":
+            for source, update in data.items():
+                if source in ("model", "tools"):            
+                    logging.debug(f"{update["messages"][-1]}\n\n----------------\n")
 
 async def StreamTokens(graph, question):
     logging.info(f"\n=== {StreamTokens.__name__} ===")
     logging.debug(f"Question: {question}")
     async for message, metadata in graph.astream(
-        {"question": question}, stream_mode="messages"
+        {"question": question}, 
+        stream_mode="messages"
     ):
         logging.debug(message.content, end="|")
 

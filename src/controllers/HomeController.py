@@ -189,7 +189,6 @@ async def invoke():
 async def message_generator(user_input: StreamInput, config: RunnableConfig) -> AsyncGenerator[str, None]:
     """
     Generate a stream of messages from the agent.
-
     This is the workhorse method for the /stream endpoint.
     """
     # Use an asyncio queue to process both messages and tokens in
@@ -201,12 +200,17 @@ async def message_generator(user_input: StreamInput, config: RunnableConfig) -> 
     # Pass the agent's stream of messages to the queue in a separate task, so
     # we can yield the messages to the client in the main thread.
     async def run_agent_stream():
-        async for s in current_app.agent.astream(
+        # https://docs.langchain.com/oss/python/langchain/streaming/overview#streaming-from-sub-agents
+        async for _, stream_mode, data in current_app.agent.astream(
             {"messages": [{"role": "user", "content": user_input['message']}]},
             stream_mode="updates",
             config = config, # This is needed by Checkpointer
+            subgraphs=True,
         ):
-            await output_queue.put(s)
+            if stream_mode == "updates":
+                for source, update in data.items():
+                    if source in ("model", "tools"):            
+                        await output_queue.put(update["messages"][-1])
         await output_queue.put(None)
 
     stream_task = asyncio.create_task(run_agent_stream())
