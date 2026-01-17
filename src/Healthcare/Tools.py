@@ -68,7 +68,7 @@ async def HealthcareReview(
         return await reviews_vector_chain.ainvoke({"input": query})
     except Exception as e:
         logging.exception(f"HealthcareReview Exception! {str(e)}, repr: {repr(e)}")
-        return repr(e)
+        return str(e)
 
 @tool(description="""Useful for answering questions about patients,
         physicians, hospitals, insurance payers, patient review
@@ -114,4 +114,4 @@ async def HealthcareCypher(
             return syntax_error.message
         except Exception as e:
             logging.exception(f"HealthcareCypher Exception! {str(e)}, repr: {repr(e)}")
-            return repr(e)
+            return str(e)
