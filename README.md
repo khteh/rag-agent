@@ -318,24 +318,16 @@ What have patients said about hospital efficiency? Mention details from specific
 - `output/final_answer.md`:
 
 ```
-## Patient Perspectives on Hospital Efficiency
+## Key Findings on Hospital Efficiency from Patient Reviews
 
-Patients consistently highlight several aspects of hospital operations that contribute to a perception of efficiency:
+| Patient | Physician | Hospital | Review Highlighting Efficiency |
+|---------|-----------|----------|---------------------------------|
+| **Marisa Jennings** | Andre Johnson | Wheeler, Bryant and Johns | “My stay at the hospital was comfortable. **The medical team was efficient**, and the facilities were clean and well‑maintained.” |
+| **Karen Fox** | Tammy Hart | Schultz‑Powers | “The hospital staff was friendly and **efficient**. I appreciated the prompt service and the clean environment.” |
 
-- **Clear and thorough communication** – *"The medical staff took the time to explain procedures thoroughly."* (Justin Peterson, Burke, Griffin and Cooper)
-- **Prompt service** – *"The hospital staff was friendly and efficient. I appreciated the prompt service and the clean environment."* (Karen Fox, Schultz‑Powers)
-- **Strict hygiene protocols** – *"The hygiene protocols were strictly followed, which gave me peace of mind."* (Michael Caldwell, Wheeler, Bryant and Johns)
-- **Clean and well‑maintained facilities** – *"The medical team was efficient, and the facilities were clean and well‑maintained."* (Marisa Jennings, Wheeler, Bryant and Johns)
+**Summary**
 
-1. **Clear and thorough communication** – Reviewers note that staff took the time to explain procedures, which reduces confusion and streamlines care.
-2. **Prompt service** – Multiple comments praise the speed of service, indicating well‑coordinated workflows and minimal wait times.
-3. **Strict hygiene protocols** – Patients appreciate consistently applied cleanliness standards, reflecting disciplined operational procedures.
-4. **Clean and well‑maintained facilities** – A tidy environment is repeatedly mentioned, suggesting effective facility management.
-
-These observations collectively suggest that the hospitals in question maintain organized workflows, reliable communication, and high standards of cleanliness—all key indicators of efficient hospital operations.
-
-### Sources
-No external URLs were provided by the sub‑agent. The findings are based on the patient reviews supplied by the Healthcare Sub‑Agent.
+Patient feedback consistently praises the speed and smoothness of care at **Wheeler, Bryant and Johns** and **Schultz‑Powers** hospitals. Reviewers specifically note that medical teams worked efficiently, leading to comfortable stays and prompt service. These comments underscore the hospitals’ focus on operational effectiveness and patient satisfaction.
 ```
 
 ### Answering question from Neo4J graph DB
