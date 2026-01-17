@@ -110,7 +110,7 @@ async def HealthcareCypher(
             )
             return await hospital_cypher_chain.ainvoke(query)
         except CypherSyntaxError as syntax_error:
-            logging.exception(f"HealthcareCypher CypherSyntaxError: {syntax_error}, repr: {repr(e)}")
+            logging.exception(f"HealthcareCypher CypherSyntaxError: {syntax_error}, repr: {repr(syntax_error)}")
             return syntax_error.message
         except Exception as e:
             logging.exception(f"HealthcareCypher Exception! {str(e)}, repr: {repr(e)}")
