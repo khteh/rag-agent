@@ -4,6 +4,7 @@ These tools are intended as free examples to get started. For production use,
 consider implementing more robust and specialized tools tailored to your needs.
 """
 import asyncio, logging
+from datetime import datetime
 from typing import Any, Callable, List, Optional, cast
 from langgraph.runtime import Runtime
 from langchain_community.tools.tavily_search import TavilySearchResults
@@ -21,6 +22,13 @@ from src.common.Configuration import Configuration
 from src.config import config as appconfig
 from src.common.State import CustomAgentState
 from src.rag_agent.Context import Context
+
+# 1. Define a function to get the current datetime
+@tool(description="""Returns the current date and time to answer questions about the current time.""")
+def current_timestamp(query: str = "") -> str:
+    """Returns the current date and time to answer questions about the current time."""
+    return datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
+
 async def search(
     query: str, *, config: Annotated[RunnableConfig, InjectedToolArg]
 ) -> Optional[list[dict[str, Any]]]:

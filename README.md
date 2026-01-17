@@ -204,9 +204,20 @@ Which hospital has the shortest wait time?
 - `output/final_answer.md`:
 
 ```
-## Shortest Wait Time Hospital
+## Hospital with the Shortest Wait Time
 
-The hospital with the shortest current wait time is **SHEA LLC**, with a wait time of **3 minutes**.
+The most recent data indicates that **Cunningham and Sons** in Texas has the shortest wait time among hospitals surveyed. The reported average wait time for appointments or procedures at this facility is approximately **0 minutes** for immediate services, with a typical wait of about **14.5 days** for scheduled appointments.
+
+### Key Details
+- **Hospital Name:** Cunningham and Sons
+- **Location:** Texas, USA
+- **Average Wait Time:** 0 minutes for immediate services; 14.5 days for scheduled appointments
+
+### Note
+The 0‑minute figure reflects the current wait time for immediate services at the time of the query, while the 14.5‑day figure represents the typical wait time for scheduled appointments or procedures.
+
+### Sources
+- *Hospital wait time data* (placeholder source)
 ```
 
 ### Answering questions from Postgres Vector Store:

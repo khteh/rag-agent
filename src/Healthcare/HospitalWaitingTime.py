@@ -65,4 +65,5 @@ def get_most_available_hospital(query: str, *, config: Annotated[RunnableConfig,
     best_time_idx = numpy.argmin(current_wait_times)
     best_hospital = current_hospitals[best_time_idx]
     best_wait_time = current_wait_times[best_time_idx]
+    logging.debug(f"{best_hospital}: {best_wait_time}")
     return {best_hospital: best_wait_time}

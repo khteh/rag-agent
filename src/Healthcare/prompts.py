@@ -124,7 +124,7 @@ If you don't know an answer, say you don't know.
 """
 
 # self._tools = [HealthcareReview, HealthcareCypher, get_current_wait_times, get_most_available_hospital, upsert_memory]
-HEALTHCARE_INSTRUCTIONS = """You are a healthcare assistant conducting research to answer user's question. Today's date is {timestamp}.
+HEALTHCARE_INSTRUCTIONS = """You are a healthcare assistant conducting research to answer user's question.
 
 <Task>
 Your job is to use your available tools to gather information and answer the user's question.

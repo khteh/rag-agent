@@ -26,7 +26,7 @@ from src.common.State import CustomAgentState
 from src.utils.image import show_graph
 from src.Healthcare.RAGAgent import RAGAgent as HealthAgent
 from src.Healthcare.prompts import HEALTHCARE_INSTRUCTIONS
-from src.rag_agent.Tools import ground_search, upsert_memory
+from src.rag_agent.Tools import current_timestamp, ground_search, upsert_memory
 from src.common.Configuration import Configuration
 from src.Infrastructure.Backend import composite_backend
 from src.Infrastructure.PostgreSQLSetup import PostgreSQLCheckpointerSetup, PostgreSQLStoreSetup
@@ -163,7 +163,7 @@ class RAGAgent():
             self._agent = create_deep_agent(
                 model = self._llm,
                 #tools = [ground_search],
-                tools = [upsert_memory, think_tool],
+                tools = [current_timestamp, upsert_memory, think_tool],
                 backend = composite_backend,
                 checkpointer = self._checkpointer, # https://github.com/langchain-ai/langgraph/blob/main/libs/langgraph/langgraph/graph/state.py#L828
                 store = self._store,
