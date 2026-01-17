@@ -64,10 +64,10 @@ async def HealthcareReview(
         #    documents.
         question_answer_chain = create_stuff_documents_chain(llm, review_prompt)
         reviews_vector_chain = create_retrieval_chain(neo4j_vector_index.as_retriever(k=3), question_answer_chain)
-        logging.debug(f"query: {query}")
+        logging.debug(f"HealthcareReview query: {query}")
         return await reviews_vector_chain.ainvoke({"input": query})
     except Exception as e:
-        logging.exception(f"{HealthcareReview.__name__} exception! {str(e)}, repr: {repr(e)}")
+        logging.exception(f"HealthcareReview Exception! {str(e)}, repr: {repr(e)}")
         return repr(e)
 
 @tool(description="""Useful for answering questions about patients,
@@ -110,8 +110,8 @@ async def HealthcareCypher(
             )
             return await hospital_cypher_chain.ainvoke(query)
         except CypherSyntaxError as syntax_error:
-            logging.exception(f"{HealthcareCypher.__name__} CypherSyntaxError: {syntax_error}, repr: {repr(e)}")
+            logging.exception(f"HealthcareCypher CypherSyntaxError: {syntax_error}, repr: {repr(e)}")
             return syntax_error.message
         except Exception as e:
-            logging.exception(f"{HealthcareCypher.__name__} exception! {str(e)}, repr: {repr(e)}")
+            logging.exception(f"HealthcareCypher Exception! {str(e)}, repr: {repr(e)}")
             return repr(e)

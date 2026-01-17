@@ -55,7 +55,7 @@ def get_current_wait_times(query: str, *, config: Annotated[RunnableConfig, Inje
         or historical wait times. This tool returns a dictionary with the
         hospital name as the key and the wait time in minutes as the value.
         """)
-def get_most_available_hospital(query: str, *, config: Annotated[RunnableConfig, InjectedToolArg]) -> dict[str, float]:
+def get_most_available_hospital(query: str = "", *, config: Annotated[RunnableConfig, InjectedToolArg]) -> dict[str, float]:
     """Find the hospital with the shortest wait time."""
     logging.info(f"\n=== get_most_available_hospital ===")
     current_hospitals = _get_current_hospitals()
