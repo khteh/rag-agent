@@ -77,8 +77,9 @@ async def create_app() -> Quart:
         max_size = appconfig.DB_MAX_CONNECTIONS,
         kwargs = appconfig.connection_kwargs,
     )
-    from src.rag_agent.RAGAgent import make_graph
-    app.agent = await make_graph(app.db_pool)
+    from src.rag_agent.RAGAgent import RAGAgent
+    app.agent = RAGAgent(app.db_pool)
+    await app.agent.CreateGraph()
     #if app.debug:
     # https://github.com/pgjones/hypercorn/issues/294
     #    return HTTPToHTTPSRedirectMiddleware(app, "khteh.com")  # type: ignore - Defined in hypercorn.toml server_names
