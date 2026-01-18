@@ -33,7 +33,7 @@ async def create_app() -> Quart:
     """
     Create App
     """
-    logging.debug(f"\n=== {create_app.__name__} ===")
+    logging.info(f"\n=== {create_app.__name__} ===")
     #vertexai.init(project=os.environ.get("GOOGLE_CLOUD_PROJECT"), location=os.environ.get("GOOGLE_CLOUD_LOCATION"))
     app = Quart(__name__, template_folder='view/templates', static_url_path='', static_folder='view/static')
     app.config.from_file("/etc/ragagent_config.json", json.load)
@@ -51,26 +51,15 @@ async def create_app() -> Quart:
         else:
             return redirect(url_for("home.index")), 440
 
+    # https://quart.palletsprojects.com/en/stable/how_to_guides/startup_shutdown.html
     @app.before_serving
     async def before_serving() -> None:
-        logging.debug(f"\n=== {before_serving.__name__} ===")
-        app.db_pool = AsyncConnectionPool(
-            conninfo = appconfig.POSTGRESQL_DATABASE_URI,
-            max_size = appconfig.DB_MAX_CONNECTIONS,
-            kwargs = appconfig.connection_kwargs,
-        )
+        logging.info(f"\n=== {before_serving.__name__} ===")
         await app.db_pool.open()
-        # Create the AsyncPostgresSaver
-        checkpointer = await PostgreSQLCheckpointerSetup(app.db_pool)
-        # Assign the checkpointer to the assistant
-        app.agent.checkpointer = checkpointer
-        app.graph_rag.checkpointer = checkpointer
-        app.healthcare_agent.checkpointer = checkpointer
-        logging.debug(f"\n=== {before_serving.__name__} done! ===")
 
     @app.after_serving
     async def after_serving():
-        logging.debug(f"\n=== {after_serving.__name__} ===")
+        logging.info(f"\n=== {after_serving.__name__} ===")
         await app.db_pool.close()
 
     app.after_request(_add_secure_headers)
@@ -83,15 +72,13 @@ async def create_app() -> Quart:
     # https://quart-wtf.readthedocs.io/en/stable/how_to_guides/configuration.html
     CSRFProtect(app)
     bcrypt.init_app(app)
+    app.db_pool = AsyncConnectionPool(
+        conninfo = appconfig.POSTGRESQL_DATABASE_URI,
+        max_size = appconfig.DB_MAX_CONNECTIONS,
+        kwargs = appconfig.connection_kwargs,
+    )
     from src.rag_agent.RAGAgent import make_graph
-    from src.rag_agent.GraphRAG import make_graph as graph_rag_make_graph
-    from src.Healthcare.RAGAgent import make_graph as healthcare_make_graph
-    config = RunnableConfig(run_name="RAG Deep Agent", thread_id=uuid7str())
-    grapg_rag_config = RunnableConfig(run_name="RAG Deep Agent", thread_id=uuid7str())
-    healthcare_config = RunnableConfig(run_name="Healthcare Sub-Agent", thread_id=uuid7str())
-    app.agent = await make_graph(config)
-    app.graph_rag = await graph_rag_make_graph(grapg_rag_config)
-    app.healthcare_agent = await healthcare_make_graph(healthcare_config)
+    app.agent = await make_graph(app.db_pool)
     #if app.debug:
     # https://github.com/pgjones/hypercorn/issues/294
     #    return HTTPToHTTPSRedirectMiddleware(app, "khteh.com")  # type: ignore - Defined in hypercorn.toml server_names
@@ -100,6 +87,5 @@ async def create_app() -> Quart:
     return app
 
 app = asyncio.run(create_app())
-
 logging.info(f"Running app...")
 #asyncio.run(serve(app, config), debug=True)

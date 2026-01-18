@@ -112,11 +112,9 @@ async def invoke():
         session["user_id"] = uuid7str()
     if "thread_id" not in session or not session["thread_id"]:
         session["thread_id"] = uuid7str()
-    logging.info(f"/invoke session {session['thread_id']} {session['user_id']}")
+    logging.info(f"/invoke session: {session['thread_id']}, user_id: {session['user_id']}")
     user_input: UserInput = await ProcessCurlInput()
-    """
-    If it is not curl, then the request must have come from the browser with form data. The following processes it.
-    """
+    # If it is not curl, then the request must have come from the browser with form data. The following processes it.
     if not user_input or "message" not in user_input:
         form = await request.form
         #logging.debug(f"form: {form}")

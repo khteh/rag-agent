@@ -33,7 +33,6 @@ from src.Infrastructure.PostgreSQLSetup import PostgreSQLCheckpointerSetup, Post
 class RAGAgent():
     _name:str = "RAG Deep Agent"
     _llm = None
-    _config = None
     _urls = [
         {"url": "https://lilianweng.github.io/", "type": "article"},
         {"url": "https://lilianweng.github.io/posts/2023-06-23-agent/", "type": "article", "filter": ("post-content", "post-title", "post-header")},
@@ -77,13 +76,12 @@ class RAGAgent():
     _rag_subagent: CompiledSubAgent = None
     _agent = None
     # Class constructor
-    def __init__(self, config: RunnableConfig={}):
+    def __init__(self, db_pool:AsyncConnectionPool = None):
         """
         Class RAGAgent Constructor
         """
         #atexit.register(self.Cleanup)
         #vertexai.init(project=os.environ.get("GOOGLE_CLOUD_PROJECT"), location=os.environ.get("GOOGLE_CLOUD_LOCATION"))
-        self._config = config
         # .bind_tools() gives the agent LLM descriptions of each tool from their docstring and input arguments. 
         # If the agent LLM determines that its input requires a tool call, it’ll return a JSON tool message with the name of the tool it wants to use, along with the input arguments.
         # For VertexAI, use VertexAIEmbeddings, model="text-embedding-005"; "gemini-2.0-flash" model_provider="google_genai"
@@ -94,13 +92,13 @@ class RAGAgent():
         #        #"dims": 1536,
         #    }
         #)
-        self._healthcare_rag = HealthAgent(config)
-        self._db_pool = AsyncConnectionPool(
-                conninfo = appconfig.POSTGRESQL_DATABASE_URI,
-                max_size = appconfig.DB_MAX_CONNECTIONS,
-                kwargs = appconfig.connection_kwargs,
-                open = False
-            )
+        self._healthcare_rag = HealthAgent()
+        self._db_pool = db_pool or AsyncConnectionPool(
+                        conninfo = appconfig.POSTGRESQL_DATABASE_URI,
+                        max_size = appconfig.DB_MAX_CONNECTIONS,
+                        kwargs = appconfig.connection_kwargs,
+                        open = False
+                    )        
         self._vectorStore = VectorStore(model=appconfig.EMBEDDING_MODEL, chunk_size=1000, chunk_overlap=0)
         # GoogleSearch ground_search works well but it will sometimes take precedence and overwrite the ingested data into Chhroma and Neo4J. So, exclude it for now until it is really needed.
         # Use it as a custom subagent
@@ -129,11 +127,11 @@ class RAGAgent():
         return [{"role": "system", "content": system_msg}] + state["messages"]
 
     async def LoadDocuments(self):
-        logging.debug(f"\n=== {self.LoadDocuments.__name__} ===")
+        logging.info(f"\n=== {self.LoadDocuments.__name__} ===")
         await self._vectorStore.LoadDocuments(self._urls)
 
     async def CreateGraph(self) -> CompiledStateGraph:
-        logging.debug(f"\n=== {self.CreateGraph.__name__} ===")
+        logging.info(f"\n=== {self.CreateGraph.__name__} ===")
         try:
             # https://langchain-ai.github.io/langgraph/reference/prebuilt/#langgraph.prebuilt.chat_agent_executor.create_react_agent
             # https://github.com/langchain-ai/langchain/issues/30723
@@ -149,14 +147,14 @@ class RAGAgent():
             self._rag_subagent = CompiledSubAgent(
                 name="RAG Sub-Agent",
                 description="Specialized agent which answers users' questions based on the information in the vector store",
-                system_prompt = RAG_INSTRUCTIONS,
+                system_prompt = RAG_INSTRUCTIONS, # developer provided instructions
                 runnable=self._ragagent
             )            
             self._healthcare_agent = await self._healthcare_rag.CreateGraph()
             self._healthcare_subagent = CompiledSubAgent(
                 name="Healthcare Sub-Agent",
                 description= "Specialized healthcare AI assistant",
-                system_prompt = HEALTHCARE_INSTRUCTIONS,
+                system_prompt = HEALTHCARE_INSTRUCTIONS, # developer provided instructions
                 runnable= self._healthcare_agent
             )
             self._subagents = [self._healthcare_subagent, self._rag_subagent]
@@ -167,7 +165,7 @@ class RAGAgent():
                 backend = composite_backend,
                 checkpointer = self._checkpointer, # https://github.com/langchain-ai/langgraph/blob/main/libs/langgraph/langgraph/graph/state.py#L828
                 store = self._store,
-                system_prompt = self._INSTRUCTIONS,
+                system_prompt = self._INSTRUCTIONS, # developer provided instructions
                 subagents = self._subagents
             )
             # self.ShowGraph() # This blocks
@@ -178,6 +176,55 @@ class RAGAgent():
     def ShowGraph(self):
         show_graph(self._agent, self._name) # This blocks
 
+    async def ShowThreads(self):
+        # https://docs.langchain.com/oss/python/langgraph/add-memory
+        # AsyncPostgresSaver uses a connection pool
+        if self._checkpointer is None:
+            self._checkpointer = await PostgreSQLCheckpointerSetup(self._db_pool)
+        thread_ids = await self._GetAllThreadIds()
+        for id in thread_ids:
+            #config = RunnableConfig(run_name="RAG Deep Agent", thread_id=id)
+            config = {
+                "configurable": {
+                    "thread_id": id
+                }
+            }            
+            #messages = list(self._checkpointer.list(config))
+            # Use 'async for' to iterate over the asynchronous iterator
+            async for checkpoint_tuple in self._checkpointer.alist(config): #, limit=10):
+                # Accessing the checkpoint data and metadata
+                #timestamp = checkpoint_tuple.ts
+                # Checkpoint structure is complex, often needs specific parsing
+                # Example of accessing a messages channel (structure may vary)
+                messages = checkpoint_tuple.checkpoint.get("channel_values", {}).get("messages", [])
+                print(f"{id}: {len(messages)} messages")
+                logging.debug(f"{id}: {len(messages)} messages")
+        await self._db_pool.close() # Close pool when done (optional, depending on app lifecycle)
+        return thread_ids
+    
+    async def DeleteAllCheckpointsForThread(self, id:int):
+        logging.info(f"\n=== {self.DeleteAllCheckpointsForThread.__name__} ===")
+        if self._checkpointer is None:
+            self._checkpointer = await PostgreSQLCheckpointerSetup(self._db_pool)
+        await self._checkpointer.adelete_thread(id)
+
+    async def DeleteAllThreads(self):
+        logging.info(f"\n=== {self.DeleteAllThreads.__name__} ===")
+        if self._checkpointer is None:
+            self._checkpointer = await PostgreSQLCheckpointerSetup(self._db_pool)
+        thread_ids = await self._GetAllThreadIds()
+        for id in thread_ids:
+            await self.DeleteAllCheckpointsForThread(id)
+
+    async def _GetAllThreadIds(self):
+        logging.info(f"\n=== {self._GetAllThreadIds.__name__} ===")
+        async with self._db_pool.connection() as conn:
+            async with conn.cursor() as cur:
+                await cur.execute("SELECT DISTINCT thread_id FROM checkpoints")
+                thread_ids = [row[0] for row in await cur.fetchall()]
+        logging.debug(f"{len(thread_ids)} threads")
+        return thread_ids
+    
     async def ChatAgent(self, config: RunnableConfig, message: str):
         """
         message is a single string. It can contain multiple questions:
@@ -194,10 +241,11 @@ class RAGAgent():
         ):
             result.append(step["messages"][-1])
             step["messages"][-1].pretty_print()
+        await self._db_pool.close()
         return result[-1]
 
-async def make_graph(config: RunnableConfig) -> CompiledStateGraph:
-    return await RAGAgent(config).CreateGraph()
+async def make_graph(db_pool:AsyncConnectionPool = None) -> CompiledStateGraph:
+    return await RAGAgent(db_pool).CreateGraph()
 
 async def main():
     """
@@ -206,6 +254,8 @@ async def main():
     """
     parser = argparse.ArgumentParser(description='LLM-RAG deep agent answering user questions about healthcare system and AI/ML')
     parser.add_argument('-l', '--load-urls', action='store_true', help='Load documents from URLs')
+    parser.add_argument('-t', '--show-threads', action='store_true', help='Show history of all threads')
+    parser.add_argument('-d', '--delete-threads', action='store_true', help='Delete history of all threads')
     parser.add_argument('-a', '--ai-ml', action='store_true', help="Ask questions regarding AI/ML which should be answered based on Lilian's blog")
     parser.add_argument('-m', '--mlflow', action='store_true', help="Ask questions regarding MLFlow")
     parser.add_argument('-n', '--neo4j-graph', action='store_true', help='Ask question with answer in Neo4J graph database store')
@@ -220,8 +270,7 @@ async def main():
     Path("output/final_answer.md").unlink(missing_ok=True)
     # httpx library is a dependency of LangGraph and is used under the hood to communicate with the AI models.
     #vertexai.init(project=os.environ.get("GOOGLE_CLOUD_PROJECT"), location=os.environ.get("GOOGLE_CLOUD_LOCATION"))
-    config = RunnableConfig(run_name="RAG Deep Agent", thread_id=uuid7str(), user_id=uuid7str())
-    rag = RAGAgent(config)
+    rag = RAGAgent()
     await rag.CreateGraph()
     """
     graph = agent.get_graph().draw_mermaid_png()
@@ -234,6 +283,14 @@ async def main():
     print(f"args: {args}")
     if args.load_urls:
         await rag.LoadDocuments()
+        return
+    elif args.show_threads:
+        await rag.ShowThreads()
+        return
+    elif args.delete_threads:
+        await rag.DeleteAllThreads()
+        return
+
     input_message: str = ""
     if args.ai_ml:
         input_message = ("What is task decomposition?\n" "What is the standard method for Task Decomposition?\n" "Once you get the answer, look up common extensions of that method.")
@@ -248,8 +305,8 @@ async def main():
     elif args.neo4j:
         input_message = "Query the graph database to show me the reviews written by patient 7674"
     #print(f"typeof input_message: {type(input_message)}")
-    if not args.load_urls:
-        await rag.ChatAgent(config, input_message)
+    config = RunnableConfig(run_name="RAG Deep Agent", thread_id=uuid7str(), user_id=uuid7str())
+    await rag.ChatAgent(config, input_message)
 
 if __name__ == "__main__":
     asyncio.run(main())

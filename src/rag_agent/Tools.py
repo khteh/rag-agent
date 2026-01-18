@@ -128,13 +128,16 @@ async def upsert_memory(
     """
     logging.info(f"\n=== upsert_memory ===")
     mem_id = memory_id or uuid7str()
-    user_id = Configuration.from_runnable_config(config).user_id
-    logging.debug(f"content: {content}, context: {context}, memory_id: {memory_id} {mem_id}, user_id: {user_id}")
-    await store.aput(
-        ("memories", user_id),
-        key=str(mem_id),
-        value={"content": content, "context": context},
-    )
+    try:
+        user_id = Configuration.from_runnable_config(config).user_id
+        logging.debug(f"content: {content}, context: {context}, memory_id: {memory_id} {mem_id}, user_id: {user_id}")
+        await store.aput(
+            ("memories", user_id),
+            key=str(mem_id),
+            value={"content": content, "context": context},
+        )
+    except Exception as e:
+        logging.exception(f"Exception! {e}")
     return f"Stored memory {mem_id}"
 
 @tool(parse_docstring=True)

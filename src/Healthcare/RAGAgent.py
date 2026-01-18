@@ -26,7 +26,6 @@ from src.common.State import CustomAgentState
 class RAGAgent():
     _name:str = "Healthcare Sub-Agent"
     _llm = None
-    _config = None
     # placeholder:
     # Means the template will receive an optional list of messages under the "messages" key.
     # A list of the names of the variables for placeholder or MessagePlaceholder that are optional. These variables are auto inferred from the prompt and user need not provide them.
@@ -37,12 +36,11 @@ class RAGAgent():
     _tools: List[Callable[..., Any]] = None
     agent: CompiledStateGraph = None
     # Class constructor
-    def __init__(self, config: RunnableConfig={}):
+    def __init__(self, db_pool:AsyncConnectionPool = None):
         """
         Class RAGAgent Constructor
         """
         #vertexai.init(project=os.environ.get("GOOGLE_CLOUD_PROJECT"), location=os.environ.get("GOOGLE_CLOUD_LOCATION"))
-        self._config = config
         # .bind_tools() gives the agent LLM descriptions of each tool from their docstring and input arguments. 
         # If the agent LLM determines that its input requires a tool call, it’ll return a JSON tool message with the name of the tool it wants to use, along with the input arguments.
         # For VertexAI, use VertexAIEmbeddings, model="text-embedding-005"; "gemini-2.0-flash" model_provider="google_genai"
@@ -54,6 +52,12 @@ class RAGAgent():
         #    }
         #)
         #atexit.register(self.Cleanup)
+        self._db_pool = db_pool or AsyncConnectionPool(
+                        conninfo = appconfig.POSTGRESQL_DATABASE_URI,
+                        max_size = appconfig.DB_MAX_CONNECTIONS,
+                        kwargs = appconfig.connection_kwargs,
+                        open = False
+                    )
         self._tools = [HealthcareReview, HealthcareCypher, get_current_wait_times, get_most_available_hospital, upsert_memory, think_tool]
         #self._llm = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider="ollama", base_url=appconfig.BASE_URI, streaming=True, temperature=0).bind_tools(self._tools)
         if appconfig.BASE_URI:
@@ -74,14 +78,7 @@ class RAGAgent():
             # https://github.com/langchain-ai/langchain/issues/30723
             # https://langchain-ai.github.io/langgraph/how-tos/cross-thread-persistence/
             # https://github.com/langchain-ai/langgraph/blob/main/libs/prebuilt/langgraph/prebuilt/chat_agent_executor.py#L241
-            if self._db_pool is None:
-                self._db_pool = db_pool or AsyncConnectionPool(
-                        conninfo = appconfig.POSTGRESQL_DATABASE_URI,
-                        max_size = appconfig.DB_MAX_CONNECTIONS,
-                        kwargs = appconfig.connection_kwargs,
-                        open = False
-                    )
-                await self._db_pool.open()
+            await self._db_pool.open()
             if self._store is None:
                 self._store = await PostgreSQLStoreSetup(self._db_pool) # store is needed when creating the ReAct agent / StateGraph for InjectedStore to work
             if self._checkpointer is None:
@@ -107,14 +104,14 @@ class RAGAgent():
             step["messages"][-1].pretty_print()
         return result[-1]
 
-async def make_graph(config: RunnableConfig) -> CompiledStateGraph:
-    return await RAGAgent(config).CreateGraph()
+async def make_graph(db_pool:AsyncConnectionPool = None) -> CompiledStateGraph:
+    return await RAGAgent(db_pool).CreateGraph()
 
 async def main():
     # httpx library is a dependency of LangGraph and is used under the hood to communicate with the AI models.
     #vertexai.init(project=os.environ.get("GOOGLE_CLOUD_PROJECT"), location=os.environ.get("GOOGLE_CLOUD_LOCATION"))
     config = RunnableConfig(run_name="Healthcare Sub-Agent", thread_id=uuid7str(), user_id=uuid7str())
-    rag = RAGAgent(config)
+    rag = RAGAgent()
     await rag.CreateGraph()
     """
     graph = agent.get_graph().draw_mermaid_png()

@@ -178,19 +178,21 @@ $ c3 -v https://localhost:4433/healthcare/invoke -m 300 -X POST -d '{"message": 
 
 ```
 $ uv run python -m src.rag_agent.RAGAgent -h
-usage: RAGAgent.py [-h] [-l] [-a] [-m] [-n] [-v] [-b] [-w]
+usage: RAGAgent.py [-h] [-l] [-t] [-d] [-a] [-m] [-n] [-v] [-b] [-w]
 
 LLM-RAG deep agent answering user questions about healthcare system and AI/ML
 
 options:
-  -h, --help          show this help message and exit
-  -l, --load-urls     Load documents from URLs
-  -a, --ai-ml         Ask questions regarding AI/ML which should be answered based on Lilian's blog
-  -m, --mlflow        Ask questions regarding MLFlow
-  -n, --neo4j-graph   Ask question with answer in Neo4J graph database store
-  -v, --neo4j-vector  Ask question with answers in Neo4J vector store
-  -b, --neo4j         Ask question with answers in both Neo4J vector and graph stores
-  -w, --wait-time     Ask hospital waiting time using answer from mock API endpoint
+  -h, --help            show this help message and exit
+  -l, --load-urls       Load documents from URLs
+  -t, --show-threads    Show history of all threads
+  -d, --delete-threads  Delete history of all threads
+  -a, --ai-ml           Ask questions regarding AI/ML which should be answered based on Lilian's blog
+  -m, --mlflow          Ask questions regarding MLFlow
+  -n, --neo4j-graph     Ask question with answer in Neo4J graph database store
+  -v, --neo4j-vector    Ask question with answers in Neo4J vector store
+  -b, --neo4j           Ask question with answers in both Neo4J vector and graph stores
+  -w, --wait-time       Ask hospital waiting time using answer from mock API endpoint
 ```
 
 ### Answering questions from mocked-up API call:
@@ -277,34 +279,44 @@ What is MLFLow?
 - `output/final_answer.md`:
 
 ```
-# MLflow Overview
+## MLFlow – A Quick‑Reference Guide
 
-## Purpose
-MLflow is an open‑source platform designed to manage the end‑to‑end machine‑learning lifecycle. It provides tools for experiment tracking, reproducibility, model versioning, and deployment, enabling teams to collaborate efficiently and maintain traceability across projects.
+### Definition
+MLFlow is an **open‑source platform** designed to manage the entire machine‑learning lifecycle—from experiment tracking to model deployment—while keeping everything reproducible and vendor‑neutral. It provides a set of APIs and UI tools that let data scientists and ML engineers log parameters, metrics, artifacts, and models in a single, searchable repository.
 
-## Core Components
-1. **Tracking** – Log parameters, metrics, artifacts, and code versions; visualize results via UI or APIs.
-2. **Projects** – Package code in a reproducible format (Python, R, Docker) for consistent execution.
-3. **Models** – Standardize model packaging and serve models across multiple frameworks.
-4. **Model Registry** – Centralized version control, stage management (Staging, Production, Archived), and lineage tracking.
+### Purpose
+MLFlow’s core mission is to **reduce the operational friction** that comes with building, training, and deploying ML models. By centralizing experiment metadata and model artifacts, it enables teams to:
 
-## Typical Use Cases
-- **Experiment Management** – Run, compare, and reproduce experiments across teams.
-- **Model Versioning & Lineage** – Track model evolution, promote models through stages, and maintain audit trails.
-- **Deployment** – Deploy models to local servers, cloud services, or Kubernetes via MLflow’s REST API or native integrations.
-- **Evaluation & Validation** – Automate metric calculation, compare models side‑by‑side, and validate against reproducible datasets.
+1. **Track and compare experiments** across different runs, libraries, and environments.
+2. **Version models** and manage their lifecycle (staging → production → archived).
+3. **Deploy models** to a variety of targets (REST APIs, cloud services, edge devices) with minimal boilerplate.
+4. **Reproduce results** by storing all inputs, code, and environment details.
 
-## Key Benefits
-- **Reproducibility** – All code, data, and environment details are logged automatically.
-- **Collaboration** – Shared UI and APIs allow teams to view, compare, and comment on experiments.
-- **Automation** – Autologging for popular libraries (Scikit‑learn, XGBoost, TensorFlow, PyTorch) reduces manual logging.
-- **Scalability** – Works locally, on‑prem clusters, cloud platforms, or managed services; supports Kubernetes and native cloud deployments.
-- **Vendor‑Neutral** – Open‑source and framework‑agnostic, enabling integration with any ML stack.
+### Typical Usage
+A typical MLFlow workflow looks like this:
+
+1. **Experiment Tracking** – Log hyper‑parameters, metrics, and artifacts during training.
+2. **Model Registry** – Register the best‑performing model, assign stages, and keep a lineage history.
+3. **Deployment** – Serve the registered model via MLFlow’s built‑in REST API or push it to a cloud platform.
+4. **Monitoring & Evaluation** – Continuously log new predictions and compare them against the original training metrics.
+
+MLFlow works with popular libraries such as scikit‑learn, TensorFlow, PyTorch, and Spark MLlib, and can run locally, on‑prem, or in the cloud.
+
+### Key Features
+
+| Feature | What It Does | Benefit |
+|---------|--------------|---------|
+| **Experiment Tracking** | Logs parameters, metrics, and artifacts per run. | Easy comparison and visualization of model performance. |
+| **Model Registry** | Centralized versioning, stage management, and lineage tracking. | Clear audit trail and controlled promotion to production. |
+| **Model Deployment** | Supports REST API serving, batch inference, and cloud/edge deployment. | One‑click deployment to production environments. |
+| **Dataset Tracking** | `mlflow.log_input()` records dataset metadata. | Ensures reproducibility by linking models to exact data versions. |
+| **Integrations** | Autologging for scikit‑learn, TensorFlow, PyTorch, Spark, etc. | Minimal code changes to start logging. |
+| **Observability & Evaluation** | Built‑in UI for visualizing metrics, plots, and model lineage. | Faster debugging and model quality assessment. |
 
 ### Sources
 [1] MLflow: A Tool for Managing the Machine Learning Lifecycle – https://mlflow.org/docs/latest/index.html
-[2] MLflow Tracking – https://mlflow.org/docs/latest/tracking.html
-[3] MLflow Model Registry – https://mlflow.org/docs/latest/model-registry.html
+[2] MLflow Tracking & Experiments – https://mlflow.org/docs/latest/tracking.html
+[3] MLflow Model Registry & Deployment – https://mlflow.org/docs/latest/model-registry.html
 ```
 
 ### Answering query using Neo4J vector DB
