@@ -28,13 +28,13 @@ Python LLM-RAG deep agent using LangChain, LangGraph and LangSmith built on Quar
 Add a `.env` with the following environment variables:
 
 ```
+ENVIRONMENT=development
 DB_USERNAME=
 DB_PASSWORD=
 NEO4J_AUTH=username/password
 CHROMA_TOKEN=
 LANGSMITH_TRACING="true"
 LANGSMITH_API_KEY=
-LANGSMITH_TRACING="true"
 LANGSMITH_ENDPOINT="https://api.smith.langchain.com"
 LANGSMITH_PROJECT=
 OPENAI_API_KEY=
@@ -176,6 +176,8 @@ $ c3 -v https://localhost:4433/healthcare/invoke -m 300 -X POST -d '{"message": 
 
 ### Run:
 
+- To run the agent from console:
+
 ```
 $ uv run python -m src.rag_agent.RAGAgent -h
 usage: RAGAgent.py [-h] [-l] [-t] [-d] [-a] [-m] [-n] [-v] [-b] [-w]
@@ -193,6 +195,12 @@ options:
   -v, --neo4j-vector    Ask question with answers in Neo4J vector store
   -b, --neo4j           Ask question with answers in both Neo4J vector and graph stores
   -w, --wait-time       Ask hospital waiting time using answer from mock API endpoint
+```
+
+- To run the ASGI/WSGI web application:
+
+```
+$ ./hypercorn.sh
 ```
 
 ### Answering questions from mocked-up API call:
@@ -349,6 +357,34 @@ Patients consistently report negative experiences with sleep quality during thei
 [1] HealthcareCypher: Patient Reviews – https://healthcarecypher.com/patient-reviews
 ```
 
+- `output/user_questions.md`:
+
+```
+What have patients said about hospital efficiency? Highlight details from specific reviews.
+```
+
+- `output/final_answer.md`:
+
+```
+## Hospital Efficiency – Patient Review Highlights
+
+Patients have commented on the efficiency of care at several hospitals. The following excerpts illustrate specific observations:
+
+- **Brown Inc.** – *Jennifer McCall, Stephen Hernandez*: “The medical team was **efficient**.” This direct praise indicates that patients perceived the care process as swift and well‑coordinated.
+
+- **Little‑Spencer** – *Shawn Ellis, Tracy Dalton*: “The well‑organized approach to my treatment contributed to a positive overall experience.” The phrase “well‑organized” implies streamlined processes and timely care, suggesting efficient workflow.
+
+- **Smith, Edwards and Obrien** – *Nancy Nichols, Martin Gilbert*: “The hospital staff went above and beyond to make me comfortable during my stay. They even organized daily activities to keep patients engaged.” While this review focuses on comfort and engagement, it does not explicitly mention efficiency.
+
+- **Smith, Edwards and Obrien** – *Tara Harris, Garrett Gomez*: “My experience at the hospital was positive overall. The medical team was competent, and the facilities were modern and well‑equipped.” This review highlights competence and modern facilities but lacks mention of efficiency.
+
+These insights are drawn from patient reviews retrieved via the HealthcareReview tool.
+
+### Sources
+
+[1] HealthcareReview – Hospital efficiency patient reviews.
+```
+
 ### Answering question from Neo4J graph DB
 
 - `output/user_questions.md`:
@@ -375,37 +411,84 @@ What is the average visit duration for emergency visits in North Carolina?
 - `output/final_answer.md`:
 
 ```
-================================ Human Message =================================
+## Average Emergency Visit Duration in North Carolina
 
-What is the average visit duration for emergency visits in North Carolina?
-================================== Ai Message ==================================
-Name: RAG ReAct Agent
-Tool Calls:
-  HealthcareCypher (a3651a39-c3b7-47f5-99ad-bd575dcecb18)
- Call ID: a3651a39-c3b7-47f5-99ad-bd575dcecb18
-  Args:
-    query: What is the average visit duration for emergency visits in North Carolina?
+The HealthcareCypher sub‑agent reports an average duration of **≈ 21,705 minutes** (about **15 days**) for emergency department visits in North Carolina. This figure likely reflects the total time patients spend in the hospital following an ED visit, rather than the time spent in the ED itself. No specific data source or time period was provided, so the number should be interpreted with caution.
 
+### Sources
 
-> Entering new GraphCypherQAChain chain...
-Generated Cypher:
-MATCH (h:Hospital)<-[:AT]-(v:Visit)-[t:TREATS]-(phy:Physician)
-WHERE h.state_name = 'NC' AND v.admission_type = 'Emergency'
-WITH v,
-     duration.between(date(v.discharge_date), date(v.admission_date)).days AS visit_duration
-RETURN avg(visit_duration) AS average_visit_duration
-Full Context:
-[{'average_visit_duration': -15.072972972972977}]
+[1] HealthcareCypher: Average ED visit duration in North Carolina – 21,705 minutes (no source cited).
+```
 
-> Finished chain.
-================================= Tool Message =================================
-Name: HealthcareCypher
+### Accummulation
 
-{"query": "What is the average visit duration for emergency visits in North Carolina?", "result": "The average visit duration for emergency visits in North Carolina is approximately -15.07 days. \n\nNote: The negative value may indicate an error or an unexpected result, but based on the provided information, this is the calculated average visit duration."}
-================================== Ai Message ==================================
-Name: RAG ReAct Agent
+- `output/user_questions.md`:
 
-The average visit duration for emergency visits in North Carolina is approximately 160 minutes (or around 2.67 hours).
+```
+Which state had the largest percent increase in Medicaid visits from 2022 to 2023?
+```
+
+- `output/final_answer.md`:
+
+```
+## Largest Percent Increase in Medicaid Visits (2022‑2023)
+
+The HealthcareCypher sub‑agent reports that **Texas (TX)** had the largest percentage increase in Medicaid visits between 2022 and 2023, with an increase of **≈ 8.82 %**. This figure comes from the HealthcareCypher database’s Medicaid visit statistics by state for the two years.
+
+### Sources
+
+[1] HealthcareCypher: Medicaid visit statistics by state – 2022 and 2023.
+```
+
+- `output/user_questions.md`:
+
+```
+Which payer provides the most coverage in terms of total billing amount?
+```
+
+- `output/final_answer.md`:
+
+```
+## Payer with the Highest Total Coverage Amount
+
+The payer that provides the most coverage in terms of total billing amount is **UnitedHealthcare**, with a total coverage amount of **$52,221,646.74**.
+
+### Summary of Coverage Totals
+| Payer | Total Coverage Amount |
+|-------|------------------------|
+| UnitedHealthcare | $52,221,646.74 |
+| Cigna | $52,161,684.47 |
+| Blue Cross | $51,440,502.96 |
+| Medicaid | $50,464,204.50 |
+| Aetna | $48,806,964.29 |
+
+The figures above are derived from the healthcare database query on payer coverage totals.
+
+### Source
+[1] HealthcareCypher query result.
+```
+
+- `output/user_questions.md`:
+
+```
+Categorize all patients' reviews into "Positive", "Neutral", and "Negative". Provide totals and percentage of the categories.
+```
+
+- `output/final_answer.md`:
+
+```
+## Sentiment Categorization of Patient Reviews
+
+The dataset contains four patient reviews, all of which are classified as **Positive**. No reviews were classified as **Neutral** or **Negative**.
+
+| Sentiment | Count | Percentage |
+|-----------|-------|------------|
+| Positive | 4 | 100 % |
+| Neutral | 0 | 0 % |
+| Negative | 0 | 0 % |
+
+### Source
+[1] HealthcareCypher query result on patient reviews.
 ```
 
 ### Answering question from Neo4J graph AND vector DB
@@ -429,97 +512,6 @@ The following table summarizes the review(s) authored by patient **7674** in the
 
 ### Sources
 [1] HealthcareCypher query “reviews written by patient 7674”
-```
-
-```
-================================ Human Message =================================
-
-Classify all the reviews in the database into "Positive", "Neutral", and "Negative". Provide totals and percentage for these categories.
-================================== Ai Message ==================================
-Name: RAG ReAct Agent
-Tool Calls:
-  HealthcareReview (2d493f20-d69f-40a1-bef7-86950659328c)
- Call ID: 2d493f20-d69f-40a1-bef7-86950659328c
-  Args:
-    query: Classify all the reviews in the database into "Positive", "Neutral", and "Negative". Provide totals and percentage for these categories.
-================================= Tool Message =================================
-Name: HealthcareReview
-
-{"query": "Classify all the reviews in the database into \"Positive\", \"Neutral\", and \"Negative\". Provide totals and percentage for these categories.", "result": "After analyzing the reviews, I classified them as follows:\n\n* Scott Morrison's review at Smith, Edwards and Obrien: Positive\n* Monica Romero's review at Garcia Ltd: Positive (although she mentioned a point of frustration, her overall experience was positive)\n* Victoria Mathews' review at Boyd PLC: Positive\n* Jessica Ross' review at Boyd PLC: Positive\n\nThere are no Neutral or Negative reviews in the database.\n\nHere are the totals and percentages:\n\n* Positive: 4 (100%)\n* Neutral: 0 (0%)\n* Negative: 0 (0%)\n\nAll reviews express a positive overall experience, with some mentioning specific strengths such as thorough medical teams, caring staff, modern facilities, and effective rehabilitation services. However, one review mentions a point of frustration regarding billing transparency, but it does not outweigh the overall positive sentiment."}
-================================== Ai Message ==================================
-Name: RAG ReAct Agent
-
-After analyzing the reviews, I classified them as follows:
-
-* Scott Morrison's review at Smith, Edwards and Obrien: Positive
-* Monica Romero's review at Garcia Ltd: Positive (although she mentioned a point of frustration, her overall experience was positive)
-* Victoria Mathews' review at Boyd PLC: Positive
-* Jessica Ross' review at Boyd PLC: Positive
-
-There are no Neutral or Negative reviews in the database.
-
-Here are the totals and percentages:
-
-* Positive: 4 (100%)
-* Neutral: 0 (0%)
-* Negative: 0 (0%)
-
-All reviews express a positive overall experience, with some mentioning specific strengths such as thorough medical teams, caring staff, modern facilities, and effective rehabilitation services. However, one review mentions a point of frustration regarding billing transparency, but it does not outweigh the overall positive sentiment.
-```
-
-## StateGraph with Checkpoint
-
-![StateGraph with Checkpoint](images/checkpoint_graph.png?raw=true "StateGraph with Checkpoint")
-
-```
-$ p -m src.rag_agent.CheckpointedRAG
-================================ Human Message =================================
-
-What is Task Decomposition?
-================================== Ai Message ==================================
-Tool Calls:
-  retrieve (7f55237f-1295-45a1-a264-50d7eeccf60e)
- Call ID: 7f55237f-1295-45a1-a264-50d7eeccf60e
-  Args:
-    query: What is Task Decomposition?
-================================= Tool Message =================================
-Name: retrieve
-
-Source: {'source': 'https://lilianweng.github.io/posts/2023-06-23-agent/'}
-Content: Fig. 1. Overview of a LLM-powered autonomous agent system.
-Component One: Planning#
-A complicated task usually involves many steps. An agent needs to know what they are and plan ahead.
-Task Decomposition#
-Chain of thought (CoT; Wei et al. 2022) has become a standard prompting technique for enhancing model performance on complex tasks. The model is instructed to “think step by step” to utilize more test-time computation to decompose hard tasks into smaller and simpler steps. CoT transforms big tasks into multiple manageable tasks and shed lights into an interpretation of the model’s thinking process.
-
-Source: {'source': 'https://lilianweng.github.io/posts/2023-06-23-agent/'}
-Content: Tree of Thoughts (Yao et al. 2023) extends CoT by exploring multiple reasoning possibilities at each step. It first decomposes the problem into multiple thought steps and generates multiple thoughts per step, creating a tree structure. The search process can be BFS (breadth-first search) or DFS (depth-first search) with each state evaluated by a classifier (via a prompt) or majority vote.
-Task decomposition can be done (1) by LLM with simple prompting like "Steps for XYZ.\n1.", "What are the subgoals for achieving XYZ?", (2) by using task-specific instructions; e.g. "Write a story outline." for writing a novel, or (3) with human inputs.
-================================== Ai Message ==================================
-
-Task decomposition is the process of breaking down a complex task into smaller, more manageable steps. This can be achieved through prompting techniques like Chain of Thought (CoT), which encourages the model to "think step by step." Task decomposition can be done by LLM with simple prompting, task-specific instructions or with human inputs.
-================================ Human Message =================================
-
-Can you look up some common ways of doing it?
-================================== Ai Message ==================================
-Tool Calls:
-  retrieve (22c61c84-8cda-4d91-a453-1b645a354d50)
- Call ID: 22c61c84-8cda-4d91-a453-1b645a354d50
-  Args:
-    query: common ways to do task decomposition
-================================= Tool Message =================================
-Name: retrieve
-
-Source: {'source': 'https://lilianweng.github.io/posts/2023-06-23-agent/'}
-Content: Fig. 1. Overview of a LLM-powered autonomous agent system.
-Component One: Planning#
-A complicated task usually involves many steps. An agent needs to know what they are and plan ahead.
-Task Decomposition#
-Chain of thought (CoT; Wei et al. 2022) has become a standard prompting technique for enhancing model performance on complex tasks. The model is instructed to “think step by step” to utilize more test-time computation to decompose hard tasks into smaller and simpler steps. CoT transforms big tasks into multiple manageable tasks and shed lights into an interpretation of the model’s thinking process.
-
-Source: {'source': 'https://lilianweng.github.io/posts/2023-06-23-agent/'}
-Content: Tree of Thoughts (Yao et al. 2023) extends CoT by exploring multiple reasoning possibilities at each step. It first decomposes the problem into multiple thought steps and generates multiple thoughts per step, creating a tree structure. The search process can be BFS (breadth-first search) or DFS (depth-first search) with each state evaluated by a classifier (via a prompt) or majority vote.
-Task decomposition can be done (1) by LLM with simple prompting like "Steps for XYZ.\n1.", "What are the subgoals for achieving XYZ?", (2) by using task-specific instructions; e.g. "Write a story outline." for writing a novel, or (3) with human inputs.
 ```
 
 ## Email RAG Deep Agent
@@ -630,6 +622,10 @@ This email warrants an escalation
 ## LangSmith Application trace
 
 - https://smith.langchain.com/
+
+## Local log
+
+- /var/log/ragagent/log
 
 ## Diagnostics
 
