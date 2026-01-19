@@ -90,7 +90,32 @@ $ gcloud auth application-default set-quota-project <ProjectID>
 
 ## Start the application:
 
-- `./hypercorn.sh`
+- To run the agent from console:
+
+```
+$ uv run python -m src.rag_agent.RAGAgent -h
+usage: RAGAgent.py [-h] [-l] [-t] [-d] [-a] [-m] [-n] [-v] [-b] [-w]
+
+LLM-RAG deep agent answering user questions about healthcare system and AI/ML
+
+options:
+  -h, --help            show this help message and exit
+  -l, --load-urls       Load documents from URLs
+  -t, --show-threads    Show history of all threads
+  -d, --delete-threads  Delete history of all threads
+  -a, --ai-ml           Ask questions regarding AI/ML which should be answered based on Lilian's blog
+  -m, --mlflow          Ask questions regarding MLFlow
+  -n, --neo4j-graph     Ask question with answer in Neo4J graph database store
+  -v, --neo4j-vector    Ask question with answers in Neo4J vector store
+  -b, --neo4j           Ask question with answers in both Neo4J vector and graph stores
+  -w, --wait-time       Ask hospital waiting time using answer from mock API endpoint
+```
+
+- To run the ASGI/WSGI web application:
+
+```
+$ ./hypercorn.sh
+```
 
 ## HTTP/3 curl:
 
@@ -173,35 +198,6 @@ $ c3 -v https://localhost:4433/healthcare/invoke -m 300 -X POST -d '{"message": 
 
 ![ReAct Agent with Checkpoint](images/agent_graph.png?raw=true "ReAct Agent with Checkpoint")
 ![ReAct Agent UI](images/rag-agent.png?raw=true "ReAct Agent UI")
-
-### Run:
-
-- To run the agent from console:
-
-```
-$ uv run python -m src.rag_agent.RAGAgent -h
-usage: RAGAgent.py [-h] [-l] [-t] [-d] [-a] [-m] [-n] [-v] [-b] [-w]
-
-LLM-RAG deep agent answering user questions about healthcare system and AI/ML
-
-options:
-  -h, --help            show this help message and exit
-  -l, --load-urls       Load documents from URLs
-  -t, --show-threads    Show history of all threads
-  -d, --delete-threads  Delete history of all threads
-  -a, --ai-ml           Ask questions regarding AI/ML which should be answered based on Lilian's blog
-  -m, --mlflow          Ask questions regarding MLFlow
-  -n, --neo4j-graph     Ask question with answer in Neo4J graph database store
-  -v, --neo4j-vector    Ask question with answers in Neo4J vector store
-  -b, --neo4j           Ask question with answers in both Neo4J vector and graph stores
-  -w, --wait-time       Ask hospital waiting time using answer from mock API endpoint
-```
-
-- To run the ASGI/WSGI web application:
-
-```
-$ ./hypercorn.sh
-```
 
 ### Answering questions from mocked-up API call:
 

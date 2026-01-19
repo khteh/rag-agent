@@ -1,14 +1,9 @@
 import logging
 from psycopg import Error
-from langchain_ollama import OllamaEmbeddings
 from psycopg_pool import AsyncConnectionPool
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
 from langgraph.store.postgres.aio import AsyncPostgresStore
-from src.config import config as appconfig
 async def PostgreSQLCheckpointerSetup(pool: AsyncConnectionPool, checkpointer: AsyncPostgresSaver) -> None:
-    # Set up the checkpointer (uncomment this line the first time you run the app)
-    # Check if the checkpoints table exists
-    #checkpointer = AsyncPostgresSaver(pool)
     async with pool.connection() as conn:
         async with conn.cursor() as cur:
             try:
@@ -31,14 +26,6 @@ async def PostgreSQLCheckpointerSetup(pool: AsyncConnectionPool, checkpointer: A
                 raise e
 
 async def PostgreSQLStoreSetup(pool: AsyncConnectionPool, store: AsyncPostgresStore) -> None:
-    # Set up the checkpointer (uncomment this line the first time you run the app)
-    # Check if the checkpoints table exists
-    # logging.debug(f"EMBEDDING_DIMENSIONS: {appconfig.EMBEDDING_DIMENSIONS}")
-    #store = AsyncPostgresStore(pool, index={
-    #            "embed": OllamaEmbeddings(model=appconfig.EMBEDDING_MODEL, base_url=appconfig.BASE_URI, num_ctx=8192, num_gpu=1, temperature=0),
-    #            "dims": appconfig.EMBEDDING_DIMENSIONS, # Note: Every time when this value changes, remove the store<foo> tables in the DB so that store.setup() runs to recreate them with the right dimensions.
-    #        }
-    #)
     async with pool.connection() as conn:
         async with conn.cursor() as cur:
             try:

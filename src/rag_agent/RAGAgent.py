@@ -47,11 +47,6 @@ class RAGAgent():
         {"url": "https://mlflow.org/docs/latest/ml/tracking/", "type": "article", "filter": ("theme-doc-markdown markdown")},
         {"url": "https://mlflow.org/docs/latest/python_api/mlflow.deployments.html", "type": "class", "filter": ("section")}
     ]
-    # https://langchain-ai.github.io/langgraph/reference/prebuilt/#langgraph.prebuilt.chat_agent_executor.create_react_agent
-    #placeholder:
-    #Means the template will receive an optional list of messages under the "messages" key.
-    #A list of the names of the variables for placeholder or MessagePlaceholder that are optional. These variables are auto inferred from the prompt and user need not provide them.
-    _prompt = "You are a helpful AI assistant named Bob. Always provide accurate answer."
     # Limits
     _max_concurrent_research_units = 3
     _max_researcher_iterations = 3
@@ -90,12 +85,6 @@ class RAGAgent():
         # If the agent LLM determines that its input requires a tool call, it’ll return a JSON tool message with the name of the tool it wants to use, along with the input arguments.
         # For VertexAI, use VertexAIEmbeddings, model="text-embedding-005"; "gemini-2.0-flash" model_provider="google_genai"
         # not a vector store but a LangGraph store object. https://github.com/langchain-ai/langchain/issues/30723
-        #self._in_memory_store = InMemoryStore(
-        #    index={
-        #        "embed": OllamaEmbeddings(model=appconfig.EMBEDDING_MODEL, base_url=appconfig.BASE_URI, num_ctx=8192, num_gpu=1, temperature=0),
-        #        #"dims": 1536,
-        #    }
-        #)
         self._db_pool = db_pool or AsyncConnectionPool(
                         conninfo = appconfig.POSTGRESQL_DATABASE_URI,
                         max_size = appconfig.DB_MAX_CONNECTIONS,
@@ -108,9 +97,7 @@ class RAGAgent():
         self._healthcare_rag = HealthAgent(self._db_pool, self._store, self._checkpointer)
         # GoogleSearch ground_search works well but it will sometimes take precedence and overwrite the ingested data into Chhroma and Neo4J. So, exclude it for now until it is really needed.
         # Use it as a custom subagent
-        #self._tools = [self._vectorStore.retriever_tool, HealthcareReview, HealthcareCypher, get_current_wait_times, get_most_available_hospital]
         self._tools = [self._vectorStore.retriever_tool, upsert_memory, think_tool]
-        #self._llm = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider="ollama", base_url = appconfig.BASE_URI, configurable_fields=("user_id"), streaming = True, temperature=0).bind_tools(self._tools)
         if appconfig.BASE_URI:
             self._llm = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider=appconfig.MODEL_PROVIDER, base_url=appconfig.BASE_URI, streaming=True, temperature=0)
         else:
@@ -172,8 +159,7 @@ class RAGAgent():
             self._subagents = [self._healthcare_subagent, self._rag_subagent]
             self._agent = create_deep_agent(
                 model = self._llm,
-                #tools = [ground_search],
-                tools = [current_timestamp, upsert_memory, think_tool],
+                tools = [current_timestamp, upsert_memory, think_tool], # [ground_search]
                 backend = composite_backend,
                 checkpointer = self._checkpointer, # https://github.com/langchain-ai/langgraph/blob/main/libs/langgraph/langgraph/graph/state.py#L828
                 store = self._store,
@@ -201,11 +187,9 @@ class RAGAgent():
                     "thread_id": id
                 }
             }
-            #messages = list(self._checkpointer.list(config))
             # Use 'async for' to iterate over the asynchronous iterator
             async for checkpoint_tuple in self._checkpointer.alist(config): #, limit=10):
                 # Accessing the checkpoint data and metadata
-                #timestamp = checkpoint_tuple.ts
                 # Checkpoint structure is complex, often needs specific parsing
                 # Example of accessing a messages channel (structure may vary)
                 messages = checkpoint_tuple.checkpoint.get("channel_values", {}).get("messages", [])
@@ -250,7 +234,7 @@ class RAGAgent():
                 # https://langchain-ai.github.io/langgraph/how-tos/#streaming
                 messages: List[str] = []
                 async for step in self._agent.astream(
-                    {"messages": [{"role": "user", "content": message}], "timestamp": datetime.now()},
+                    {"messages": [{"role": "user", "content": message}]},
                     stream_mode="values", # Use this to stream all values in the state after each step.
                     config=config, # This is needed by Checkpointer
                 ):
@@ -346,7 +330,6 @@ async def main():
     elif args.delete_threads:
         await rag.DeleteAllThreads()
         return
-
     input_message: str = ""
     if args.ai_ml:
         input_message = ("What is task decomposition?\n" "What is the standard method for Task Decomposition?\n" "Once you get the answer, look up common extensions of that method.")
@@ -360,7 +343,6 @@ async def main():
         input_message = "What have patients said about hospital efficiency? Mention details from specific reviews."
     elif args.neo4j:
         input_message = "Query the graph database to show me the reviews written by patient 7674"
-    #print(f"typeof input_message: {type(input_message)}")
     config = RunnableConfig(run_name="RAG Deep Agent", thread_id=uuid7str(), user_id=uuid7str())
     await rag.ChatAgent(config, input_message)
 

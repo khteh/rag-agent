@@ -22,7 +22,6 @@ from .Tools import HealthcareReview, HealthcareCypher
 from src.rag_agent.Tools import upsert_memory, think_tool
 from src.common.Configuration import Configuration
 from src.utils.image import show_graph
-from src.Infrastructure.VectorStore import VectorStore
 from src.Infrastructure.PostgreSQLSetup import PostgreSQLCheckpointerSetup, PostgreSQLStoreSetup
 from src.common.State import CustomAgentState
 class RAGAgent():
@@ -31,7 +30,6 @@ class RAGAgent():
     # placeholder:
     # Means the template will receive an optional list of messages under the "messages" key.
     # A list of the names of the variables for placeholder or MessagePlaceholder that are optional. These variables are auto inferred from the prompt and user need not provide them.
-    _prompt = "You are a helpful healthcare AI assistant named Bob. Always provide accurate answer."
     _db_pool: AsyncConnectionPool = None
     _store: AsyncPostgresStore = None
     _checkpointer = None
@@ -47,12 +45,6 @@ class RAGAgent():
         # If the agent LLM determines that its input requires a tool call, it’ll return a JSON tool message with the name of the tool it wants to use, along with the input arguments.
         # For VertexAI, use VertexAIEmbeddings, model="text-embedding-005"; "gemini-2.0-flash" model_provider="google_genai"
         # not a vector store but a LangGraph store object.
-        #self._in_memory_store = InMemoryStore(
-        #    index={
-        #        "embed": OllamaEmbeddings(model=appconfig.EMBEDDING_MODEL, base_url=appconfig.BASE_URI, num_ctx=8192, num_gpu=1, temperature=0),
-        #        #"dims": 1536,
-        #    }
-        #)
         #atexit.register(self.Cleanup)
         self._db_pool = db_pool or AsyncConnectionPool(
                         conninfo = appconfig.POSTGRESQL_DATABASE_URI,
@@ -63,7 +55,6 @@ class RAGAgent():
         self._store = store
         self._checkpointer = checkpointer
         self._tools = [HealthcareReview, HealthcareCypher, get_current_wait_times, get_most_available_hospital, upsert_memory, think_tool]
-        #self._llm = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider="ollama", base_url=appconfig.BASE_URI, streaming=True, temperature=0).bind_tools(self._tools)
         if appconfig.BASE_URI:
             self._llm = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider=appconfig.MODEL_PROVIDER, base_url=appconfig.BASE_URI, streaming=True, temperature=0)
         else:
