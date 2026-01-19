@@ -196,7 +196,7 @@ $ c3 -v https://localhost:4433/healthcare/invoke -m 300 -X POST -d '{"message": 
 
 ## Main Agent:
 
-![Main Agent](images/EmailRAGAgent.png?raw=true "Main Agent")
+![Main Agent](images/MainAgent.png?raw=true "Main Agent")
 
 ## Question & Answer RAG Deep Agent
 
