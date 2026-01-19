@@ -194,9 +194,18 @@ $ c3 -v https://localhost:4433/healthcare/invoke -m 300 -X POST -d '{"message": 
 
 - `uv run python -m langgraph_cli dev`
 
-## RAG Deep Agent answers question from Vector and Graph Database
+## Main Agent:
 
-![ReAct Agent with Checkpoint](images/agent_graph.png?raw=true "ReAct Agent with Checkpoint")
+![Main Agent](images/EmailRAGAgent.png?raw=true "Main Agent")
+
+## Question & Answer RAG Deep Agent
+
+### Sub-Agent
+
+![Sub-Agent](images/agent_graph.png?raw=true "Sub-Agent")
+
+### RAG Deep Agent answers question from Vector and Graph Database
+
 ![ReAct Agent UI](images/rag-agent.png?raw=true "ReAct Agent UI")
 
 ### Answering questions from mocked-up API call:
@@ -511,10 +520,6 @@ The following table summarizes the review(s) authored by patient **7674** in the
 ```
 
 ## Email RAG Deep Agent
-
-### Main Agent:
-
-![Email RAG Agent with Checkpoint](images/EmailRAGAgent.png?raw=true "Email RAG Agent with Checkpoint")
 
 ### Sub-Agent:
 
