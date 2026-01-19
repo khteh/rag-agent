@@ -206,20 +206,19 @@ Which hospital has the shortest wait time?
 - `output/final_answer.md`:
 
 ```
-## Hospital with the Shortest Wait Time
+## Hospital with the Shortest Average Wait Time
 
-The most recent data indicates that **Cunningham and Sons** in Texas has the shortest wait time among hospitals surveyed. The reported average wait time for appointments or procedures at this facility is approximately **0 minutes** for immediate services, with a typical wait of about **14.5 days** for scheduled appointments.
+The hospital with the shortest average wait time is **Wallace‑Hamilton** located in Colorado. Its average wait time is **14.1 days**.
 
-### Key Details
-- **Hospital Name:** Cunningham and Sons
-- **Location:** Texas, USA
-- **Average Wait Time:** 0 minutes for immediate services; 14.5 days for scheduled appointments
+### Details
+- **Hospital:** Wallace‑Hamilton
+- **Location:** Colorado, United States
+- **Average Wait Time:** 14.1 days
 
-### Note
-The 0‑minute figure reflects the current wait time for immediate services at the time of the query, while the 14.5‑day figure represents the typical wait time for scheduled appointments or procedures.
+[1]
 
 ### Sources
-- *Hospital wait time data* (placeholder source)
+[1] HealthcareCypher: Average Hospital Wait Times – https://healthcarecypher.com/hospital-wait-times
 ```
 
 ### Answering questions from Postgres Vector Store:
@@ -324,22 +323,30 @@ MLFlow works with popular libraries such as scikit‑learn, TensorFlow, PyTorch,
 - `output/user_questions.md`:
 
 ```
-What have patients said about hospital efficiency? Mention details from specific reviews.
+What have patients said about their quality of rest during their stay?
 ```
 
 - `output/final_answer.md`:
 
 ```
-## Key Findings on Hospital Efficiency from Patient Reviews
+## Patient Feedback on Quality of Rest During Hospital Stay
 
-| Patient | Physician | Hospital | Review Highlighting Efficiency |
-|---------|-----------|----------|---------------------------------|
-| **Marisa Jennings** | Andre Johnson | Wheeler, Bryant and Johns | “My stay at the hospital was comfortable. **The medical team was efficient**, and the facilities were clean and well‑maintained.” |
-| **Karen Fox** | Tammy Hart | Schultz‑Powers | “The hospital staff was friendly and **efficient**. I appreciated the prompt service and the clean environment.” |
+Patients consistently report negative experiences with sleep quality during their hospital stay. The primary issues cited are:
 
-**Summary**
+1. **Physical discomfort** – uncomfortable beds that hinder restful sleep.
+2. **Environmental noise** – constant machine beeping and nighttime interruptions.
 
-Patient feedback consistently praises the speed and smoothness of care at **Wheeler, Bryant and Johns** and **Schultz‑Powers** hospitals. Reviewers specifically note that medical teams worked efficiently, leading to comfortable stays and prompt service. These comments underscore the hospitals’ focus on operational effectiveness and patient satisfaction.
+### Key Review Excerpts
+- **Crystal Johnson** (Smith, Edwards & Obrien): *"The uncomfortable beds made it difficult to get a good night’s sleep during my stay."*
+- **Miranda Frey** (Brown‑Golden): *"The uncomfortable beds made it difficult to get a good night’s sleep during my stay."*
+- **Jesse Tucker** (Wallace‑Hamilton): *"The constant interruptions during the night, however, affected my ability to rest."*
+- **Heather Lewis** (Brown‑Golden): *"The constant beeping of machines in the ward was bothersome and made it difficult to get quality rest."*
+
+### Overall Sentiment
+Patients consistently report negative experiences with sleep quality during their hospital stay, citing physical discomfort and environmental noise as the main contributors.
+
+### Sources
+[1] HealthcareCypher: Patient Reviews – https://healthcarecypher.com/patient-reviews
 ```
 
 ### Answering question from Neo4J graph DB
@@ -353,13 +360,19 @@ Which physician has treated the most patients covered by Cigna?
 - `output/final_answer.md`:
 
 ```
-## Final Answer
-
-The physician who has treated the most patients covered by Cigna is **Kayla Lawson**, who has treated **10** Cigna patients.
+The physician who has treated the most patients covered by Cigna is **Kayla Lawson**, who has seen **10 patients**.
 
 ### Sources
-No external sources were cited in the sub‑agent’s response.
+[1] HealthcareCypher: Physician Coverage Data – https://healthcarecypher.com/physician-coverage
 ```
+
+- `output/user_questions.md`:
+
+```
+What is the average visit duration for emergency visits in North Carolina?
+```
+
+- `output/final_answer.md`:
 
 ```
 ================================ Human Message =================================

@@ -130,7 +130,7 @@ async def upsert_memory(
     mem_id = memory_id or uuid7str()
     try:
         user_id = Configuration.from_runnable_config(config).user_id
-        logging.debug(f"content: {content}, context: {context}, memory_id: {memory_id} {mem_id}, user_id: {user_id}")
+        logging.debug(f"content: {content}, context: {context}, {'EXISTING' if memory_id else 'NEW'} memory_id: {memory_id or mem_id}, user_id: {user_id}")
         await store.aput(
             ("memories", user_id),
             key=str(mem_id),

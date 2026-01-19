@@ -10,7 +10,9 @@ from langgraph.graph.state import CompiledStateGraph
 from langchain.agents import create_agent
 from langgraph.store.base import BaseStore
 from langgraph.store.postgres.aio import AsyncPostgresStore
-from psycopg_pool import AsyncConnectionPool, ConnectionPool
+from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
+from psycopg_pool import AsyncConnectionPool
+from langchain_ollama import OllamaEmbeddings
 from deepagents import create_deep_agent, CompiledSubAgent
 # https://github.com/langchain-ai/deepagents
 #https://python.langchain.com/docs/tutorials/qa_chat_history/
@@ -78,7 +80,7 @@ class RAGAgent():
     _rag_subagent: CompiledSubAgent = None
     _agent = None
     # Class constructor
-    def __init__(self, db_pool:AsyncConnectionPool = None):
+    def __init__(self, db_pool:AsyncConnectionPool = None, store: AsyncPostgresStore = None, checkpointer: AsyncPostgresSaver = None):
         """
         Class RAGAgent Constructor
         """
@@ -94,14 +96,16 @@ class RAGAgent():
         #        #"dims": 1536,
         #    }
         #)
-        self._healthcare_rag = HealthAgent()
         self._db_pool = db_pool or AsyncConnectionPool(
                         conninfo = appconfig.POSTGRESQL_DATABASE_URI,
                         max_size = appconfig.DB_MAX_CONNECTIONS,
                         kwargs = appconfig.connection_kwargs,
                         open = False
-                    )        
+                    )
+        self._store = store
+        self._checkpointer = checkpointer
         self._vectorStore = VectorStore(model=appconfig.EMBEDDING_MODEL, chunk_size=1000, chunk_overlap=0)
+        self._healthcare_rag = HealthAgent(self._db_pool, self._store, self._checkpointer)
         # GoogleSearch ground_search works well but it will sometimes take precedence and overwrite the ingested data into Chhroma and Neo4J. So, exclude it for now until it is really needed.
         # Use it as a custom subagent
         #self._tools = [self._vectorStore.retriever_tool, HealthcareReview, HealthcareCypher, get_current_wait_times, get_most_available_hospital]
@@ -141,9 +145,15 @@ class RAGAgent():
             # https://github.com/langchain-ai/langgraph/blob/main/libs/prebuilt/langgraph/prebuilt/chat_agent_executor.py#L241
             await self._db_pool.open()
             if self._store is None:
-                self._store = await PostgreSQLStoreSetup(self._db_pool) # store is needed when creating the ReAct agent / StateGraph for InjectedStore to work
+                self._store = AsyncPostgresStore(self._db_pool, index={
+                            "embed": OllamaEmbeddings(model=appconfig.EMBEDDING_MODEL, base_url=appconfig.BASE_URI, num_ctx=8192, num_gpu=1, temperature=0),
+                            "dims": appconfig.EMBEDDING_DIMENSIONS, # Note: Every time when this value changes, remove the store<foo> tables in the DB so that store.setup() runs to recreate them with the right dimensions.
+                        }
+                )
+                await PostgreSQLStoreSetup(self._db_pool, self._store) # store is needed when creating the ReAct agent / StateGraph for InjectedStore to work
             if self._checkpointer is None:
-                self._checkpointer = await PostgreSQLCheckpointerSetup(self._db_pool)
+                self._checkpointer = AsyncPostgresSaver(self._db_pool)
+                await PostgreSQLCheckpointerSetup(self._db_pool, self._checkpointer)
             self._ragagent = create_agent(self._llm, self._tools, context_schema = Configuration, state_schema = CustomAgentState, name = self._name, system_prompt = RAG_INSTRUCTIONS, store = self._store, checkpointer = self._checkpointer)
             # Use it as a custom subagent
             self._rag_subagent = CompiledSubAgent(
@@ -190,7 +200,7 @@ class RAGAgent():
                 "configurable": {
                     "thread_id": id
                 }
-            }            
+            }
             #messages = list(self._checkpointer.list(config))
             # Use 'async for' to iterate over the asynchronous iterator
             async for checkpoint_tuple in self._checkpointer.alist(config): #, limit=10):
@@ -259,10 +269,9 @@ class RAGAgent():
                 if len(messages):
                     ai_message = ChatMessage.from_langchain(messages[-1])
                     if ai_message and not ai_message.tool_calls and ai_message.content and len(ai_message.content):
-                        logging.debug(f"/invoke respose: {ai_message.content}")
+                        logging.debug(f"respose: {ai_message.content}")
                         #logging.debug(f"response: {response}")
-                        result = ai_message.content
-                #await self._db_pool.close()
+                        return ai_message.content
             except Exception as e:
                 # https://langchain-ai.github.io/langgraph/troubleshooting/errors/INVALID_CHAT_HISTORY/
                 logging.exception(f"ChatAgent exception! {str(e)}, repr: {repr(e)}")

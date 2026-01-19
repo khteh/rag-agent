@@ -8,8 +8,11 @@ from src.common.Bcrypt import bcrypt
 from quart_wtf.csrf import CSRFProtect, CSRFError
 from quart_cors import cors
 from langchain_core.runnables import RunnableConfig
+from langgraph.store.postgres.aio import AsyncPostgresStore
+from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
+from langchain_ollama import OllamaEmbeddings
 from src.config import config as appconfig
-from src.Infrastructure.PostgreSQLSetup import PostgreSQLCheckpointerSetup
+from src.Infrastructure.PostgreSQLSetup import PostgreSQLCheckpointerSetup, PostgreSQLStoreSetup
 import warnings
 """
 https://docs.python.org/3/library/warnings.html#warnings.filterwarnings
@@ -55,7 +58,24 @@ async def create_app() -> Quart:
     @app.before_serving
     async def before_serving() -> None:
         logging.info(f"\n=== {before_serving.__name__} ===")
+        app.db_pool = AsyncConnectionPool(
+            conninfo = appconfig.POSTGRESQL_DATABASE_URI,
+            max_size = appconfig.DB_MAX_CONNECTIONS,
+            kwargs = appconfig.connection_kwargs,
+        )
         await app.db_pool.open()
+        logging.debug(f"EMBEDDING_DIMENSIONS: {appconfig.EMBEDDING_DIMENSIONS}")
+        app.store = AsyncPostgresStore(app.db_pool, index={
+                    "embed": OllamaEmbeddings(model=appconfig.EMBEDDING_MODEL, base_url=appconfig.BASE_URI, num_ctx=8192, num_gpu=1, temperature=0),
+                    "dims": appconfig.EMBEDDING_DIMENSIONS, # Note: Every time when this value changes, remove the store<foo> tables in the DB so that store.setup() runs to recreate them with the right dimensions.
+                }
+        )
+        app.checkpointer = AsyncPostgresSaver(app.db_pool)
+        await PostgreSQLStoreSetup(app.db_pool, app.store) # store is needed when creating the ReAct agent / StateGraph for InjectedStore to work
+        await PostgreSQLCheckpointerSetup(app.db_pool, app.checkpointer)
+        from src.rag_agent.RAGAgent import RAGAgent
+        app.agent = RAGAgent(app.db_pool, app.store, app.checkpointer)
+        await app.agent.CreateGraph()
 
     @app.after_serving
     async def after_serving():
@@ -72,14 +92,6 @@ async def create_app() -> Quart:
     # https://quart-wtf.readthedocs.io/en/stable/how_to_guides/configuration.html
     CSRFProtect(app)
     bcrypt.init_app(app)
-    app.db_pool = AsyncConnectionPool(
-        conninfo = appconfig.POSTGRESQL_DATABASE_URI,
-        max_size = appconfig.DB_MAX_CONNECTIONS,
-        kwargs = appconfig.connection_kwargs,
-    )
-    from src.rag_agent.RAGAgent import RAGAgent
-    app.agent = RAGAgent(app.db_pool)
-    await app.agent.CreateGraph()
     #if app.debug:
     # https://github.com/pgjones/hypercorn/issues/294
     #    return HTTPToHTTPSRedirectMiddleware(app, "khteh.com")  # type: ignore - Defined in hypercorn.toml server_names

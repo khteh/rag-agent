@@ -13,8 +13,10 @@ from langchain_core.runnables import RunnableConfig
 from langchain_core.prompts import ChatPromptTemplate
 from langgraph.graph.state import CompiledStateGraph
 from langchain.agents import create_agent
-from psycopg_pool import AsyncConnectionPool, ConnectionPool
+from psycopg_pool import AsyncConnectionPool
 from langgraph.store.postgres.aio import AsyncPostgresStore
+from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
+from langchain_ollama import OllamaEmbeddings
 from .prompts import HEALTHCARE_INSTRUCTIONS
 from .Tools import HealthcareReview, HealthcareCypher
 from src.rag_agent.Tools import upsert_memory, think_tool
@@ -36,7 +38,7 @@ class RAGAgent():
     _tools: List[Callable[..., Any]] = None
     agent: CompiledStateGraph = None
     # Class constructor
-    def __init__(self, db_pool:AsyncConnectionPool = None):
+    def __init__(self, db_pool:AsyncConnectionPool = None, store: AsyncPostgresStore = None, checkpointer: AsyncPostgresSaver = None):
         """
         Class RAGAgent Constructor
         """
@@ -58,6 +60,8 @@ class RAGAgent():
                         kwargs = appconfig.connection_kwargs,
                         open = False
                     )
+        self._store = store
+        self._checkpointer = checkpointer
         self._tools = [HealthcareReview, HealthcareCypher, get_current_wait_times, get_most_available_hospital, upsert_memory, think_tool]
         #self._llm = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider="ollama", base_url=appconfig.BASE_URI, streaming=True, temperature=0).bind_tools(self._tools)
         if appconfig.BASE_URI:
@@ -71,8 +75,8 @@ class RAGAgent():
     #    logging.info(f"\n=== {self.Cleanup.__name__} ===")
     #    await self._db_pool.close()
 
-    async def CreateGraph(self, db_pool: AsyncConnectionPool = None) -> CompiledStateGraph:
-        logging.debug(f"\n=== {self.CreateGraph.__name__} ===")
+    async def CreateGraph(self) -> CompiledStateGraph:
+        logging.info(f"\n=== Healthcare {self.CreateGraph.__name__} ===")
         try:
             # https://langchain-ai.github.io/langgraph/reference/prebuilt/#langgraph.prebuilt.chat_agent_executor.create_react_agent
             # https://github.com/langchain-ai/langchain/issues/30723
@@ -80,9 +84,15 @@ class RAGAgent():
             # https://github.com/langchain-ai/langgraph/blob/main/libs/prebuilt/langgraph/prebuilt/chat_agent_executor.py#L241
             await self._db_pool.open()
             if self._store is None:
-                self._store = await PostgreSQLStoreSetup(self._db_pool) # store is needed when creating the ReAct agent / StateGraph for InjectedStore to work
+                self._store = AsyncPostgresStore(self._db_pool, index={
+                            "embed": OllamaEmbeddings(model=appconfig.EMBEDDING_MODEL, base_url=appconfig.BASE_URI, num_ctx=8192, num_gpu=1, temperature=0),
+                            "dims": appconfig.EMBEDDING_DIMENSIONS, # Note: Every time when this value changes, remove the store<foo> tables in the DB so that store.setup() runs to recreate them with the right dimensions.
+                        }
+                )
+                await PostgreSQLStoreSetup(self._db_pool, self._store) # store is needed when creating the ReAct agent / StateGraph for InjectedStore to work
             if self._checkpointer is None:
-                self._checkpointer = await PostgreSQLCheckpointerSetup(self._db_pool)
+                self._checkpointer = AsyncPostgresSaver(self._db_pool)
+                await PostgreSQLCheckpointerSetup(self._db_pool, self._checkpointer)
             self._agent = create_agent(self._llm, self._tools, context_schema = Configuration, state_schema = CustomAgentState, name = self._name, system_prompt = HEALTHCARE_INSTRUCTIONS.format(timestamp=datetime.now()), store = self._store, checkpointer = self._checkpointer)
             # self.ShowGraph() # This blocks
         except Exception as e:
@@ -104,8 +114,8 @@ class RAGAgent():
             step["messages"][-1].pretty_print()
         return result[-1]
 
-async def make_graph(db_pool:AsyncConnectionPool = None) -> CompiledStateGraph:
-    return await RAGAgent(db_pool).CreateGraph()
+async def make_graph() -> CompiledStateGraph:
+    return await RAGAgent().CreateGraph()
 
 async def main():
     # httpx library is a dependency of LangGraph and is used under the hood to communicate with the AI models.
