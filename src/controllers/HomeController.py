@@ -126,15 +126,15 @@ async def invoke():
     # Expect a single string.
     if isinstance(user_input["message"], (list, tuple)):
         user_input["message"] = user_input["message"][-1]
-    config = RunnableConfig(run_name="RAG Deep Agent /invoke", thread_id = session["thread_id"], user_id =  session["user_id"])
+    config = RunnableConfig(run_name="RAG Deep Agent /invoke", configurable={"thread_id": session["thread_id"], "user_id":  session["user_id"]})
     logging.debug(f"/invoke message: {user_input['message']}")
     result: str = "Oops, there was some error. Please try again!"
     try:
-        result = await current_app.agent.ChatAgent(config, user_input['message'])
+        success, result = await current_app.agent.ChatAgent(config, user_input['message'])
     except Exception as e:
         # https://langchain-ai.github.io/langgraph/troubleshooting/errors/INVALID_CHAT_HISTORY/
         logging.exception(f"/invoke exception! {str(e)}, repr: {repr(e)}")
-    return custom_response({"message": result}, 503 if "error" in result.lower() else 200)
+    return custom_response({"message": result}, 200 if success else 503)
 
 async def message_generator(user_input: StreamInput, config: RunnableConfig) -> AsyncGenerator[str, None]:
     """
@@ -181,8 +181,8 @@ async def message_generator(user_input: StreamInput, config: RunnableConfig) -> 
         for message in new_messages:
             try:
                 chat_message = ChatMessage.from_langchain(message)
-                chat_message.thread_id = config["thread_id"]
-                chat_message.user_id = config["user_id"]
+                chat_message.thread_id = config.runnable["thread_id"]
+                chat_message.user_id = config.runnable["user_id"]
             except Exception as e:
                 yield f"data: {json.dumps({'type': 'error', 'content': f'Error parsing message: {e}'})}\n\n"
                 continue
@@ -205,7 +205,7 @@ async def stream_agent(): #user_input: StreamInput):
         session["user_id"] = uuid7str()
     if "thread_id" not in session or not session["thread_id"]:
         session["thread_id"] = uuid7str()
-    config = RunnableConfig(run_name="RAG Deep Agent /invoke", thread_id = session["thread_id"], user_id =  session["user_id"])
+    config = RunnableConfig(run_name="RAG Deep Agent /invoke", configurable={"thread_id": session["thread_id"], "user_id":  session["user_id"]})
     logging.info(f"/stream session {session['thread_id']} {session['user_id']}")
     user_input: UserInput = await ProcessCurlInput()
     """

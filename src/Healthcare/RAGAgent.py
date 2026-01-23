@@ -111,7 +111,7 @@ async def make_graph() -> CompiledStateGraph:
 async def main():
     # httpx library is a dependency of LangGraph and is used under the hood to communicate with the AI models.
     #vertexai.init(project=os.environ.get("GOOGLE_CLOUD_PROJECT"), location=os.environ.get("GOOGLE_CLOUD_LOCATION"))
-    config = RunnableConfig(run_name="Healthcare Sub-Agent", thread_id=uuid7str(), user_id=uuid7str())
+    config = RunnableConfig(run_name="Healthcare Sub-Agent", configurable={"thread_id": uuid7str(), "user_id": uuid7str()})
     rag = RAGAgent()
     await rag.CreateGraph()
     """

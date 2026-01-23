@@ -332,7 +332,7 @@ async def main():
     parser.add_argument('-l', '--load-urls', action='store_true', help='Load documents from URLs')
     args = parser.parse_args()
     #vertexai.init(project=os.environ.get("GOOGLE_CLOUD_PROJECT"), location=os.environ.get("GOOGLE_CLOUD_LOCATION"))
-    config = RunnableConfig(run_name="Checkpointed StateGraph RAG", thread_id=uuid7str(), user_id=uuid7str())
+    config = RunnableConfig(run_name="Checkpointed StateGraph RAG", configurable={"thread_id": uuid7str(), "user_id": uuid7str()})
     graph = GraphRAG(config)
     print(f"args: {args}")
     if args.load_urls:

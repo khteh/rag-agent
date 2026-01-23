@@ -8,7 +8,7 @@ from src.common.State import EmailRAGState
 
 @pytest.mark.asyncio(loop_scope="function")
 async def test_generate_query_or_respond(GraphRAGFixture):
-    config = RunnableConfig(run_name=test_generate_query_or_respond.__name__, thread_id=uuid7str())
+    config = RunnableConfig(run_name=test_generate_query_or_respond.__name__, configurable={"thread_id": uuid7str()})
     input = {"messages": [{"role": "user", "content": "Hello, who are you?"}]}
     response = await GraphRAGFixture.Agent(input, config)
     lc_ai_message = response["messages"][-1]
@@ -19,7 +19,7 @@ async def test_generate_query_or_respond(GraphRAGFixture):
 
 @pytest.mark.asyncio(loop_scope="function")
 async def test_should_rewrite_question(GraphRAGFixture):
-    config = RunnableConfig(run_name=test_should_rewrite_question.__name__, thread_id=uuid7str())
+    config = RunnableConfig(run_name=test_should_rewrite_question.__name__, configurable={"thread_id": uuid7str()})
     input = {
         "messages": convert_to_messages(
             [
@@ -46,7 +46,7 @@ async def test_should_rewrite_question(GraphRAGFixture):
 
 @pytest.mark.asyncio(loop_scope="function")
 async def test_should_generate_answer(GraphRAGFixture):
-    config = RunnableConfig(run_name=test_should_generate_answer.__name__, thread_id=uuid7str())
+    config = RunnableConfig(run_name=test_should_generate_answer.__name__, configurable={"thread_id": uuid7str()})
     input = {
         "messages": convert_to_messages(
             [
@@ -77,7 +77,7 @@ async def test_should_generate_answer(GraphRAGFixture):
 
 @pytest.mark.asyncio(loop_scope="function")
 async def test_rewrite_question(GraphRAGFixture):
-    config = RunnableConfig(run_name=test_rewrite_question.__name__, thread_id=uuid7str())
+    config = RunnableConfig(run_name=test_rewrite_question.__name__, configurable={"thread_id": uuid7str()})
     input = {
         "messages": convert_to_messages(
             [
@@ -106,7 +106,7 @@ async def test_rewrite_question(GraphRAGFixture):
    
 @pytest.mark.asyncio(loop_scope="function")
 async def test_generete_answer(GraphRAGFixture):
-    config = RunnableConfig(run_name=test_generete_answer.__name__, thread_id=uuid7str())
+    config = RunnableConfig(run_name=test_generete_answer.__name__, configurable={"thread_id": uuid7str()})
     input = {
         "messages": convert_to_messages(
             [

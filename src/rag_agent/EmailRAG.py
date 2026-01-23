@@ -297,7 +297,7 @@ async def main():
     Path("output/email_request.md").unlink(missing_ok=True)
     Path("output/email_extract.md").unlink(missing_ok=True)
     Path("output/final_report.md").unlink(missing_ok=True)
-    config = RunnableConfig(run_name="Email RAG", thread_id=uuid7str(), user_id=uuid7str())
+    config = RunnableConfig(run_name="Email RAG", configurable={"thread_id": uuid7str(), "user_id": uuid7str()})
     rag = EmailRAG(config)
     await rag.CreateGraph()
     email_state = {

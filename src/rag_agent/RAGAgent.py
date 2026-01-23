@@ -181,7 +181,6 @@ class RAGAgent():
             self._checkpointer = await PostgreSQLCheckpointerSetup(self._db_pool)
         thread_ids = await self._GetAllThreadIds()
         for id in thread_ids:
-            #config = RunnableConfig(run_name="RAG Deep Agent", thread_id=id)
             config = {
                 "configurable": {
                     "thread_id": id
@@ -246,7 +245,7 @@ class RAGAgent():
                 #            Allocate resources: With a clear understanding of the individual steps, resources can be allocated more effectively.\n4. Monitor progress: Decomposing tasks into smaller steps makes it easier to track progress and identify potential bottlenecks.\n\n
                 #            In the context of artificial intelligence and machine learning, task decomposition is used in techniques such as Chain of Thought (CoT) and Tree of Thoughts. These methods involve breaking down complex tasks into smaller steps, allowing models to utilize more test-time computation and provide insights into their thinking processes.\n\n
                 #            Overall, task decomposition is a powerful technique for simplifying complex tasks, improving productivity, and enhancing decision-making.' 
-                #additional_kwargs={} 
+                #additional_kwargs={}
                 #response_metadata={'model': 'llama3.3', 'created_at': '2025-04-12T12:23:19.47198126Z', 'done': True, 'done_reason': 'stop', 'total_duration': 428800185880, 'load_duration': 23447133, 'prompt_eval_count': 674, 'prompt_eval_duration': 19170396674, 'eval_count': 265, 'eval_duration': 409602973053, 'message': 
                 #Message(role='assistant', content='Task decomposition is a process of breaking down complex tasks or problems into smaller, more manageable steps or subtasks. This technique is used to simplify complicated tasks, making them easier to understand, plan, and execute. It involves identifying the individual components or steps required to complete a task, and then organizing these steps in a logical order.\n\nTask decomposition can be applied in various contexts, including project management, problem-solving, and decision-making. It helps individuals or teams to:\n\n1. Clarify complex tasks: By breaking down complex tasks into smaller steps, individuals can better understand what needs to be done.\n2. Identify priorities: Task decomposition helps to identify the most critical steps that need to be completed first.\n3. Allocate resources: With a clear understanding of the individual steps, resources can be allocated more effectively.\n4. Monitor progress: Decomposing tasks into smaller steps makes it easier to track progress and identify potential bottlenecks.\n\nIn the context of artificial intelligence and machine learning, task decomposition is used in techniques such as Chain of Thought (CoT) and Tree of Thoughts. These methods involve breaking down complex tasks into smaller steps, allowing models to utilize more test-time computation and provide insights into their thinking processes.\n\nOverall, task decomposition is a powerful technique for simplifying complex tasks, improving productivity, and enhancing decision-making.', images=None, tool_calls=None), 'model_name': 'llama3.3'} name='RAG ReAct Agent' id='run-fc59fe44-18ea-44d5-b806-4c8454401703-0' usage_metadata={'input_tokens': 674, 'output_tokens': 265, 'total_tokens': 939}
                 ai_message: ChatMessage = None
@@ -255,12 +254,12 @@ class RAGAgent():
                     if ai_message and not ai_message.tool_calls and ai_message.content and len(ai_message.content):
                         logging.debug(f"respose: {ai_message.content}")
                         #logging.debug(f"response: {response}")
-                        return ai_message.content
+                        return True, ai_message.content
             except Exception as e:
                 # https://langchain-ai.github.io/langgraph/troubleshooting/errors/INVALID_CHAT_HISTORY/
                 logging.exception(f"ChatAgent exception! {str(e)}, repr: {repr(e)}")
                 if attempt == 2:
-                    return result
+                    return False, result
                 if "Found AIMessages with tool_calls that do not have a corresponding ToolMessage" in str(e):
                     #state = await current_app.agent.with_config(config).aget_state() XXX: This doesn't work! Why!?!
                     state = await self._agent.aget_state({"configurable": {"thread_id": config.thread_id, "user_id": config.user_id}})
@@ -279,7 +278,7 @@ class RAGAgent():
                         # provide ToolMessages that match existing tool calls and call graph.invoke({'messages': [ToolMessage(...)]}). 
                         # NOTE: this will append the messages to the history and run the graph from the START node.
                         await self._agent.with_config(config).ainvoke({'messages': [ToolMessage(content="I don't know!", tool_call_id=id)]})
-        return result
+        return False, result
 
 async def make_graph() -> CompiledStateGraph:
     """
@@ -343,7 +342,7 @@ async def main():
         input_message = "What have patients said about hospital efficiency? Mention details from specific reviews."
     elif args.neo4j:
         input_message = "Query the graph database to show me the reviews written by patient 7674"
-    config = RunnableConfig(run_name="RAG Deep Agent", thread_id=uuid7str(), user_id=uuid7str())
+    config = RunnableConfig(run_name="RAG Deep Agent", configurable={"thread_id": uuid7str(), "user_id": uuid7str()})
     await rag.ChatAgent(config, input_message)
 
 if __name__ == "__main__":

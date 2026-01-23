@@ -6,7 +6,7 @@ pytest_plugins = ('pytest_asyncio',)
 
 @pytest.mark.asyncio(loop_scope="function")
 async def test_hospital_visit_duration():
-    config = RunnableConfig(run_name=test_hospital_visit_duration.__name__, thread_id=uuid7str())
+    config = RunnableConfig(run_name=test_hospital_visit_duration.__name__, configurable={"thread_id": uuid7str()})
     query = "What is the average visit duration for emergency visits in North Carolina?"
     response = await HealthcareCypher.ainvoke(query, config)
     result = response.get('result')
@@ -18,7 +18,7 @@ async def test_hospital_visit_duration():
 
 @pytest.mark.asyncio(loop_scope="function")
 async def test_hospital_percent_increase():
-    config = RunnableConfig(run_name=test_hospital_percent_increase.__name__, thread_id=uuid7str())
+    config = RunnableConfig(run_name=test_hospital_percent_increase.__name__, configurable={"thread_id": uuid7str()})
     query = "Which state had the largest percent increase in Medicaid visits from 2022 to 2023?"
     response = await HealthcareCypher.ainvoke(query, config)
     result = response.get('result')

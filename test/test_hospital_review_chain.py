@@ -6,7 +6,7 @@ pytest_plugins = ('pytest_asyncio',)
 
 @pytest.mark.asyncio(loop_scope="function")
 async def test_hospital_review_chain():
-    config = RunnableConfig(run_name=test_hospital_review_chain.__name__, thread_id=uuid7str())
+    config = RunnableConfig(run_name=test_hospital_review_chain.__name__, configurable={"thread_id": uuid7str()})
     query = """What have patients said about hospital efficiency?
             Mention details from specific reviews."""
     response = await HealthcareReview.ainvoke(query, config)
