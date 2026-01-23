@@ -219,19 +219,16 @@ Which hospital has the shortest wait time?
 - `output/final_answer.md`:
 
 ```
-## Hospital with the Shortest Average Wait Time
+## Shortest Wait Time Hospital
 
-The hospital with the shortest average wait time is **Wallace‑Hamilton** located in Colorado. Its average wait time is **14.1 days**.
+| Hospital | Location | Wait Time |
+|----------|----------|-----------|
+| **Walton LLC** | Florida (FL) | **6 minutes** |
 
-### Details
-- **Hospital:** Wallace‑Hamilton
-- **Location:** Colorado, United States
-- **Average Wait Time:** 14.1 days
+**Sources**
 
-[1]
-
-### Sources
-[1] HealthcareCypher: Average Hospital Wait Times – https://healthcarecypher.com/hospital-wait-times
+- Shortest wait time: *get_most_available_hospital* returned “Walton LLC” with a wait time of 6 minutes.
+- Location: *HealthcareCypher* confirmed that Walton LLC is located in Florida.
 ```
 
 ### Answering questions from Postgres Vector Store:

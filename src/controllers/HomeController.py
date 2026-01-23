@@ -134,7 +134,7 @@ async def invoke():
     except Exception as e:
         # https://langchain-ai.github.io/langgraph/troubleshooting/errors/INVALID_CHAT_HISTORY/
         logging.exception(f"/invoke exception! {str(e)}, repr: {repr(e)}")
-    return custom_response({"message": result}, 200 if success else 503)
+    return custom_response({"message": result}, 200 if success else 500)
 
 async def message_generator(user_input: StreamInput, config: RunnableConfig) -> AsyncGenerator[str, None]:
     """
