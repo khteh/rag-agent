@@ -3,22 +3,12 @@ Once you have received the parsed content of the email from Email Parser SubAgen
 
 Follow this workflow for all email processing requests:
 
-1. **Plan**: Create a todo list with write_todos to break down the email processing into focused tasks. (see ToDo List Guidelines below)
+1. **Plan**: Create a todo list with write_todos to break down the email processing into focused tasks.
 2. **Save the request**: Use write_file() to save the user's email processing request to `/email_request.md`. (see User Email Request Guidelines below)
 3. **Extract escalation criteria**: Extract the criteria from user message and add it as 'escalation_text_criteria' of the state passed to the subagent.
 4. **Always delegate email parsing task to Email Parser SubAgent by passing the email to the subagent.**
 5. **Write Report**: Write a comprehensive final report to `/final_report.md` based on the EmailRAGState returned especially the 'extract' information of the dictionary (see Report Writing Guidelines below)
 6. **Response**: Respond to the user with the content of the final report.
-
-## ToDo List Guidelines
-- The format should be a list of dictionary.
-- The dictionary should have the 'content' and 'status' keys.
-- The value of 'content' is the todo item.
-Example:
-```
-[{'content': 'Create todo list', 'status': 'in_progress'}, {'content': 'Save user question to file', 'status': 'pending'}, {'content': 'Extract the escalation criteria', 'status': 'pending'}, {'content': 'Launch Email Parser SubAgent to process the email', 'status': 'pending'}, {'content': 'Write report', 'status': 'pending'}, {'content': 'Respond to user', 'status': 'pending'}]
-```
-- Update the status of the list item to reflect the status of the progress of the workflow.
 
 ## User Email Request Guidelines
 - Create the file if it does not exist

@@ -14,10 +14,12 @@ from langgraph.graph import (
 )
 from langgraph.graph.state import CompiledStateGraph
 from langgraph.store.postgres.aio import AsyncPostgresStore
+from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
 from psycopg_pool import AsyncConnectionPool, ConnectionPool
 from langchain_core.prompts import ChatPromptTemplate, HumanMessagePromptTemplate, PromptTemplate, SystemMessagePromptTemplate
 from typing_extensions import List, TypedDict
 from deepagents import create_deep_agent, CompiledSubAgent
+from langchain_ollama import OllamaEmbeddings
 """
 https://langchain-ai.github.io/langgraph/tutorials/rag/langgraph_agentic_rag/
 https://cloud.google.com/vertex-ai/generative-ai/docs/embeddings/get-text-embeddings
@@ -218,9 +220,15 @@ class EmailRAG():
             cache_policy = CachePolicy(ttl=600) # 10 minutes
             await self._db_pool.open()
             if self._store is None:
-                self._store = await PostgreSQLStoreSetup(self._db_pool) # store is needed when creating the ReAct agent / StateGraph for InjectedStore to work
+                self._store = AsyncPostgresStore(self._db_pool, index={
+                            "embed": OllamaEmbeddings(model=appconfig.EMBEDDING_MODEL, base_url=appconfig.BASE_URI, num_ctx=8192, num_gpu=1, temperature=0),
+                            "dims": appconfig.EMBEDDING_DIMENSIONS, # Note: Every time when this value changes, remove the store<foo> tables in the DB so that store.setup() runs to recreate them with the right dimensions.
+                        }
+                )
+                await PostgreSQLStoreSetup(self._db_pool, self._store) # store is needed when creating the ReAct agent / StateGraph for InjectedStore to work
             if self._checkpointer is None:
-                self._checkpointer = await PostgreSQLCheckpointerSetup(self._db_pool)
+                self._checkpointer = AsyncPostgresSaver(self._db_pool)
+                await PostgreSQLCheckpointerSetup(self._db_pool, self._checkpointer)
             # This should be a custom subagent.
             graph_builder = StateGraph(EmailRAGState, ContextSchema)
             graph_builder.add_node("ParseEmail", self.ParseEmail, cache_policy = cache_policy)
