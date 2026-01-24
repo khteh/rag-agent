@@ -126,6 +126,7 @@ class VectorStore(): #metaclass=VectorStoreSingleton):
         """
         Load and chunk contents of the blog
         https://docs.langchain.com/oss/python/langchain/rag
+        https://docs.langchain.com/oss/python/integrations/document_loaders
         """
         count: int = 0
         for url in urls:
