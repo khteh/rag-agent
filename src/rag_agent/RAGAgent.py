@@ -1,8 +1,10 @@
-import argparse, atexit, asyncio, logging, sys
+import argparse, json, asyncio, logging, sys
 from uuid_extensions import uuid7, uuid7str
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Callable, List, Optional, cast
+from asyncio import Queue, run, create_task
+from typing import Any, Callable, List, AsyncGenerator
+from langchain_core.messages.base import BaseMessage, BaseMessageChunk
 from langchain.chat_models import init_chat_model
 from langchain_core.messages import HumanMessage, AIMessage, ToolMessage, SystemMessage, ToolCall
 from langchain_core.runnables import RunnableConfig, ensure_config
@@ -11,6 +13,7 @@ from langchain.agents import create_agent
 from langgraph.store.base import BaseStore
 from langgraph.store.postgres.aio import AsyncPostgresStore
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
+from langchain_core.callbacks import AsyncCallbackHandler
 from psycopg_pool import AsyncConnectionPool
 from langchain_ollama import OllamaEmbeddings
 from deepagents import create_deep_agent, CompiledSubAgent
@@ -34,6 +37,16 @@ from src.rag_agent.Tools import current_timestamp, ground_search, upsert_memory
 from src.common.Configuration import Configuration
 from src.Infrastructure.Backend import composite_backend
 from src.Infrastructure.PostgreSQLSetup import PostgreSQLCheckpointerSetup, PostgreSQLStoreSetup
+
+class TokenQueueStreamingHandler(AsyncCallbackHandler):
+    """LangChain callback handler for streaming LLM tokens to an asyncio queue."""
+    def __init__(self, queue: Queue):
+        self.queue = queue
+
+    async def on_llm_new_token(self, token: str, **kwargs) -> None:
+        if token:
+            await self.queue.put(token)
+
 class RAGAgent():
     _name:str = "RAG Deep Agent"
     _llm = None
@@ -211,34 +224,36 @@ class RAGAgent():
         for id in thread_ids:
             await self.DeleteAllCheckpointsForThread(id)
 
-    async def _GetAllThreadIds(self):
-        logging.info(f"\n=== {self._GetAllThreadIds.__name__} ===")
-        async with self._db_pool.connection() as conn:
-            async with conn.cursor() as cur:
-                await cur.execute("SELECT DISTINCT thread_id FROM checkpoints")
-                thread_ids = [row[0] for row in await cur.fetchall()]
-        logging.debug(f"{len(thread_ids)} threads")
-        return thread_ids
-    
-    async def ChatAgent(self, config: RunnableConfig, message: str) -> str:
+    async def ChatAgent(self, config: RunnableConfig, message: str, modes: List[str] = ["values"], subgraphs: bool = False, output_queue: Queue = None) -> str:
         """
         message is a single string. It can contain multiple questions:
         input_message: str = ("What is task decomposition?\n" "What is the standard method for Task Decomposition?\n" "Once you get the answer, look up common extensions of that method.")
         """
-        logging.info(f"\n=== {self.ChatAgent.__name__} ===")
+        logging.info(f"\n=== {self.ChatAgent.__name__} modes: {modes}, subgraphs: {subgraphs} ===")
         result: str = "Oops, there was some error. Please try again!"
         for attempt in range(3):
             try:
                 # https://langchain-ai.github.io/langgraph/concepts/streaming/
                 # https://langchain-ai.github.io/langgraph/how-tos/#streaming
-                messages: List[str] = []
-                async for step in self._agent.astream(
+                messages: List[BaseMessage] = []
+                async for stream_mode, data in self._agent.astream( # The output of each step in the graph. The output shape depends on the stream_mode.
                     {"messages": [{"role": "user", "content": message}]},
-                    stream_mode="values", # Use this to stream all values in the state after each step.
-                    config=config, # This is needed by Checkpointer
+                    stream_mode = modes, # Use this to stream all values in the state after each step.
+                    config = config, # This is needed by Checkpointer
+                    subgraphs = subgraphs
                 ):
-                    messages.append(step["messages"][-1])
-                    step["messages"][-1].pretty_print()
+                    logging.debug(f"stream_mode: {stream_mode}")
+                    if stream_mode == "values":
+                        #logging.debug(f"data type: {type(data["messages"][-1])}")
+                        messages.append(data["messages"][-1])
+                        data["messages"][-1].pretty_print()
+                    elif stream_mode == "updates":
+                        for source, update in data.items():
+                            if source in ("model", "tools"):
+                                #logging.debug(f"update type: {type(update["messages"][-1])}")
+                                logging.debug(f"source: {source}")
+                                update["messages"][-1].pretty_print()
+                                await output_queue.put(update["messages"][-1])
                 #2025-04-12 20:23:19 DEBUG    /invoke respose: content='Task decomposition is a process of breaking down complex tasks or problems into smaller, more manageable steps or subtasks. This technique is used to simplify complicated tasks, making them easier to understand, plan, and execute. 
                 #            It involves identifying the individual components or steps required to complete a task, and then organizing these steps in a logical order.\n\nTask decomposition can be applied in various contexts, including project management, problem-solving, and decision-making. 
                 #            It helps individuals or teams to:\n\n1. Clarify complex tasks: By breaking down complex tasks into smaller steps, individuals can better understand what needs to be done.\n2. Identify priorities: Task decomposition helps to identify the most critical steps that need to be completed first.\n3. 
@@ -280,6 +295,64 @@ class RAGAgent():
                         await self._agent.with_config(config).ainvoke({'messages': [ToolMessage(content="I don't know!", tool_call_id=id)]})
         return False, result
 
+    async def message_generator(self, user_input: StreamInput, config: RunnableConfig) -> AsyncGenerator[str, None]:
+        """
+        Generate a stream of messages from the agent.
+        This is the workhorse method for the /stream endpoint.
+        """
+        logging.info(f"\n=== {self.message_generator.__name__} ===")
+        # Use an asyncio queue to process both messages and tokens in
+        # chronological order, so we can easily yield them to the client.
+        output_queue = Queue(maxsize=10)
+        if user_input.stream_tokens:
+            config["callbacks"] = [TokenQueueStreamingHandler(queue=output_queue)]
+
+        stream_task = create_task(self._run_agent_stream(config, user_input.message, ["updates"], True, output_queue))
+        # Process the queue and yield messages over the SSE stream.
+        while s := await output_queue.get():
+            if isinstance(s, str):
+                # str is an LLM token
+                yield f"data: {json.dumps({'type': 'token', 'content': s})}\n\n"
+                continue
+
+            # Otherwise, s should be a dict of state updates for each node in the graph.
+            # s could have updates for multiple nodes, so check each for messages.
+            new_messages = []
+            for _, state in s.items():
+                if "messages" in state:
+                    new_messages.extend(state["messages"])
+            for message in new_messages:
+                try:
+                    chat_message = ChatMessage.from_langchain(message)
+                    chat_message.thread_id = config.runnable["thread_id"]
+                    chat_message.user_id = config.runnable["user_id"]
+                except Exception as e:
+                    yield f"data: {json.dumps({'type': 'error', 'content': f'Error parsing message: {e}'})}\n\n"
+                    continue
+                # LangGraph re-sends the input message, which feels weird, so drop it
+                if chat_message.type == "human" and chat_message.content == user_input.message:
+                    continue
+                yield f"data: {json.dumps({'type': 'message', 'content': chat_message.model_dump()})}\n\n"
+        await stream_task
+        yield "data: [DONE]\n\n"
+
+    # Pass the agent's stream of messages to the queue in a separate task, so
+    # we can yield the messages to the client in the main thread.
+    async def _run_agent_stream(self, config: RunnableConfig, message: str, modes: List[str], subgraphs:bool, output_queue: Queue):
+        # https://docs.langchain.com/oss/python/langchain/streaming/overview#streaming-from-sub-agents
+        logging.info(f"\n=== run_agent_stream ===")
+        await self.ChatAgent(config, message, modes, subgraphs, output_queue)
+        await output_queue.put(None)
+
+    async def _GetAllThreadIds(self):
+        logging.info(f"\n=== {self._GetAllThreadIds.__name__} ===")
+        async with self._db_pool.connection() as conn:
+            async with conn.cursor() as cur:
+                await cur.execute("SELECT DISTINCT thread_id FROM checkpoints")
+                thread_ids = [row[0] for row in await cur.fetchall()]
+        logging.debug(f"{len(thread_ids)} threads")
+        return thread_ids
+
 async def make_graph() -> CompiledStateGraph:
     """
     This should only be used by the langgraph cli as defined in langgraph.json
@@ -298,6 +371,7 @@ async def main():
     parser.add_argument('-a', '--ai-ml', action='store_true', help="Ask questions regarding AI/ML which should be answered based on Lilian's blog")
     parser.add_argument('-m', '--mlflow', action='store_true', help="Ask questions regarding MLFlow")
     parser.add_argument('-n', '--neo4j-graph', action='store_true', help='Ask question with answer in Neo4J graph database store')
+    parser.add_argument('-u', '--stream-updates', action='store_true', help='Stream updates instead of theh complete message')
     parser.add_argument('-v', '--neo4j-vector', action='store_true', help='Ask question with answers in Neo4J vector store')
     parser.add_argument('-b', '--neo4j', action='store_true', help='Ask question with answers in both Neo4J vector and graph stores')
     parser.add_argument('-w', '--wait-time', action='store_true', help='Ask hospital waiting time using answer from mock API endpoint')
@@ -343,7 +417,12 @@ async def main():
     elif args.neo4j:
         input_message = "Query the graph database to show me the reviews written by patient 7674"
     config = RunnableConfig(run_name="RAG Deep Agent", configurable={"thread_id": uuid7str(), "user_id": uuid7str()})
-    await rag.ChatAgent(config, input_message)
+    if args.stream_updates:
+        input = StreamInput(message = input_message, thread_id = config["configurable"]["thread_id"], stream_tokens = True)
+        async for answer in rag.message_generator(input, config):
+            print(answer)
+    else:
+        await rag.ChatAgent(config, input_message)
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    run(main())

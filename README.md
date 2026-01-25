@@ -94,7 +94,7 @@ $ gcloud auth application-default set-quota-project <ProjectID>
 
 ```
 $ uv run python -m src.rag_agent.RAGAgent -h
-usage: RAGAgent.py [-h] [-l] [-t] [-d] [-a] [-m] [-n] [-v] [-b] [-w]
+usage: RAGAgent.py [-h] [-l] [-t] [-d] [-a] [-m] [-n] [-u] [-v] [-b] [-w]
 
 LLM-RAG deep agent answering user questions about healthcare system and AI/ML
 
@@ -106,6 +106,7 @@ options:
   -a, --ai-ml           Ask questions regarding AI/ML which should be answered based on Lilian's blog
   -m, --mlflow          Ask questions regarding MLFlow
   -n, --neo4j-graph     Ask question with answer in Neo4J graph database store
+  -u, --stream-updates  Stream updates instead of theh complete message
   -v, --neo4j-vector    Ask question with answers in Neo4J vector store
   -b, --neo4j           Ask question with answers in both Neo4J vector and graph stores
   -w, --wait-time       Ask hospital waiting time using answer from mock API endpoint
