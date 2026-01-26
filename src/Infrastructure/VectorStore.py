@@ -93,7 +93,7 @@ class VectorStore(): #metaclass=VectorStoreSingleton):
         atexit.register(self.Cleanup)
 
     def Cleanup(self):
-        logging.info(f"\n=== {self.Cleanup.__name__} ===")
+        logging.info(f"\n=== {self.__class__.__name__}.{self.Cleanup.__name__} ===")
         # self._embeddings.close() 'OllamaEmbeddings' object has no attribute 'close'
         # self._client.close() 'Client' object has no attribute 'close'
         # self.vector_store.close()

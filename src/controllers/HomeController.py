@@ -131,8 +131,8 @@ async def invoke():
 async def stream_agent(): #user_input: StreamInput):
     """
     Stream the agent's response to a user input, including intermediate messages and tokens.
-
     Use thread_id to persist and continue a multi-turn conversation.
+    https://quart.palletsprojects.com/en/stable/how_to_guides/streaming_response.html
     """
     if "user_id" not in session or not session["user_id"]:
         session["user_id"] = uuid7str()

@@ -249,11 +249,12 @@ class RAGAgent():
                         data["messages"][-1].pretty_print()
                     elif stream_mode == "updates":
                         for source, update in data.items():
-                            if source in ("model", "tools"):
+                            #if source in ("model", "tools"):
+                            if source == "model":
                                 #logging.debug(f"update type: {type(update["messages"][-1])}")
                                 logging.debug(f"source: {source}")
-                                update["messages"][-1].pretty_print()
-                                await output_queue.put(update["messages"][-1])
+                                #update["messages"][-1].pretty_print() This will clutter the stream output at the console
+                                await output_queue.put(update) # Queue the state object. Not the message: update["messages"][-1]
                 #2025-04-12 20:23:19 DEBUG    /invoke respose: content='Task decomposition is a process of breaking down complex tasks or problems into smaller, more manageable steps or subtasks. This technique is used to simplify complicated tasks, making them easier to understand, plan, and execute. 
                 #            It involves identifying the individual components or steps required to complete a task, and then organizing these steps in a logical order.\n\nTask decomposition can be applied in various contexts, including project management, problem-solving, and decision-making. 
                 #            It helps individuals or teams to:\n\n1. Clarify complex tasks: By breaking down complex tasks into smaller steps, individuals can better understand what needs to be done.\n2. Identify priorities: Task decomposition helps to identify the most critical steps that need to be completed first.\n3. 
@@ -268,7 +269,6 @@ class RAGAgent():
                     ai_message = ChatMessage.from_langchain(messages[-1])
                     if ai_message and not ai_message.tool_calls and ai_message.content and len(ai_message.content):
                         logging.debug(f"respose: {ai_message.content}")
-                        #logging.debug(f"response: {response}")
                         return True, ai_message.content
             except Exception as e:
                 # https://langchain-ai.github.io/langgraph/troubleshooting/errors/INVALID_CHAT_HISTORY/
@@ -276,7 +276,6 @@ class RAGAgent():
                 if attempt == 2:
                     return False, result
                 if "Found AIMessages with tool_calls that do not have a corresponding ToolMessage" in str(e):
-                    #state = await current_app.agent.with_config(config).aget_state() XXX: This doesn't work! Why!?!
                     state = await self._agent.aget_state({"configurable": {"thread_id": config.thread_id, "user_id": config.user_id}})
                     tool_messages = set()
                     outstanding_tool_call_ids = set()
@@ -299,6 +298,7 @@ class RAGAgent():
         """
         Generate a stream of messages from the agent.
         This is the workhorse method for the /stream endpoint.
+        https://github.com/yuxiaojian/llm-tools-call
         """
         logging.info(f"\n=== {self.message_generator.__name__} ===")
         # Use an asyncio queue to process both messages and tokens in
@@ -306,15 +306,14 @@ class RAGAgent():
         output_queue = Queue(maxsize=10)
         if user_input.stream_tokens:
             config["callbacks"] = [TokenQueueStreamingHandler(queue=output_queue)]
-
-        stream_task = create_task(self._run_agent_stream(config, user_input.message, ["updates"], True, output_queue))
+        stream_task = create_task(self._run_agent_stream(config, user_input.message, ["updates"], False, output_queue))
         # Process the queue and yield messages over the SSE stream.
         while s := await output_queue.get():
             if isinstance(s, str):
                 # str is an LLM token
-                yield f"data: {json.dumps({'type': 'token', 'content': s})}\n\n"
+                #yield f"data: {json.dumps({'type': 'token', 'content': s})}\n\n"
+                yield s
                 continue
-
             # Otherwise, s should be a dict of state updates for each node in the graph.
             # s could have updates for multiple nodes, so check each for messages.
             new_messages = []
@@ -334,12 +333,16 @@ class RAGAgent():
                     continue
                 yield f"data: {json.dumps({'type': 'message', 'content': chat_message.model_dump()})}\n\n"
         await stream_task
-        yield "data: [DONE]\n\n"
+        #yield "data: [DONE]\n\n"
+        yield "\n"
 
     # Pass the agent's stream of messages to the queue in a separate task, so
     # we can yield the messages to the client in the main thread.
     async def _run_agent_stream(self, config: RunnableConfig, message: str, modes: List[str], subgraphs:bool, output_queue: Queue):
-        # https://docs.langchain.com/oss/python/langchain/streaming/overview#streaming-from-sub-agents
+        """
+        https://docs.langchain.com/oss/python/langchain/streaming/overview#streaming-from-sub-agents
+        https://github.com/yuxiaojian/llm-tools-call
+        """
         logging.info(f"\n=== run_agent_stream ===")
         await self.ChatAgent(config, message, modes, subgraphs, output_queue)
         await output_queue.put(None)
@@ -420,9 +423,9 @@ async def main():
     if args.stream_updates:
         input = StreamInput(message = input_message, thread_id = config["configurable"]["thread_id"], stream_tokens = True)
         async for answer in rag.message_generator(input, config):
-            print(answer)
+            print(answer, end="")
     else:
-        await rag.ChatAgent(config, input_message)
+        await rag.ChatAgent(config, input_message, ["values"], False)
 
 if __name__ == "__main__":
     run(main())
