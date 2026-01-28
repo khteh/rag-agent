@@ -63,9 +63,22 @@ async def create_app() -> Quart:
         )
         await app.db_pool.open()
         logging.debug(f"EMBEDDING_DIMENSIONS: {appconfig.EMBEDDING_DIMENSIONS}")
+        # Note: Every time when this value changes, remove the following tables (https://github.com/langchain-ai/langgraph/issues/6687)
+        # -- Drop the table containing the vectors with the wrong dimension
+        # DROP TABLE IF EXISTS store_vectors;
+
+        #-- Remove the migration record so setup() runs the table creation script again
+        # -- (Assumes the CREATE TABLE migration is version 2, which matches current source)
+        # DELETE FROM vector_migrations WHERE v >= 2;
+
+        # -- For the main store table version
+        # SELECT max(v) FROM store_migrations;
+
+        # -- For the vector store table version
+        # SELECT max(v) FROM vector_migrations;        
         app.store = AsyncPostgresStore(app.db_pool, index={
                     "embed": OllamaEmbeddings(model=appconfig.EMBEDDING_MODEL, base_url=appconfig.BASE_URI, num_ctx=8192, num_gpu=1, temperature=0),
-                    "dims": appconfig.EMBEDDING_DIMENSIONS, # Note: Every time when this value changes, remove the store<foo> tables in the DB so that store.setup() runs to recreate them with the right dimensions.
+                    "dims": appconfig.EMBEDDING_DIMENSIONS,
                 }
         )
         app.checkpointer = AsyncPostgresSaver(app.db_pool)
