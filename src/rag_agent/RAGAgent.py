@@ -2,6 +2,7 @@ import argparse, json, asyncio, logging, sys
 from uuid_extensions import uuid7, uuid7str
 from datetime import datetime
 from pathlib import Path
+from pprint import pprint
 from asyncio import Queue, run, create_task
 from typing import Any, Callable, List, AsyncGenerator
 from langchain_core.messages.base import BaseMessage, BaseMessageChunk
@@ -17,13 +18,6 @@ from langchain_core.callbacks import AsyncCallbackHandler
 from psycopg_pool import AsyncConnectionPool
 from langchain_ollama import OllamaEmbeddings
 from deepagents import create_deep_agent, CompiledSubAgent
-# https://github.com/langchain-ai/deepagents
-#https://python.langchain.com/docs/tutorials/qa_chat_history/
-#https://python.langchain.com/api_reference/langchain/chat_models/langchain.chat_models.base.init_chat_model.html
-#https://cloud.google.com/vertex-ai/generative-ai/docs/embeddings/get-text-embeddings
-#https://langchain-ai.github.io/langgraph/how-tos/streaming/#values
-#https://python.langchain.com/docs/how_to/configure/
-#https://langchain-ai.github.io/langgraph/how-tos/
 from src.config import config as appconfig
 from src.rag_agent.RAGPrompts import RAG_INSTRUCTIONS, SUBAGENT_DELEGATION_INSTRUCTIONS, RAG_WORKFLOW_INSTRUCTIONS
 from src.models.schema import ChatMessage, UserInput, StreamInput
@@ -37,15 +31,31 @@ from src.rag_agent.Tools import current_timestamp, ground_search, upsert_memory
 from src.common.Configuration import Configuration
 from src.Infrastructure.Backend import composite_backend
 from src.Infrastructure.PostgreSQLSetup import PostgreSQLCheckpointerSetup, PostgreSQLStoreSetup
+# https://github.com/langchain-ai/deepagents
+# https://python.langchain.com/docs/tutorials/qa_chat_history/
+# https://python.langchain.com/api_reference/langchain/chat_models/langchain.chat_models.base.init_chat_model.html
+# https://cloud.google.com/vertex-ai/generative-ai/docs/embeddings/get-text-embeddings
+# https://langchain-ai.github.io/langgraph/how-tos/streaming/#values
+# https://python.langchain.com/docs/how_to/configure/
+# https://langchain-ai.github.io/langgraph/how-tos/
 
 class TokenQueueStreamingHandler(AsyncCallbackHandler):
     """LangChain callback handler for streaming LLM tokens to an asyncio queue."""
     def __init__(self, queue: Queue):
         self.queue = queue
-
     async def on_llm_new_token(self, token: str, **kwargs) -> None:
         if token:
-            await self.queue.put(token)
+            logging.info(f"\n=== {self.on_llm_new_token.__name__} kwargs: {kwargs} ===")
+            # kwargs: {'chunk': ChatGenerationChunk(text='We', message=AIMessageChunk(content='We', additional_kwargs={}, response_metadata={}, tool_calls=[], invalid_tool_calls=[], tool_call_chunks=[])), 
+            #          'run_id': UUID('019c028e-19a4-7213-92d0-26535292aaca'), 
+            #          'parent_run_id': UUID('019c028e-1983-7f42-8648-8f02f450018c'), 
+            #          'tags': ['seq:step:1'], 
+            #          'verbose': False}
+            chunk = kwargs.get("chunk", None)
+            if chunk:
+                message = chunk.message
+                if len(message.tool_calls) == 0 and len(message.tool_call_chunks) == 0 and len(message.invalid_tool_calls) == 0:
+                    await self.queue.put(token)
 
 class RAGAgent():
     _name:str = "RAG Deep Agent"
@@ -251,8 +261,7 @@ class RAGAgent():
                         for source, update in data.items():
                             #if source in ("model", "tools"):
                             if source == "model":
-                                #logging.debug(f"update type: {type(update["messages"][-1])}")
-                                logging.debug(f"source: {source}")
+                                logging.debug(f"source: {source}, type: {type(update)}")
                                 #update["messages"][-1].pretty_print() This will clutter the stream output at the console
                                 await output_queue.put(update) # Queue the state object. Not the message: update["messages"][-1]
                 #2025-04-12 20:23:19 DEBUG    /invoke respose: content='Task decomposition is a process of breaking down complex tasks or problems into smaller, more manageable steps or subtasks. This technique is used to simplify complicated tasks, making them easier to understand, plan, and execute. 
@@ -316,22 +325,16 @@ class RAGAgent():
                 continue
             # Otherwise, s should be a dict of state updates for each node in the graph.
             # s could have updates for multiple nodes, so check each for messages.
-            new_messages = []
-            for _, state in s.items():
-                if "messages" in state:
-                    new_messages.extend(state["messages"])
-            for message in new_messages:
-                try:
-                    chat_message = ChatMessage.from_langchain(message)
-                    chat_message.thread_id = config.runnable["thread_id"]
-                    chat_message.user_id = config.runnable["user_id"]
-                except Exception as e:
-                    yield f"data: {json.dumps({'type': 'error', 'content': f'Error parsing message: {e}'})}\n\n"
-                    continue
-                # LangGraph re-sends the input message, which feels weird, so drop it
-                if chat_message.type == "human" and chat_message.content == user_input.message:
-                    continue
-                yield f"data: {json.dumps({'type': 'message', 'content': chat_message.model_dump()})}\n\n"
+            logging.debug(f"s: {s}")
+            if "messages" in s:
+                logging.debug(f"{len(s["messages"])} messages")
+                for message in s["messages"]:
+                    try:
+                        chat_message = ChatMessage.from_langchain(message)
+                        if chat_message.type == "ai" and not chat_message.tool_calls:
+                            yield chat_message.content
+                    except Exception as e:
+                        logging.exception(f"{self.message_generator.__name__} exception! {str(e)}, repr: {repr(e)}")
         await stream_task
         #yield "data: [DONE]\n\n"
         yield "\n"
@@ -423,7 +426,7 @@ async def main():
     if args.stream_updates:
         input = StreamInput(message = input_message, thread_id = config["configurable"]["thread_id"], stream_tokens = True)
         async for answer in rag.message_generator(input, config):
-            print(answer, end="")
+            print(answer, end = "", flush = True)
     else:
         await rag.ChatAgent(config, input_message, ["values"], False)
 

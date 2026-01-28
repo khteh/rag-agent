@@ -158,4 +158,3 @@ async def stream_agent(): #user_input: StreamInput):
         message = current_app.agent.message_generator(user_input, config)
         yield message.encode()
     return async_generator(), 200
-    #return StreamingResponse(message_generator(user_input), media_type="text/event-stream")
