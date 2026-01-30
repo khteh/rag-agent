@@ -26,6 +26,7 @@ from typing_extensions import List, TypedDict
 from src.common.ResponseHelper import Respond
 from src.common.Response import custom_response
 from src.utils.JsonString import is_json
+from src.rag_agent.RAGAgent import RAGAgent
 home_api = Blueprint("home", __name__)
 @home_api.context_processor
 def inject_now():
@@ -121,7 +122,9 @@ async def invoke():
     logging.debug(f"/invoke message: {user_input['message']}")
     result: str = "Oops, there was some error. Please try again!"
     try:
-        success, result = await current_app.agent.ChatAgent(config, user_input['message'])
+        agent = RAGAgent(current_app.db_pool, current_app.store, current_app.checkpointer)
+        await agent.CreateGraph()
+        success, result = await agent.ChatAgent(config, user_input['message'])
     except Exception as e:
         # https://langchain-ai.github.io/langgraph/troubleshooting/errors/INVALID_CHAT_HISTORY/
         logging.exception(f"/invoke exception! {str(e)}, repr: {repr(e)}")
@@ -155,6 +158,13 @@ async def stream_agent(): #user_input: StreamInput):
     config = RunnableConfig(run_name="RAG Deep Agent /stream", configurable={"thread_id": session["thread_id"], "user_id":  session["user_id"]})
     @stream_with_context
     async def async_generator():
-        message = current_app.agent.message_generator(user_input, config)
+        message: str = "Oops, there was some error. Please try again!"
+        try:
+            agent = RAGAgent(current_app.db_pool, current_app.store, current_app.checkpointer)
+            await agent.CreateGraph()
+            message = agent.message_generator(user_input, config)
+        except Exception as e:
+            # https://langchain-ai.github.io/langgraph/troubleshooting/errors/INVALID_CHAT_HISTORY/
+            logging.exception(f"/invoke exception! {str(e)}, repr: {repr(e)}")
         yield message.encode()
     return async_generator(), 200

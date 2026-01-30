@@ -84,9 +84,9 @@ async def create_app() -> Quart:
         app.checkpointer = AsyncPostgresSaver(app.db_pool)
         await PostgreSQLStoreSetup(app.db_pool, app.store) # store is needed when creating the ReAct agent / StateGraph for InjectedStore to work
         await PostgreSQLCheckpointerSetup(app.db_pool, app.checkpointer)
-        from src.rag_agent.RAGAgent import RAGAgent
-        app.agent = RAGAgent(app.db_pool, app.store, app.checkpointer)
-        await app.agent.CreateGraph()
+        #from src.rag_agent.RAGAgent import RAGAgent
+        #app.agent = RAGAgent(app.db_pool, app.store, app.checkpointer)
+        #await app.agent.CreateGraph()
 
     @app.after_serving
     async def after_serving():
