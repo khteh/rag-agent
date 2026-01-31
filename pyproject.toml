@@ -38,6 +38,10 @@ dependencies = [
     "deepagents>=0.3.0",
     "google-api-core>=2.28.1",
     "grpcio-status>=1.76.0",
+    "flask-sqlalchemy>=3.1.1",
+    "quart-flask-patch>=0.3.0",
+    "marshmallow>=3.26.2",
+    "marshmallow-sqlalchemy>=1.4.2",
 ]
 
 [dependency-groups]

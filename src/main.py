@@ -1,3 +1,4 @@
+import quart_flask_patch
 import logging, os, re, json, asyncio, psycopg, json
 from datetime import date, datetime, timedelta, timezone
 from hypercorn.config import Config
@@ -94,12 +95,16 @@ async def create_app() -> Quart:
         await app.db_pool.close()
 
     app.after_request(_add_secure_headers)
+    from src.controllers.AuthenticationController import auth_api as auth_blueprint
     from src.controllers.HomeController import home_api as home_blueprint
     from src.controllers.HealthController import health_api as health_blueprint
     from src.controllers.HealthcareController import healthcare_api as healthcare_blueprint
+    from src.controllers.UserController import user_api as user_blueprint
     app.register_blueprint(home_blueprint, url_prefix="/")
+    app.register_blueprint(auth_blueprint, url_prefix="/auth")
     app.register_blueprint(health_blueprint, url_prefix="/health")
     app.register_blueprint(healthcare_blueprint, url_prefix="/healthcare")
+    app.register_blueprint(user_blueprint, url_prefix="/users")
     # https://quart-wtf.readthedocs.io/en/stable/how_to_guides/configuration.html
     CSRFProtect(app)
     bcrypt.init_app(app)

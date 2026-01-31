@@ -754,6 +754,19 @@ wheels = [
 ]
 
 [[package]]
+name = "flask-sqlalchemy"
+version = "3.1.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "flask" },
+    { name = "sqlalchemy" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/91/53/b0a9fcc1b1297f51e68b69ed3b7c3c40d8c45be1391d77ae198712914392/flask_sqlalchemy-3.1.1.tar.gz", hash = "sha256:e4b68bb881802dda1a7d878b2fc84c06d1ee57fb40b874d3dc97dabfa36b8312", size = 81899, upload-time = "2023-09-11T21:42:36.147Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/1d/6a/89963a5c6ecf166e8be29e0d1bf6806051ee8fe6c82e232842e3aeac9204/flask_sqlalchemy-3.1.1-py3-none-any.whl", hash = "sha256:4ba4be7f419dc72f4efd8802d69974803c37259dd42f3913b0dcf75c9447e0a0", size = 25125, upload-time = "2023-09-11T21:42:34.514Z" },
+]
+
+[[package]]
 name = "fonttools"
 version = "4.61.1"
 source = { registry = "https://pypi.org/simple" }
@@ -1885,6 +1898,19 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/55/79/de6c16cc902f4fc372236926b0ce2ab7845268dcc30fb2fbb7f71b418631/marshmallow-3.26.2.tar.gz", hash = "sha256:bbe2adb5a03e6e3571b573f42527c6fe926e17467833660bebd11593ab8dfd57", size = 222095, upload-time = "2025-12-22T06:53:53.309Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/be/2f/5108cb3ee4ba6501748c4908b908e55f42a5b66245b4cfe0c99326e1ef6e/marshmallow-3.26.2-py3-none-any.whl", hash = "sha256:013fa8a3c4c276c24d26d84ce934dc964e2aa794345a0f8c7e5a7191482c8a73", size = 50964, upload-time = "2025-12-22T06:53:51.801Z" },
+]
+
+[[package]]
+name = "marshmallow-sqlalchemy"
+version = "1.4.2"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "marshmallow" },
+    { name = "sqlalchemy" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/1d/8c/861ed468b99773866d59e315a73a02538f503c99167d24b3b3f1c8e0242c/marshmallow_sqlalchemy-1.4.2.tar.gz", hash = "sha256:6410304bf98ec26ea35f3f9d3cee82e51fd093c434612add32a0bdcdb5668f7c", size = 51428, upload-time = "2025-04-09T23:44:54.734Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/26/62/9d87301c861b9bded849082d5c5d306dcfd0c3c304b7ed70d2151caaa4da/marshmallow_sqlalchemy-1.4.2-py3-none-any.whl", hash = "sha256:65aee301c4601e76a2fdb02764a65c18913afba2a3506a326c625d13ab405b40", size = 16740, upload-time = "2025-04-09T23:44:52.999Z" },
 ]
 
 [[package]]
@@ -3050,6 +3076,18 @@ wheels = [
 ]
 
 [[package]]
+name = "quart-flask-patch"
+version = "0.3.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "quart" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/f6/5f/f1e7642a719ccdd8ef40af4529ba5f0984f90b480dfdce87142826801e6e/quart_flask_patch-0.3.0.tar.gz", hash = "sha256:81dc073698d54ffe1d8c85a556881c13215923a920f9300a02b5005d5447268d", size = 8754, upload-time = "2023-11-19T21:54:01.332Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/cb/ce/ad2b19e3a26d2c611aa883b8500e8b4eb08f8a2d1595e28c37864e54e99c/quart_flask_patch-0.3.0-py2.py3-none-any.whl", hash = "sha256:b5a1d97a8edee9f40082db278fb491687d712af9bc8eb774830ea6f92790b990", size = 9231, upload-time = "2023-11-19T21:53:59.814Z" },
+]
+
+[[package]]
 name = "quart-trio"
 version = "0.12.0"
 source = { registry = "https://pypi.org/simple" }
@@ -3100,6 +3138,7 @@ dependencies = [
     { name = "beautifulsoup4" },
     { name = "databricks-sdk" },
     { name = "deepagents" },
+    { name = "flask-sqlalchemy" },
     { name = "google-api-core" },
     { name = "google-genai" },
     { name = "grpcio-status" },
@@ -3115,6 +3154,8 @@ dependencies = [
     { name = "langchain-text-splitters" },
     { name = "langgraph" },
     { name = "langgraph-checkpoint-postgres" },
+    { name = "marshmallow" },
+    { name = "marshmallow-sqlalchemy" },
     { name = "mlflow" },
     { name = "neo4j" },
     { name = "pillow" },
@@ -3125,6 +3166,7 @@ dependencies = [
     { name = "quart" },
     { name = "quart-bcrypt" },
     { name = "quart-cors" },
+    { name = "quart-flask-patch" },
     { name = "quart-trio" },
     { name = "quart-wtforms" },
     { name = "retry" },
@@ -3145,6 +3187,7 @@ requires-dist = [
     { name = "beautifulsoup4" },
     { name = "databricks-sdk" },
     { name = "deepagents", specifier = ">=0.3.0" },
+    { name = "flask-sqlalchemy", specifier = ">=3.1.1" },
     { name = "google-api-core", specifier = ">=2.28.1" },
     { name = "google-genai" },
     { name = "grpcio-status", specifier = ">=1.76.0" },
@@ -3160,6 +3203,8 @@ requires-dist = [
     { name = "langchain-text-splitters" },
     { name = "langgraph" },
     { name = "langgraph-checkpoint-postgres" },
+    { name = "marshmallow", specifier = ">=3.26.2" },
+    { name = "marshmallow-sqlalchemy", specifier = ">=1.4.2" },
     { name = "mlflow" },
     { name = "neo4j" },
     { name = "pillow" },
@@ -3170,6 +3215,7 @@ requires-dist = [
     { name = "quart" },
     { name = "quart-bcrypt" },
     { name = "quart-cors" },
+    { name = "quart-flask-patch", specifier = ">=0.3.0" },
     { name = "quart-trio" },
     { name = "quart-wtforms" },
     { name = "retry" },

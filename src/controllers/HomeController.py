@@ -27,6 +27,7 @@ from src.common.ResponseHelper import Respond
 from src.common.Response import custom_response
 from src.utils.JsonString import is_json
 from src.rag_agent.RAGAgent import RAGAgent
+from ..models.UserModel import UserModel
 home_api = Blueprint("home", __name__)
 @home_api.context_processor
 def inject_now():
@@ -34,6 +35,7 @@ def inject_now():
 
 @home_api.route("/")
 @home_api.route("/index")
+@Authentication.auth_required("home.index")
 async def index() -> ResponseReturnValue:
     greeting = None
     now = datetime.now()
@@ -45,20 +47,20 @@ async def index() -> ResponseReturnValue:
         greeting = "Friend! It's " + formatted_now
         #print(f"homeController hello greeting: {greeting}")
         return await Respond("index.html", title="Welcome to LLM-RAG 💬", greeting=greeting)
-    user = jsonpickle.decode(session['user'])
-    if not user or not hasattr(user, 'token'):
+    user = session['user']
+    logging.debug(f"index: {session["user"]}")
+    if not user or "token" not in user:
         greeting = "Friend! It's " + formatted_now
         #print(f"homeController hello greeting: {greeting}")
         return await Respond("index.html", title="Welcome to LLM-RAG 💬", greeting=greeting)
-    data = Authentication.decode_token(user.token)
+    data = Authentication.decode_token(user['token'])
     if data["error"]:
         return await Respond("login.html", title="Welcome to LLM-RAG 💬", error=data["error"])
     user_id = data["data"]["user_id"]
     logging.debug(f"User: {user_id}")
-    """
     user = UserModel.get_user(user_id)
     if not user:
-        return await Respond("login.html", title="Welcome to LLM-RAG 💬", error="Invalid user!")
+        return await Respond("login.html", title="Welcome to Python RESTful API", error="Invalid user!")
     try:
         logging.debug(f"Firstname: {user.firstname}, Lastname: {user.lastname}")
         name = user.firstname + ", " + user.lastname
@@ -70,9 +72,9 @@ async def index() -> ResponseReturnValue:
         else:
             clean_name = "Friend!"
         greeting = f"Hello {clean_name}! It's {formatted_now}"
+        """Renders a homes page."""
     except (Exception) as error:
         greeting = "Exception {0}".format(error)
-    """
     if not greeting:
         greeting = "Friend! It's " + formatted_now
         #print(f"homeController hello greeting: {greeting}")
@@ -95,16 +97,17 @@ async def ProcessCurlInput() -> UserInput:
     return user_input
 
 @home_api.post("/invoke")
+@Authentication.auth_required("home.invoke")
 async def invoke():
     """
     Invoke the agent with user input to retrieve a final response.
     Use thread_id to persist and continue a multi-turn conversation.
     """
-    if "user_id" not in session or not session["user_id"]:
-        session["user_id"] = uuid7str()
+    user = session['user']
+    logging.debug(f"home.invoke user: {user}")
     if "thread_id" not in session or not session["thread_id"]:
         session["thread_id"] = uuid7str()
-    logging.info(f"\n=== /invoke session: {session['thread_id']}, user_id: {session['user_id']} ===")
+    logging.info(f"\n=== /invoke session: {session['thread_id']}, user_id: {user['id']} ===")
     user_input: UserInput = await ProcessCurlInput()
     # If it is not curl, then the request must have come from the browser with form data. The following processes it.
     if not user_input or "message" not in user_input:
@@ -118,7 +121,7 @@ async def invoke():
     # Expect a single string.
     if isinstance(user_input["message"], (list, tuple)):
         user_input["message"] = user_input["message"][-1]
-    config = RunnableConfig(run_name="RAG Deep Agent /invoke", configurable={"thread_id": session["thread_id"], "user_id":  session["user_id"]})
+    config = RunnableConfig(run_name="RAG Deep Agent /invoke", configurable={"thread_id": session["thread_id"], "user_id":  user["id"]})
     logging.debug(f"/invoke message: {user_input['message']}")
     result: str = "Oops, there was some error. Please try again!"
     try:
@@ -155,7 +158,7 @@ async def stream_agent(): #user_input: StreamInput):
     # Expect a single string.
     if isinstance(user_input["message"], (list, tuple)):
         user_input["message"] = user_input["message"][-1]
-    config = RunnableConfig(run_name="RAG Deep Agent /stream", configurable={"thread_id": session["thread_id"], "user_id":  session["user_id"]})
+    config = RunnableConfig(run_name="RAG Deep Agent /stream", configurable={"thread_id": session["thread_id"], "user_id": session["user_id"]})
     @stream_with_context
     async def async_generator():
         message: str = "Oops, there was some error. Please try again!"

@@ -52,6 +52,29 @@ USER_AGENT="USER_AGENT"
 $ sudo apt install -y python3.13-tk
 ```
 
+## Database setup:
+
+- This project uses PostgreSQL database with SQLAlchemy ORM and marshmallow model schema.
+
+## Create Database
+
+- Firstly, create an empty database "Langchain" in PostgreSQL
+
+## Database Migration
+
+- Copy `env.py` to `migrations/` folder.
+- Set the values `DB_foo` in `/etc/ragagent_config.json`
+- run migrations initialization with db init command:
+
+  ```
+  $ uv run alembic init migrations
+  $ cp env.py migrations
+  $ uv run alembic revision --autogenerate -m "Initial migration"
+  $ uv run alembic upgrade head
+  ```
+
+- There will be 1 table, "users" created in the PostgreSQL database "Langchain" after the `upgrade`.
+
 ## Local Model
 
 - https://python.langchain.com/docs/how_to/local_llms/

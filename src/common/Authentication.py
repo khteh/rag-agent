@@ -2,7 +2,7 @@ import jwt, logging, jsonpickle
 from datetime import datetime, timezone, timedelta
 from quart import json, Response, session, redirect, url_for, session, abort, current_app
 from functools import wraps
-
+from src.models.UserModel import UserModel
 """
 https://github.com/kroketio/quart-keycloak for OIDC
 """
@@ -73,26 +73,24 @@ class Authentication():
             def decorated_auth_required(*args, **kwargs):
                 session["url"] = url_for(url, *args, **kwargs) if url else url
                 #if "api-token" not in request.headers:
-                if "user" not in session or not session["user"]: # or not session["user"]["token"]:
+                if "user" not in session or not session["user"]:
                     #await flash(f"Please login to continue.", "info")
                     return redirect(url_for("auth.login"))
-                user = jsonpickle.decode(session['user'])
-                if not user or not hasattr(user, 'token'):
+                user = session['user']
+                if not user or "token" not in user:
                     return redirect(url_for("auth.login"))
                 #token = request.headers.get("api-token")
-                data = Authentication.decode_token(user.token)
+                data = Authentication.decode_token(user['token'])
                 if data["error"]:
                     logging.warning(f"[Auth] error: {data['error']}!")                
                     #await flash(f"{data['error']}", "danger")
                     return redirect(url_for("auth.login"))
                 user_id = data["data"]["user_id"]
-                """
                 check_user = UserModel.get_user(user_id)
                 if not check_user:
                     logging.warning(f"[Auth] Invalid user {user_id}!")
                     #await flash(f"Invalid username and/or password!", "danger")
                     return redirect(url_for("auth.login"))
-                """
                 return func(*args, **kwargs)
             return decorated_auth_required
         return actual_auth_required
@@ -103,7 +101,11 @@ class Authentication():
             @wraps(func)
             def wrapped_require_role(*args, **kwargs):
                 if Authentication.isAuthenticated() and "user" in session:
-                    user = jsonpickle.decode(session['user'])
+                    user = UserModel.get_user(session['user'])
+                    if not user:
+                        logging.warning(f"[Auth] Invalid user {session['user']}!")
+                        #await flash(f"Invalid username and/or password!", "danger")
+                        return redirect(url_for("auth.login"))
                     if role in user.roles:
                         return func(*args, **kwargs)
                     else:
