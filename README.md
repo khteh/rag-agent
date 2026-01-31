@@ -52,15 +52,13 @@ USER_AGENT="USER_AGENT"
 $ sudo apt install -y python3.13-tk
 ```
 
-## Database setup:
+## Data Source Preparation:
 
-- This project uses PostgreSQL database with SQLAlchemy ORM and marshmallow model schema.
-
-## Create Database
+### PostgreSQL Database
 
 - Firstly, create an empty database "Langchain" in PostgreSQL
 
-## Database Migration
+### Database Migration
 
 - Copy `env.py` to `migrations/` folder.
 - Set the values `DB_foo` in `/etc/ragagent_config.json`
@@ -74,6 +72,20 @@ $ sudo apt install -y python3.13-tk
   ```
 
 - There will be 1 table, "users" created in the PostgreSQL database "Langchain" after the `upgrade`.
+
+### PostgresSQL PGVector
+
+- Run the following CLI command to crawl and ingest blogs into PostgreSQL PGVector.
+
+```
+$ uv run python -m src.rag_agent.RAGAgent -l
+```
+
+### Neo4J Graph DB
+
+- Import data from CSV files into the database
+- Copy the files / folder into the pod `/var/lib/neo4j/import`
+- `LoadNeo4J.sh` will load `data/Healthcare` into `neo4j-0` pod
 
 ## Local Model
 
@@ -659,12 +671,7 @@ $ docker run --rm ymuski/curl-http3 curl --http3 --verbose https://<nodeport ser
 
 - To build your own HTTP/3 curl: https://curl.se/docs/http3.html
 
-## Neo4J
-
-### To import CSV into the database:
-
-- Need to copy the files / folder into the pod `/var/lib/neo4j/import`
-- `LoadNeo4J.sh` will load `data/Healthcare` into `neo4j-0` pod
+## Neo4J Graph DB
 
 ### Sample Cypher Queries:
 
