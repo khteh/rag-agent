@@ -121,13 +121,19 @@ async def invoke():
     # Expect a single string.
     if isinstance(user_input["message"], (list, tuple)):
         user_input["message"] = user_input["message"][-1]
+    timestamp = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
+    user_message = f"""
+    [Request Timestamp: {timestamp}]
+    {user_input['message']}
+    """
     config = RunnableConfig(run_name="RAG Deep Agent /invoke", configurable={"thread_id": session["thread_id"], "user_id":  user["id"]})
-    logging.debug(f"/invoke message: {user_input['message']}")
+    #logging.debug(f"/invoke message: {user_input['message']}")
+    logging.debug(f"/invoke message: {user_message}")
     result: str = "Oops, there was some error. Please try again!"
     try:
         agent = RAGAgent(current_app.db_pool, current_app.store, current_app.checkpointer)
         await agent.CreateGraph()
-        success, result = await agent.ChatAgent(config, user_input['message'])
+        success, result = await agent.ChatAgent(config, user_message)
     except Exception as e:
         # https://langchain-ai.github.io/langgraph/troubleshooting/errors/INVALID_CHAT_HISTORY/
         logging.exception(f"/invoke exception! {str(e)}, repr: {repr(e)}")

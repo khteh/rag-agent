@@ -182,7 +182,7 @@ class RAGAgent():
             self._subagents = [self._healthcare_subagent, self._rag_subagent]
             self._agent = create_deep_agent(
                 model = self._llm,
-                tools = [current_timestamp, upsert_memory, think_tool], # [ground_search]
+                tools = [upsert_memory, think_tool], # [ground_search]
                 backend = composite_backend,
                 checkpointer = self._checkpointer, # https://github.com/langchain-ai/langgraph/blob/main/libs/langgraph/langgraph/graph/state.py#L828
                 store = self._store,
