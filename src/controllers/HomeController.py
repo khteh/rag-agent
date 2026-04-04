@@ -122,10 +122,7 @@ async def invoke():
     if isinstance(user_input["message"], (list, tuple)):
         user_input["message"] = user_input["message"][-1]
     timestamp = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
-    user_message = f"""
-    [Request Timestamp: {timestamp}]
-    {user_input['message']}
-    """
+    user_message = f"[Request Timestamp: {timestamp}]\n{user_input['message']}"
     config = RunnableConfig(run_name="RAG Deep Agent /invoke", configurable={"thread_id": session["thread_id"], "user_id":  user["id"]})
     #logging.debug(f"/invoke message: {user_input['message']}")
     logging.debug(f"/invoke message: {user_message}")

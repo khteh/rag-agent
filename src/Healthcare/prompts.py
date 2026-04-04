@@ -161,9 +161,10 @@ You have access to the following 6 specific research tools:
         wait time. This tool does not have any information about aggregate
         or historical wait times. This tool returns a dictionary with the
         hospital name as the key and the wait time in minutes as the value.
-5. **upsert_memory**: Used to remember long-term memory of user query and your response to that.
-6. **think_tool**: For reflection and strategic planning during research
-**CRITICAL: Use think_tool after each search to reflect on results and plan next steps and use upsert_memory to remember.**
+5. **RAGMemoryManager**: Used to manage long-term memory of interactions with the user.
+6. **RAGMemorySearcher**: Used to search long-term memory of interactions with the user.
+7. **think_tool**: For reflection and strategic planning during research
+**CRITICAL: Use think_tool after each search to reflect on results and plan next steps and use RAGMemoryManager to remember.**
 </Available Research Tools>
 
 <Instructions>
