@@ -42,6 +42,7 @@ dependencies = [
     "quart-flask-patch>=0.3.0",
     "marshmallow>=3.26.2",
     "marshmallow-sqlalchemy>=1.4.2",
+    "langmem>=0.0.30",
 ]
 
 [dependency-groups]

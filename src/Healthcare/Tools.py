@@ -11,6 +11,7 @@ from langchain_ollama import OllamaEmbeddings
 from langchain_classic.chains import create_retrieval_chain
 from langchain_classic.chains.combine_documents import create_stuff_documents_chain
 from neo4j.exceptions import CypherSyntaxError
+from langmem import create_manage_memory_tool, create_search_memory_tool
 from src.common.Configuration import Configuration
 from src.config import config as appconfig
 # For VertexAI, use VertexAIEmbeddings, model="text-embedding-005"; "gemini-2.0-flash" model_provider="google_genai"
@@ -115,3 +116,18 @@ async def HealthcareCypher(
         except Exception as e:
             logging.exception(f"HealthcareCypher Exception! {str(e)}, repr: {repr(e)}")
             return str(e)
+
+HealthcareMemoryManager = create_manage_memory_tool(
+    namespace=(
+        "rag-agent", 
+        "{user_id}",
+        "healthcare"
+    )
+)
+HealthcareMemorySearcher = create_search_memory_tool(
+    namespace=(
+        "rag-agent",
+        "{user_id}",
+        "healthcare"
+    )
+)

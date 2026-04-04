@@ -18,7 +18,7 @@ from langgraph.store.postgres.aio import AsyncPostgresStore
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
 from langchain_ollama import OllamaEmbeddings
 from .prompts import HEALTHCARE_INSTRUCTIONS
-from .Tools import HealthcareReview, HealthcareCypher
+from .Tools import HealthcareReview, HealthcareCypher, HealthcareMemoryManager, HealthcareMemorySearcher
 from src.rag_agent.Tools import upsert_memory, think_tool
 from src.common.Configuration import Configuration
 from src.utils.image import show_graph
@@ -54,7 +54,8 @@ class RAGAgent():
                     )
         self._store = store
         self._checkpointer = checkpointer
-        self._tools = [HealthcareReview, HealthcareCypher, get_current_wait_times, get_most_available_hospital, upsert_memory, think_tool]
+        #self._tools = [HealthcareReview, HealthcareCypher, get_current_wait_times, get_most_available_hospital, upsert_memory, think_tool]
+        self._tools = [HealthcareReview, HealthcareCypher, get_current_wait_times, get_most_available_hospital, HealthcareMemoryManager, HealthcareMemorySearcher, think_tool]
         if appconfig.BASE_URI:
             self._llm = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider=appconfig.MODEL_PROVIDER, base_url=appconfig.BASE_URI, streaming=True, temperature=0)
         else:

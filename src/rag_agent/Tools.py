@@ -18,6 +18,7 @@ from google.genai import types
 from google.genai.types import Tool, GenerateContentConfig, GoogleSearch
 from typing_extensions import Annotated
 from uuid_extensions import uuid7, uuid7str
+from langmem import create_manage_memory_tool, create_search_memory_tool
 from src.common.Configuration import Configuration
 from src.config import config as appconfig
 from src.common.State import CustomAgentState
@@ -201,5 +202,19 @@ async def store_memory(state: CustomAgentState, runtime: Runtime[Context]):
     ]
     return {"messages": results}
 
+RAGMemoryManager = create_manage_memory_tool(
+    namespace=(
+        "rag-agent", 
+        "{user_id}",
+        "rag-agent"
+    )
+)
+RAGMemorySearcher = create_search_memory_tool(
+    namespace=(
+        "rag-agent",
+        "{user_id}",
+        "rag-agent"
+    )
+)
 if __name__ == "__main__":
     print(f"upsert_memory input schema: {upsert_memory.get_input_schema().model_json_schema()}, tool_call schema: ${upsert_memory.tool_call_schema.model_json_schema()}")

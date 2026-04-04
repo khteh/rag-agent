@@ -21,13 +21,12 @@ from deepagents import create_deep_agent, CompiledSubAgent
 from src.config import config as appconfig
 from src.rag_agent.RAGPrompts import RAG_INSTRUCTIONS, SUBAGENT_DELEGATION_INSTRUCTIONS, RAG_WORKFLOW_INSTRUCTIONS
 from src.models.schema import ChatMessage, UserInput, StreamInput
-from src.rag_agent.Tools import upsert_memory, think_tool
+from src.rag_agent.Tools import upsert_memory, think_tool, RAGMemoryManager, RAGMemorySearcher
 from src.Infrastructure.VectorStore import VectorStore
 from src.common.State import CustomAgentState
 from src.utils.image import show_graph
 from src.Healthcare.RAGAgent import RAGAgent as HealthAgent
 from src.Healthcare.prompts import HEALTHCARE_INSTRUCTIONS
-from src.rag_agent.Tools import current_timestamp, ground_search, upsert_memory
 from src.common.Configuration import Configuration
 from src.Infrastructure.Backend import composite_backend
 from src.Infrastructure.PostgreSQLSetup import PostgreSQLCheckpointerSetup, PostgreSQLStoreSetup
@@ -120,7 +119,8 @@ class RAGAgent():
         self._healthcare_rag = HealthAgent(self._db_pool, self._store, self._checkpointer)
         # GoogleSearch ground_search works well but it will sometimes take precedence and overwrite the ingested data into Chhroma and Neo4J. So, exclude it for now until it is really needed.
         # Use it as a custom subagent
-        self._tools = [self._vectorStore.retriever_tool, upsert_memory, think_tool]
+        # self._tools = [self._vectorStore.retriever_tool, upsert_memory, think_tool]
+        self._tools = [self._vectorStore.retriever_tool, RAGMemoryManager, RAGMemorySearcher, think_tool]
         if appconfig.BASE_URI:
             self._llm = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider=appconfig.MODEL_PROVIDER, base_url=appconfig.BASE_URI, streaming=True, temperature=0)
         else:
