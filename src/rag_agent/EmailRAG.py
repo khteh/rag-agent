@@ -4,7 +4,7 @@ from pathlib import Path
 from uuid_extensions import uuid7, uuid7str
 from google.api_core.exceptions import ResourceExhausted
 from langchain.chat_models import init_chat_model
-from langchain_core.runnables import RunnableConfig
+from langchain_core.runnables import RunnableConfig, ensure_config
 from langgraph.graph import StateGraph, MessagesState
 from langgraph.types import CachePolicy
 from langgraph.cache.memory import InMemoryCache
@@ -40,6 +40,7 @@ from src.models.EscalationModel import EscalationCheckModel
 from src.Infrastructure.VectorStore import VectorStore
 from src.Infrastructure.PostgreSQLSetup import PostgreSQLCheckpointerSetup, PostgreSQLStoreSetup
 from src.Infrastructure.Backend import composite_backend
+from src.rag_agent.Tools import upsert_memory, think_tool, RAGMemoryManager, RAGMemorySearcher
 from data.sample_emails import EMAILS
 # https://realpython.com/langgraph-python/
 
@@ -149,14 +150,16 @@ class EmailRAG():
         https://github.com/langchain-ai/deepagents/issues/613
         """
         logging.info(f"\n=== {self.ParseEmail.__name__} ===")
-        with open("output/email_request.md", 'r') as f:
+        config = ensure_config(config)
+        timestamp = config.get("configurable", {}).get("timestamp")
+        with open(f"output/email_request_{timestamp}.md", 'r') as f:
             email:str = ""
             for l in f:
-                if "escalation criteria:" in l.lower():
+                if "escalation criteria" in l.lower():
                     state["escalation_text_criteria"] = l.split(":")[1].strip()
-                elif "escalation dollar criteria:" in l.lower():
+                elif "escalation dollar criteria" in l.lower():
                     state["escalation_dollar_criteria"] = l.split(":")[1].strip()
-                elif "escalation emails:" in l.lower():
+                elif "escalation emails" in l.lower():
                     state["escalation_emails"] = l.split(":")[1].strip()
                 elif l is not None and l != "":
                     email += l
@@ -256,10 +259,11 @@ class EmailRAG():
             self._subagents = [self._parser_subagent]
             self._agent = create_deep_agent(
                 model = self._llm,
+                tools = [RAGMemoryManager, RAGMemorySearcher],
                 backend = composite_backend,
                 store = self._store,
                 checkpointer = self._checkpointer,
-                system_prompt = EMAIL_PROCESSING_INSTRUCTIONS.format(timestamp=datetime.now()),
+                system_prompt = EMAIL_PROCESSING_INSTRUCTIONS,
                 subagents = self._subagents
             )
             # self.ShowGraph()
@@ -273,14 +277,16 @@ class EmailRAG():
 
     async def Chat(self, criteria, email_state) -> List[str]:
         logging.info(f"\n=== {self.Chat.__name__} ===")
-        message = f"The escalation criteria is: {criteria}\n"
+        timestamp = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
+        message = f"[Timestamp: {timestamp}]\nThe escalation criteria is: {criteria}\n"
         if "escalation_dollar_criteria" in email_state:
             message += f"The escalation dollar criteria is: {email_state['escalation_dollar_criteria']}\n"
         if "escalation_emails" in email_state:
             message += f"Escalation emails: {', '.join(email_state['escalation_emails'])}\n"
         message += f"Here's the email: {email_state['email']}"
         result: List[str] = []
-        async for step in self._agent.with_config(self._config).astream(
+        config = RunnableConfig(run_name="Email RAG", configurable={"thread_id": uuid7str(), "user_id": uuid7str(),  "timestamp": timestamp})
+        async for step in self._agent.with_config(config).astream(
             {"messages": [{"role": "user", "content": message}]},
             stream_mode="values",
             #config = config
@@ -305,8 +311,7 @@ async def main():
     Path("output/email_request.md").unlink(missing_ok=True)
     Path("output/email_extract.md").unlink(missing_ok=True)
     Path("output/final_report.md").unlink(missing_ok=True)
-    config = RunnableConfig(run_name="Email RAG", configurable={"thread_id": uuid7str(), "user_id": uuid7str()})
-    rag = EmailRAG(config)
+    rag = EmailRAG()
     await rag.CreateGraph()
     email_state = {
         "email": EMAILS[3],

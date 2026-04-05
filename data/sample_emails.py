@@ -70,7 +70,7 @@ EMAILS = [
     Structural Integrity: The temporary support beams in the eastern wing do not meet the load-bearing standards specified in local building codes.
     Required Corrective Actions: Replace or properly secure exposed wiring to meet electrical safety standards. 
     Install additional fire extinguishers in compliance with fire code requirements. Reinforce or replace temporary support beams
-    to ensure structural stability. Deadline for Compliance: Violations must be addressed no later than October 31, 2025. 
+    to ensure structural stability. Deadline for Compliance: Violations must be addressed no later than December 31. 
     Failure to comply may result in a stop-work order and additional fines.
     Contact: For questions or to schedule a re-inspection, please contact the Building and Safety Department at (555) 456-7890 or email inspections@lacity.gov.
     """,
