@@ -614,13 +614,13 @@ The deadline for compliance is December 31, 2025.
 ### Fines and Penalties
 Failure to comply may result in a stop-work order and additional fines.
 Contact: For questions or to schedule a re-inspection, please contact the Building and Safety Department at (555) 456-7890 or email inspections@lacity.gov.```
+```
 
 ### Sub-agent Outputs:
 
 - `output/email_extract.md`:
 
 ```
-
 {
 "name": "City of Los Angeles Building and Safety Department",
 "phone": null,
