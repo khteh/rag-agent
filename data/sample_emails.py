@@ -1,7 +1,7 @@
 EMAILS = [
     # Email 0
     """
-    Date: Wed, 02 Apr 2025 15:39:59 -0700
+    Date: Wed, 02 Apr 2026 15:39:59 -0700
     From: Occupational Safety and Health Administration (OSHA) <compliance.osha@osha.gov>
     Reply-To: "Occupational Safety and Health Administration (OSHA)" <admin@reply.osha.com>
     To: "Blue Ridge Construction" <admin@blueridge.com>
@@ -21,12 +21,12 @@ EMAILS = [
     Required Corrective Actions:
     Install guardrails and fall arrest systems on all scaffolding over 10 feet. Conduct an inspection of all scaffolding structures and reinforce unstable sections. 
     Ensure all workers on-site are provided with necessary PPE and conduct safety training on proper usage.
-    Deadline for Compliance: All violations must be rectified by November 10, 2025. Failure to comply may result in fines of up to $25,000 per violation.
+    Deadline for Compliance: All violations must be rectified by November 10, 2026. Failure to comply may result in fines of up to $25,000 per violation.
     Contact: For questions or to confirm compliance, please reach out to the OSHA regional office at (555) 123-4567 or email compliance.osha@osha.gov.
     """,
     # Email 1
     """
-    Date: Fri, 28 Mar 2025 11:36:10 +0000
+    Date: Fri, 28 Mar 2026 11:36:10 +0000
     From: Debby <debby@stack.com>
     Reply-To: Debby <debby@stack.com>
     To: Mickey <mickey@mouse.com>
@@ -39,7 +39,7 @@ EMAILS = [
     """,
     # Email 2
     """
-    Date: Thu, 3 Apr 2025 11:36:10 +0000
+    Date: Thu, 3 Apr 2026 11:36:10 +0000
     From: David <tdavid@companyxyz.com>
     Reply-To: David <tdavid@companyxyz.com>
     To: Paul <paul@hvac.com>
@@ -55,7 +55,7 @@ EMAILS = [
     """,
     # Email 3
     """
-    Date: Thu, 3 Apr 2025 11:36:10 +0000
+    Date: Thu, 3 Apr 2026 11:36:10 +0000
     From: City of Los Angeles Building and Safety Department <inspections@lacity.gov>
     Reply-To: Admin <admin@building-safety.la.com>
     To: West Coast Development <admin@west-coast-dev.com>

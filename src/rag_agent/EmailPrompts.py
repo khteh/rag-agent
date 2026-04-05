@@ -17,7 +17,7 @@ Follow this workflow for all email processing requests:
 Example:
 ```
 Escalation Criteria: There's an immediate risk of electrical, water, or fire damage.
-Date: Thu, 3 Apr 2025 11:36:10 +0000
+Date: Thu, 3 Apr 2026 11:36:10 +0000
 From: City of Los Angeles Building and Safety Department <inspections@lacity.gov>
 Reply-To: Admin <admin@building-safety.la.com>
 To: West Coast Development <admin@west-coast-dev.com>
@@ -75,7 +75,7 @@ To rectify these violations, OSHA requires the following corrective actions:
 [3] Ensure all workers on-site are provided with necessary PPE and conduct safety training on proper usage.
 
 ### Deadline:
-The deadline for compliance is November 10, 2025.
+The deadline for compliance is November 10, 2026.
 
 ### Fines and penalties:
 Failure to comply may result in fines of up to $25,000 per violation.

@@ -22,7 +22,7 @@ async def test_email_parser_chain_email0(EmailRAGFixture):
     assert result["extract"]
     assert result["extract"].date_str
     assert result["extract"].date_of_email
-    assert result["extract"].date_of_email == date(2025, 4, 2)
+    assert result["extract"].date_of_email == date(2026, 4, 2)
     assert result["extract"].name == 'Occupational Safety and Health Administration (OSHA)'
     if result["extract"].phone:
      assert result["extract"].phone == "(555) 123-4567"
@@ -35,7 +35,7 @@ async def test_email_parser_chain_email0(EmailRAGFixture):
     assert result["extract"].violation_type
     assert result["extract"].required_changes
     assert result["extract"].compliance_deadline
-    assert result["extract"].compliance_deadline == date(2025, 11, 10)
+    assert result["extract"].compliance_deadline == date(2026, 11, 10)
     assert result["extract"].max_potential_fine
     assert result["extract"].max_potential_fine == 25000.0
 
@@ -56,7 +56,7 @@ async def test_email_parser_chain_email3(EmailRAGFixture):
     assert result["extract"]
     assert result["extract"].date_str
     assert result["extract"].date_of_email
-    assert result["extract"].date_of_email == date(2025, 4, 3)
+    assert result["extract"].date_of_email == date(2026, 4, 3)
     assert result["extract"].name == 'City of Los Angeles Building and Safety Department'
     #assert result["extract"].phone
     if result["extract"].phone:
@@ -70,5 +70,5 @@ async def test_email_parser_chain_email3(EmailRAGFixture):
     assert result["extract"].violation_type
     assert result["extract"].required_changes
     assert result["extract"].compliance_deadline
-    assert result["extract"].compliance_deadline == date(2025, 10, 31)
+    assert result["extract"].compliance_deadline == date(2026, 10, 31)
     assert not result["extract"].max_potential_fine

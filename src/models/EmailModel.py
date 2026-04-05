@@ -54,7 +54,7 @@ class EmailModel(BaseModel):
         locale.getlocale()
         local.setlocale(local.LC_ALL, 'en_US')
         https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes
-        Date: Wed, 02 Apr 2025 15:39:59 -0700
+        Date: Wed, 02 Apr 2026 15:39:59 -0700
         """
         try:
             #return datetime.strptime(date_str, '%a, %d %b %Y %H:%M:%S %z') if date_str else None
