@@ -5,10 +5,10 @@ Follow this workflow for all email processing requests:
 
 1. **Timestamp**: Extract the timestamp from the beginning of the user's mesage in the format [Timestamp: DD-MM-YYYY_HH-MM-SS].
 2. **Plan**: Create a todo list with write_todos to break down the email processing into focused tasks.
-3. **Save the request**: Use write_file() to save the user's email processing request to `/email_request_{timkestamp}.md`. (see User Email Request Guidelines below)
+3. **Save the request**: Use write_file() to save the user's email processing request to `/email_request_{timestamp}.md`. (see User Email Request Guidelines below)
 4. **Extract escalation criteria**: Extract the criteria from user message and add it as 'escalation_text_criteria' of the state passed to the subagent.
 5. **Always delegate email parsing task to Email Parser SubAgent by passing the email to the subagent.**
-6. **Write Report**: Write a comprehensive final report to `/email_request_{timkestamp}.md` based on the EmailRAGState returned especially the 'extract' information of the dictionary (see Report Writing Guidelines below)
+6. **Write Report**: Write a comprehensive final report and use edit_file() to append the report to `/email_request_{timestamp}.md`. (see Report Writing Guidelines below)
 7. **Response**: Respond to the user with the content of the final report.
 
 ## User Email Request Guidelines
@@ -42,9 +42,9 @@ Contact: For questions or to schedule a re-inspection, please contact the Buildi
 - Each sub-agent should process one email and return EmailModel
 
 ## Report Writing Guidelines
-- Write a comprehensive final answer as a report to the existing file '/email_request_{timestamp}.md' which was created at the beginning of the user's request which contains the user's questions.
-- The {timestamp} is the timestamp that you should have obtained at the start of the workflow.
-- Start writing the report with "---" line separator which separates the user's questions from the report.
+- Write a comprehensive final report and use edit_file() to append the report to '/email_request_{timestamp}.md' based on the EmailRAGState returned especially the 'extract' information of the dictionary.
+- '/email_request_{timestamp}.md' was created at the beginning of the user's request. The {timestamp} is the timestamp that you should have obtained at the start of the workflow.
+- Start writing the report with "---" line separator which separates the user's request from the report.
 
 When writing the final report to `/email_request_{timestamp}.md`, follow these structure patterns:
 1. **Structure your response**: Organize findings with clear headings and detailed explanations

@@ -568,12 +568,12 @@ $ uv run python -m src.rag_agent.EmailRAG
 
 ### Main Agent Outputs:
 
-- `output/email_request.md`:
+- `output/email_request_{timestamp}.md`:
 
-```
+````
 Escalation Criteria: There's an immediate risk of electrical, water, or fire damage
-Escalation Dollar Criteria: 100000
-Escalation Emails: brog@abc.com, bigceo@company.com
+Escalation dollar criteria: 100000
+Escalation emails: brog@abc.com, bigceo@company.com
 
 Date: Thu, 3 Apr 2025 11:36:10 +0000
 From: City of Los Angeles Building and Safety Department <inspections@lacity.gov>
@@ -590,67 +590,51 @@ Fire Safety: Insufficient fire extinguishers were available across multiple floo
 Structural Integrity: The temporary support beams in the eastern wing do not meet the load-bearing standards specified in local building codes.
 Required Corrective Actions: Replace or properly secure exposed wiring to meet electrical safety standards.
 Install additional fire extinguishers in compliance with fire code requirements. Reinforce or replace temporary support beams
-to ensure structural stability. Deadline for Compliance: Violations must be addressed no later than October 31, 2025.
+to ensure structural stability. Deadline for Compliance: Violations must be addressed no later than December 31.
 Failure to comply may result in a stop-work order and additional fines.
-Contact: For questions or to schedule a re-inspection, please contact the Building and Safety Department at (555) 456-7890 or email inspections@lacity.gov.
-```
 
-- `output/final_report.md`:
-
-```
+---
 ## Key Findings
 
-The email from the City of Los Angeles Building and Safety Department to West Coast Development identifies several building code violations at the Sunset Luxury Condominiums site located at 456 Sunset Boulevard, Los Angeles, CA.
+The email from the City of Los Angeles Building and Safety Department indicates several building code violations at the construction site located at 456 Sunset Boulevard, Los Angeles, CA.
 
 ### Violations
-[1] **Electrical Wiring**: Exposed wiring was found in the underground parking garage, posing an immediate electrical hazard.
-[2] **Fire Safety**: Insufficient fire extinguishers were available across multiple floors of the structure under construction.
-[3] **Structural Integrity**: The temporary support beams in the eastern wing do not meet the load‑bearing standards specified in local building codes.
+[1] Electrical Wiring: Exposed wiring was found in the underground parking garage, posing a safety hazard.
+[2] Fire Safety: Insufficient fire extinguishers were available across multiple floors of the structure under construction.
+[3] Structural Integrity: The temporary support beams in the eastern wing do not meet the load-bearing standards specified in local building codes.
 
 ### Corrective Actions
-To rectify these violations, the following actions are required:
 [1] Replace or properly secure exposed wiring to meet electrical safety standards.
 [2] Install additional fire extinguishers in compliance with fire code requirements.
 [3] Reinforce or replace temporary support beams to ensure structural stability.
 
 ### Deadline
-The deadline for compliance is **October 31, 2025**.
+The deadline for compliance is December 31, 2025.
 
 ### Fines and Penalties
-Failure to comply may result in a stop‑work order and additional fines. Given the escalation dollar criteria of $100,000 and the immediate risk of electrical, water, or fire damage, the situation warrants escalation.
-
-### Escalation
-- **Escalation Criteria**: Immediate risk of electrical, water, or fire damage.
-- **Escalation Dollar Criteria**: $100,000.
-- **Escalation Emails**: brog@abc.com, bigceo@company.com.
-
-### Contact
-For questions or to schedule a re‑inspection, contact the Building and Safety Department at (555) 456‑7890 or email inspections@lacity.gov.
-
----
-
-**Prepared by:** Bob, Email Assistant
-**Date:** 2026-01-13
-```
+Failure to comply may result in a stop-work order and additional fines.
+Contact: For questions or to schedule a re-inspection, please contact the Building and Safety Department at (555) 456-7890 or email inspections@lacity.gov.```
 
 ### Sub-agent Outputs:
 
 - `output/email_extract.md`:
 
-```
+````
+
 {
-    "name": "City of Los Angeles Building and Safety Department",
-    "phone": null,
-    "email": "inspections@lacity.gov",
-    "project_id": 345678123,
-    "site_location": "456 Sunset Boulevard, Los Angeles, CA",
-    "violation_type": "Electrical Wiring, Fire Safety, Structural Integrity",
-    "required_changes": "Replace or properly secure exposed wiring to meet electrical safety standards; Install additional fire extinguishers in compliance with fire code requirements; Reinforce or replace temporary support beams to ensure structural stability",
-    "max_potential_fine": null,
-    "date_of_email": "2025-04-03",
-    "compliance_deadline": "2025-10-31"
+"name": "City of Los Angeles Building and Safety Department",
+"phone": null,
+"email": "inspections@lacity.gov",
+"project_id": 345678123,
+"site_location": "456 Sunset Boulevard, Los Angeles, CA",
+"violation_type": "Electrical Wiring, Fire Safety, Structural Integrity",
+"required_changes": "Replace or properly secure exposed wiring to meet electrical safety standards; Install additional fire extinguishers in compliance with fire code requirements; Reinforce or replace temporary support beams to ensure structural stability",
+"max_potential_fine": null,
+"date_of_email": "2025-04-03",
+"compliance_deadline": "2025-10-31"
 }
 This email warrants an escalation
+
 ```
 
 ## LangSmith Application trace
@@ -666,7 +650,9 @@ This email warrants an escalation
 - HTTP/3 curl:
 
 ```
+
 $ docker run --rm ymuski/curl-http3 curl --http3 --verbose https://<nodeport service>:<nodeport>/health/ready
+
 ```
 
 - To build your own HTTP/3 curl: https://curl.se/docs/http3.html
@@ -678,25 +664,33 @@ $ docker run --rm ymuski/curl-http3 curl --http3 --verbose https://<nodeport ser
 - Visit with id:56:
 
 ```
+
 MATCH (v:Visit) WHERE v.id = 56 RETURN v;
+
 ```
 
 - Which patient was involved in Visit id:56
 
 ```
+
 MATCH (p:Patient)-[h:HAS]->(v:Visit) where v.id=56 return v,h,p
+
 ```
 
 - Which physician treated the patient i Visit id:56
 
 ```
+
 MATCH (p:Patient)-[h:HAS]->(v:Visit)<-[t:TREATS]-(ph:Physician) where v.id=56 return v,h,p,t,ph
+
 ```
 
 - All relationships going in and out of Visit id:56
 
 ```
+
 MATCH (v:Visit)-[r]-(n) where v.id=56 return v,r,n
+
 ```
 
 ### Sample Cypher Accumulation:
@@ -704,9 +698,13 @@ MATCH (v:Visit)-[r]-(n) where v.id=56 return v,r,n
 - Total visits and bill paid by payer Aetna in Texas:
 
 ```
+
 MATCH (p:Payer)<-[c:COVERED_BY]-(v:Visit)-[:AT]->(h:Hospital)
 WHERE p.name = "Aetna"
 AND h.state_name = "TX"
-RETURN COUNT(*) as num_visits,
+RETURN COUNT(\*) as num_visits,
 SUM(c.billing_amount) as total_billing_amount;
+
+```
+
 ```
