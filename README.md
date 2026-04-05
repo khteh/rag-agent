@@ -619,7 +619,7 @@ Contact: For questions or to schedule a re-inspection, please contact the Buildi
 
 - `output/email_extract.md`:
 
-````
+```
 
 {
 "name": "City of Los Angeles Building and Safety Department",
@@ -708,3 +708,4 @@ SUM(c.billing_amount) as total_billing_amount;
 ```
 
 ```
+````

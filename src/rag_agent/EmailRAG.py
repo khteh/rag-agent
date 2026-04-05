@@ -207,7 +207,8 @@ class EmailRAG():
         else:
             messages += f"\nThis email does NOT warrant an escalation"
         state["messages"].append(messages)
-        with open("output/email_extract.md", 'w+') as f:
+        timestamp = config.get("configurable", {}).get("timestamp")
+        with open(f"output/email_extract_{timestamp}.md", 'w+') as f:
             f.write(messages)
         logging.debug(f"state: {state}")
         return state
