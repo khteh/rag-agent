@@ -570,7 +570,7 @@ $ uv run python -m src.rag_agent.EmailRAG
 
 - `output/email_request_{timestamp}.md`:
 
-````
+```
 Escalation Criteria: There's an immediate risk of electrical, water, or fire damage
 Escalation dollar criteria: 100000
 Escalation emails: brog@abc.com, bigceo@company.com
@@ -613,7 +613,7 @@ The deadline for compliance is December 31, 2025.
 
 ### Fines and Penalties
 Failure to comply may result in a stop-work order and additional fines.
-Contact: For questions or to schedule a re-inspection, please contact the Building and Safety Department at (555) 456-7890 or email inspections@lacity.gov.```
+Contact: For questions or to schedule a re-inspection, please contact the Building and Safety Department at (555) 456-7890 or email inspections@lacity.gov.
 ```
 
 ### Sub-agent Outputs:
@@ -708,4 +708,9 @@ SUM(c.billing_amount) as total_billing_amount;
 ```
 
 ```
-````
+
+```
+
+```
+
+```
