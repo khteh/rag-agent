@@ -42,6 +42,8 @@ async def create_app() -> Quart:
     app.config["SEND_FILE_MAX_AGE_DEFAULT"] = timedelta(days=90)
     app.config["TEMPLATES_AUTO_RELOAD"] = True
     app.config["WTF_CSRF_TIME_LIMIT"] = None # Max age in seconds for CSRF tokens. If set to None, the CSRF token is valid for the life of the session.
+    app.config["SECRET_KEY"] = appconfig.SECRET_KEY
+    app.config["JWT_SECRET_KEY"] = appconfig.JWT_SECRET_KEY
     app = cors(app, allow_credentials=True, allow_origin="https://localhost:4433")
 
     @app.errorhandler(CSRFError)

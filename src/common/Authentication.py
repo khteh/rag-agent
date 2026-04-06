@@ -26,8 +26,8 @@ class Authentication():
                     "exp": now + timedelta(hours=1),
                     "iat": now,
                     "nbf": now,
-                    "iss": "urn:PythonFlaskRestAPI",
-					"aud": "urn:PythonFlaskRestAPI",
+                    "iss": "urn:PythonRAGAgent",
+					"aud": "urn:PythonRAGAgent",
                     "user_id": user_id
 					# https://stackoverflow.com/questions/28418360/jwt-json-web-token-audience-aud-versus-client-id-whats-the-difference
                 }
@@ -49,7 +49,7 @@ class Authentication():
         result = {"data": {}, "error": {}}
         if token:
             try:
-                payload = jwt.decode(token, current_app.config["JWT_SECRET_KEY"], "HS512", audience="urn:PythonFlaskRestAPI")
+                payload = jwt.decode(token, current_app.config["JWT_SECRET_KEY"], "HS512", audience="urn:PythonRAGAgent")
                 result["data"] = {"user_id": payload["user_id"]}
                 return result
             except jwt.ExpiredSignatureError as expired:

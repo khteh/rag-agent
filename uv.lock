@@ -3309,7 +3309,7 @@ requires-dist = [
     { name = "jsonpickle" },
     { name = "langchain", extras = ["google-genai"] },
     { name = "langchain-community" },
-    { name = "langchain-core", specifier = ">=1.2.26" },
+    { name = "langchain-core" },
     { name = "langchain-google-genai" },
     { name = "langchain-neo4j" },
     { name = "langchain-ollama" },
