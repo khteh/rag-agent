@@ -1,4 +1,4 @@
-import os, json, logging, sys
+import os, json, logging, sys, secrets
 from logging.handlers import TimedRotatingFileHandler
 from dotenv import load_dotenv
 from urllib import parse
@@ -51,7 +51,10 @@ class Config(metaclass=ConfigSingleton):
         self.SQLALCHEMY_DATABASE_URI = f"postgresql+psycopg://{os.environ.get('DB_USERNAME')}:{parse.quote(os.environ.get('DB_PASSWORD'))}@{config['DB_HOST']}/{config['DB_DATABASE']}"
         self.POSTGRESQL_DATABASE_URI = f"postgresql://{os.environ.get('DB_USERNAME')}:{parse.quote(os.environ.get('DB_PASSWORD'))}@{config['DB_HOST']}/{config['DB_DATABASE']}"
         self.DB_MAX_CONNECTIONS = config["DB_MAX_CONNECTIONS"]
-        self.JWT_SECRET_KEY = config["JWT_SECRET_KEY"]
+        if "JWT_SECRET_KEY" in config and len(config["JWT_SECRET_KEY"]) >= 64:
+            self.JWT_SECRET_KEY = config["JWT_SECRET_KEY"]
+        else:
+            self.JWT_SECRET_KEY = secrets.token_hex(64) # SHA512 requirement
         credential = os.environ.get('NEO4J_AUTH').split('/')
         #self.CHROMA_URI = config["CHROMA_URI"]
         #self.CHROMA_TOKEN = os.environ.get("CHROMA_TOKEN")

@@ -21,7 +21,7 @@ dependencies = [
     "quart-wtforms",
     "Quart-CORS",
     "langgraph-checkpoint-postgres",
-    "langchain-core",
+    "langchain-core>=1.2.26",
     "aioquic",
     "pydantic[email]",
     "neo4j",

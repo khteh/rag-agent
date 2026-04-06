@@ -572,10 +572,10 @@ $ uv run python -m src.rag_agent.EmailRAG
 
 ```
 Escalation Criteria: There's an immediate risk of electrical, water, or fire damage
-Escalation dollar criteria: 100000
-Escalation emails: brog@abc.com, bigceo@company.com
+Escalation Dollar Criteria: 100000
+Escalation Emails: brog@abc.com, bigceo@company.com
 
-Date: Thu, 3 Apr 2025 11:36:10 +0000
+Date: Thu, 3 Apr 2026 11:36:10 +0000
 From: City of Los Angeles Building and Safety Department <inspections@lacity.gov>
 Reply-To: Admin <admin@building-safety.la.com>
 To: West Coast Development <admin@west-coast-dev.com>
@@ -592,16 +592,18 @@ Required Corrective Actions: Replace or properly secure exposed wiring to meet e
 Install additional fire extinguishers in compliance with fire code requirements. Reinforce or replace temporary support beams
 to ensure structural stability. Deadline for Compliance: Violations must be addressed no later than December 31.
 Failure to comply may result in a stop-work order and additional fines.
+Contact: For questions or to schedule a re-inspection, please contact the Building and Safety Department at (555) 456-7890 or email inspections@lacity.gov.
 
 ---
+
 ## Key Findings
 
-The email from the City of Los Angeles Building and Safety Department indicates several building code violations at the construction site located at 456 Sunset Boulevard, Los Angeles, CA.
+The email from the City of Los Angeles Building and Safety Department indicates several violations at the Sunset Luxury Condominiums site located at 456 Sunset Boulevard, Los Angeles, CA.
 
 ### Violations
-[1] Electrical Wiring: Exposed wiring was found in the underground parking garage, posing a safety hazard.
-[2] Fire Safety: Insufficient fire extinguishers were available across multiple floors of the structure under construction.
-[3] Structural Integrity: The temporary support beams in the eastern wing do not meet the load-bearing standards specified in local building codes.
+[1] Electrical Wiring: Exposed wiring in the underground parking garage poses a safety hazard.
+[2] Fire Safety: Insufficient fire extinguishers across multiple floors of the structure under construction.
+[3] Structural Integrity: Temporary support beams in the eastern wing do not meet load‑bearing standards specified in local building codes.
 
 ### Corrective Actions
 [1] Replace or properly secure exposed wiring to meet electrical safety standards.
@@ -609,11 +611,12 @@ The email from the City of Los Angeles Building and Safety Department indicates 
 [3] Reinforce or replace temporary support beams to ensure structural stability.
 
 ### Deadline
-The deadline for compliance is December 31, 2025.
+Compliance must be addressed no later than 2026‑12‑31.
 
-### Fines and Penalties
-Failure to comply may result in a stop-work order and additional fines.
-Contact: For questions or to schedule a re-inspection, please contact the Building and Safety Department at (555) 456-7890 or email inspections@lacity.gov.
+### Fines and penalties
+Failure to comply may result in a stop‑work order and additional fines.
+
+---
 ```
 
 ### Sub-agent Outputs:
@@ -622,19 +625,18 @@ Contact: For questions or to schedule a re-inspection, please contact the Buildi
 
 ```
 {
-"name": "City of Los Angeles Building and Safety Department",
-"phone": null,
-"email": "inspections@lacity.gov",
-"project_id": 345678123,
-"site_location": "456 Sunset Boulevard, Los Angeles, CA",
-"violation_type": "Electrical Wiring, Fire Safety, Structural Integrity",
-"required_changes": "Replace or properly secure exposed wiring to meet electrical safety standards; Install additional fire extinguishers in compliance with fire code requirements; Reinforce or replace temporary support beams to ensure structural stability",
-"max_potential_fine": null,
-"date_of_email": "2025-04-03",
-"compliance_deadline": "2025-10-31"
+    "name": "City of Los Angeles Building and Safety Department",
+    "phone": null,
+    "email": "inspections@lacity.gov",
+    "project_id": 345678123,
+    "site_location": "456 Sunset Boulevard, Los Angeles, CA",
+    "violation_type": "Electrical Wiring, Fire Safety, Structural Integrity",
+    "required_changes": "Replace or properly secure exposed wiring to meet electrical safety standards. Install additional fire extinguishers in compliance with fire code requirements. Reinforce or replace temporary support beams to ensure structural stability.",
+    "max_potential_fine": null,
+    "date_of_email": "2026-04-03",
+    "compliance_deadline": "2026-12-31"
 }
 This email warrants an escalation
-
 ```
 
 ## LangSmith Application trace
