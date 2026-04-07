@@ -39,6 +39,7 @@ class Config(metaclass=ConfigSingleton):
     EMBEDDING_MODEL: str = None
     EMBEDDING_DIMENSIONS: int = None
     MODEL_PROVIDER: str = None
+    OLLAMA_CONTEXT_LENGTH: int = None
     LLM_RAG_MODEL: str = None
     connection_kwargs = None
     def __new__(cls, *args, **kwargs):
@@ -67,6 +68,7 @@ class Config(metaclass=ConfigSingleton):
         self.EMBEDDING_DIMENSIONS = config["EMBEDDING_DIMENSIONS"]
         self.MODEL_PROVIDER = config["MODEL_PROVIDER"]
         self.LLM_RAG_MODEL = config["LLM_RAG_MODEL"]
+        self.OLLAMA_CONTEXT_LENGTH = config["OLLAMA_CONTEXT_LENGTH"]
         self.connection_kwargs = {
             "autocommit": True,
             "prepare_threshold": 0,

@@ -30,7 +30,7 @@ async def HealthcareReview(
     logging.info(f"\n=== HealthcareReview ===")
     try:
         neo4j_vector_index = Neo4jVector.from_existing_graph(
-            embedding = OllamaEmbeddings(model=appconfig.EMBEDDING_MODEL, base_url=appconfig.BASE_URI, num_ctx=8192, num_gpu=1, temperature=0),
+            embedding = OllamaEmbeddings(model=appconfig.EMBEDDING_MODEL, base_url=appconfig.BASE_URI, num_ctx=appconfig.OLLAMA_CONTEXT_LENGTH, num_gpu=1, temperature=0),
             url = appconfig.NEO4J_URI,
             username = appconfig.NEO4J_USERNAME,
             password = appconfig.NEO4J_PASSWORD,
