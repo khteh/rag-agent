@@ -122,7 +122,7 @@ When writing the email extract to `/email_extract.md`, use the following structu
     'email': "The email addreess of the email sender (if present in the message). This is usually found in the From: field in the email formatted as name <email>",
     'project_id': "The project ID (if present in the message) - must be an integer. This is usually found in the Subject: field or email body text",
     'site_location': "The site location of the project (if present in the message). Use the full address if possible.",
-    'violation_type': "The type of violation (if present in the message)",
+    'violation_types': "The type of violation (if present in the message)",
     'required_changes': "The required changes specified by the email (if present in the message)",
     'compliance_deadline_str': "The date that the company must comply (if any) reformatted to match dd-mm-YYYY",
     'max_potential_fine': "The maximum potential fine (if any) - must be a float."

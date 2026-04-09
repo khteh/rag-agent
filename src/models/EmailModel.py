@@ -1,5 +1,6 @@
 import locale
 from datetime import datetime, date
+from typing_extensions import List, TypedDict
 from pydantic import BaseModel, Field, computed_field
 
 class EmailModel(BaseModel):
@@ -29,11 +30,11 @@ class EmailModel(BaseModel):
         default=None,
         description="The site location of the project (if present in the message). Use the full address if possible.",
     )
-    violation_type: str | None = Field(
+    violation_types: List[str] | None = Field(
         default=None,
-        description="The type of violation (if present in the message)",
+        description="The types of violation (if present in the message)",
     )
-    required_changes: str | None = Field(
+    required_changes: List[str] | None = Field(
         default=None,
         description="The required changes specified by the email (if present in the message)",
     )

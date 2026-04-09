@@ -59,7 +59,7 @@ class EmailRAG():
                 Extract date from the Date: field, name and email from the From: field, project id from the Subject: field or email body text, 
                 phone number, site location, violation type, required changes, compliance deadline, and maximum potential fine from the email body text.
                 If any of the fields aren't present, don't populate them. Don't populate fields if they're not present in the email.
-                Try to cast dates into the dd-mm-YYYY format. Ignore the timestamp and timezone part of the Date. 
+                Try to cast dates into the dd-mm-YYYY format. Ignore the timestamp and timezone part of the Date.
 
                 Here's the email:
                 {email}
@@ -124,11 +124,11 @@ class EmailRAG():
             )
         self._vectorStore = VectorStore(model=appconfig.EMBEDDING_MODEL, chunk_size=1000, chunk_overlap=0)
         if appconfig.BASE_URI:
-            self._llm = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider=appconfig.MODEL_PROVIDER, base_url=appconfig.BASE_URI, streaming=True, temperature=0)
-            self._chainLLM = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider=appconfig.MODEL_PROVIDER, base_url=appconfig.BASE_URI, temperature=0)
+            self._llm = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider=appconfig.MODEL_PROVIDER, base_url=appconfig.BASE_URI, api_key=appconfig.OLLAMA_API_KEY, streaming=True, temperature=0, reasoning=True)
+            self._chainLLM = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider=appconfig.MODEL_PROVIDER, base_url=appconfig.BASE_URI, api_key=appconfig.OLLAMA_API_KEY, temperature=0, reasoning=True)
         else:
-            self._llm = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider=appconfig.MODEL_PROVIDER, streaming=True, temperature=0)
-            self._chainLLM = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider=appconfig.MODEL_PROVIDER, temperature=0)
+            self._llm = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider=appconfig.MODEL_PROVIDER, api_key=appconfig.OLLAMA_API_KEY, streaming=True, temperature=0, reasoning=True)
+            self._chainLLM = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider=appconfig.MODEL_PROVIDER, api_key=appconfig.OLLAMA_API_KEY, temperature=0, reasoning=True)
         self._email_parser_chain = (
             self._email_parser_prompt
             | self._chainLLM.with_structured_output(EmailModel)
@@ -194,7 +194,7 @@ class EmailRAG():
             'email': "The email addreess of the email sender (if present in the message). This is usually found in the From: field in the email formatted as name <email>",
             'project_id': "The project ID (if present in the message) - must be an integer. This is usually found in the Subject: field or email body text",
             'site_location': "The site location of the project (if present in the message). Use the full address if possible.",
-            'violation_type': "The type of violation (if present in the message)",
+            'violation_types': "The type of violation (if present in the message)",
             'required_changes': "The required changes specified by the email (if present in the message)",
             'compliance_deadline_str': "The date that the company must comply (if any) reformatted to match dd-mm-YYYY",
             'max_potential_fine': "The maximum potential fine (if any) - must be a float."
