@@ -57,9 +57,9 @@ class RAGAgent():
         #self._tools = [HealthcareReview, HealthcareCypher, get_current_wait_times, get_most_available_hospital, upsert_memory, think_tool]
         self._tools = [HealthcareReview, HealthcareCypher, get_current_wait_times, get_most_available_hospital, HealthcareMemoryManager, HealthcareMemorySearcher, think_tool]
         if appconfig.BASE_URI:
-            self._llm = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider=appconfig.MODEL_PROVIDER, base_url=appconfig.BASE_URI, streaming=True, temperature=0)
+            self._llm = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider=appconfig.MODEL_PROVIDER, base_url=appconfig.BASE_URI, api_key=appconfig.OLLAMA_API_KEY, streaming=True, temperature=0)
         else:
-            self._llm = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider=appconfig.MODEL_PROVIDER, streaming=True, temperature=0)
+            self._llm = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider=appconfig.MODEL_PROVIDER, api_key=appconfig.OLLAMA_API_KEY, streaming=True, temperature=0)
         # https://python.langchain.com/docs/integrations/chat/google_vertex_ai_palm/
 
     #async def Cleanup(self):

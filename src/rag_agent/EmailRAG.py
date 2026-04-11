@@ -71,7 +71,6 @@ class EmailRAG():
                 """,
             ),
             ("human", "{email}"),
-            #("placeholder", "{email}"), #should be a list of base messages
         ]
     )
     _escalation_prompt = ChatPromptTemplate.from_messages(
@@ -96,7 +95,6 @@ class EmailRAG():
                 """,
             ),
             ("human", "{email}"),
-            #("placeholder", "{email}"), #should be a list of base messages
         ]
     )
     # https://realpython.com/build-llm-rag-chatbot-with-langchain/#chains-and-langchain-expression-language-lcel
