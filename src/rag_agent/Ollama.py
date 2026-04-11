@@ -9,8 +9,8 @@ from langchain.chat_models import init_chat_model
 from langchain_core.runnables import RunnableConfig, ensure_config
 from typing_extensions import List, TypedDict
 from src.config import config
-#llm = ChatOllama(model=config.LLM_RAG_MODEL, base_url=config.BASE_URI, api_key=config.OLLAMA_API_KEY, streaming=True, temperature=0, reasoning=True)
-llm = init_chat_model(config.LLM_RAG_MODEL, model_provider=config.MODEL_PROVIDER, base_url=config.BASE_URI, api_key=config.OLLAMA_API_KEY, streaming=True, temperature=0, reasoning=True)
+#llm = ChatOllama(model=config.LLM_RAG_MODEL, base_url=config.BASE_URI, api_key=config.OLLAMA_API_KEY, streaming=True, temperature=0, think="high")
+llm = init_chat_model(config.LLM_RAG_MODEL, model_provider=config.MODEL_PROVIDER, base_url=config.BASE_URI, api_key=config.OLLAMA_API_KEY, streaming=True, temperature=0, think="high")
 
 @tool
 def echo(x: str) -> str:

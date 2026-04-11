@@ -584,39 +584,45 @@ Message-ID: <f967b2d6-1036-11f0-9701-9775a4ad682f@prod.outlook.com>
 References: <7d29dafe-1037-11f0-a588-8f6b1b834703@prod.outlook.com> <859cc44e-1037-11f0-b15c-6b9d5cb20c47@prod.outlook.com>
 Subject: Project 345678123 - Sunset Luxury Condominiums
 Location: Los Angeles, CA
+
 Following an inspection of your site at 456 Sunset Boulevard, we have identified the following building code violations:
 Electrical Wiring: Exposed wiring was found in the underground parking garage, posing a safety hazard.
 Fire Safety: Insufficient fire extinguishers were available across multiple floors of the structure under construction.
 Structural Integrity: The temporary support beams in the eastern wing do not meet the load-bearing standards specified in local building codes.
+
 Required Corrective Actions: Replace or properly secure exposed wiring to meet electrical safety standards.
-Install additional fire extinguishers in compliance with fire code requirements. Reinforce or replace temporary support beams
-to ensure structural stability. Deadline for Compliance: Violations must be addressed no later than December 31.
-Failure to comply may result in a stop-work order and additional fines.
+Install additional fire extinguishers in compliance with fire code requirements. Reinforce or replace temporary support beams to ensure structural stability.
+Deadline for Compliance: Violations must be addressed no later than December 31.
+Failure to comply may result be a stop-work order and additional fines.
 Contact: For questions or to schedule a re-inspection, please contact the Building and Safety Department at (555) 456-7890 or email inspections@lacity.gov.
-
 ---
-
 ## Key Findings
 
-The email from the City of Los Angeles Building and Safety Department indicates several violations at the Sunset Luxury Condominiums site located at 456 Sunset Boulevard, Los Angeles, CA.
+The email from **City of Los Angeles Building and Safety Department** concerning **Project 345678123 - Sunset Luxury Condominiums** at **456 Sunset Boulevard, Los Angeles, CA** outlines several critical building code violations that pose an immediate risk of electrical, water, or fire damage.
 
 ### Violations
-[1] Electrical Wiring: Exposed wiring in the underground parking garage poses a safety hazard.
-[2] Fire Safety: Insufficient fire extinguishers across multiple floors of the structure under construction.
-[3] Structural Integrity: Temporary support beams in the eastern wing do not meet load‑bearing standards specified in local building codes.
+[1] **Electrical Wiring**: Exposed wiring found in the underground parking garage, creating a safety hazard.
+[2] **Fire Safety**: Insufficient fire extinguishers across multiple floors of the structure under construction.
+[3] **Structural Integrity**: Temporary support beams in the eastern wing do not meet load‑bearing standards per local building codes.
 
-### Corrective Actions
+### Required Corrective Actions
 [1] Replace or properly secure exposed wiring to meet electrical safety standards.
 [2] Install additional fire extinguishers in compliance with fire code requirements.
 [3] Reinforce or replace temporary support beams to ensure structural stability.
 
-### Deadline
-Compliance must be addressed no later than 2026‑12‑31.
+### Deadline for Compliance
+Violations must be addressed no later than **December 31, 2026**.
 
-### Fines and penalties
-Failure to comply may result in a stop‑work order and additional fines.
+### Potential Penalties
+Failure to comply may result in a stop‑work order and additional fines (amount not specified).
 
----
+### Escalation Criteria
+- Immediate risk of electrical, water, or fire damage.
+- Escalation dollar threshold: **$100,000**.
+- Escalation contacts: **brog@abc.com**, **bigceo@company.com**.
+
+### Contact Information
+Building and Safety Department: (555) 456‑7890, email: inspections@lacity.gov.
 ```
 
 ### Sub-agent Outputs:
@@ -625,16 +631,24 @@ Failure to comply may result in a stop‑work order and additional fines.
 
 ```
 {
-    "name": "City of Los Angeles Building and Safety Department",
+    "name": null,
     "phone": null,
-    "email": "inspections@lacity.gov",
+    "email": null,
     "project_id": 345678123,
     "site_location": "456 Sunset Boulevard, Los Angeles, CA",
-    "violation_type": "Electrical Wiring, Fire Safety, Structural Integrity",
-    "required_changes": "Replace or properly secure exposed wiring to meet electrical safety standards. Install additional fire extinguishers in compliance with fire code requirements. Reinforce or replace temporary support beams to ensure structural stability.",
+    "violation_types": [
+        "Electrical Wiring",
+        "Fire Safety",
+        "Structural Integrity"
+    ],
+    "required_changes": [
+        "Replace or properly secure exposed wiring to meet electrical safety standards.",
+        "Install additional fire extinguishers in compliance with fire code requirements.",
+        "Reinforce or replace temporary support beams to ensure structural stability."
+    ],
     "max_potential_fine": null,
-    "date_of_email": "2026-04-03",
-    "compliance_deadline": "2026-12-31"
+    "date_of_email": null,
+    "compliance_deadline": null
 }
 This email warrants an escalation
 ```

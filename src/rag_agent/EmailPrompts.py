@@ -42,7 +42,6 @@ Contact: For questions or to schedule a re-inspection, please contact the Buildi
 
 ## Email Processing Guidelines
 - Always delegate email parsing task to Email Parser SubAgent by passing the email to the subagent.
-- Each sub-agent should process one email and return EmailModel
 
 ## Report Writing Guidelines
 - Write a comprehensive final report and use edit_file() to append the report to '/email_request_{timestamp}.md' based on the EmailRAGState returned especially the 'extract' information of the dictionary.

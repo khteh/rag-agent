@@ -1,7 +1,6 @@
 import locale
 from datetime import datetime, date
-from typing_extensions import List, TypedDict
-from pydantic import BaseModel, Field, computed_field
+from pydantic import BaseModel, Field, computed_field, field_validator
 
 class EmailModel(BaseModel):
     date_str: str | None = Field(
@@ -30,11 +29,11 @@ class EmailModel(BaseModel):
         default=None,
         description="The site location of the project (if present in the message). Use the full address if possible.",
     )
-    violation_types: List[str] | None = Field(
+    violation_types: list[str] | None = Field(
         default=None,
         description="The types of violation (if present in the message)",
     )
-    required_changes: List[str] | None = Field(
+    required_changes: list[str] | None = Field(
         default=None,
         description="The required changes specified by the email (if present in the message)",
     )
@@ -73,3 +72,12 @@ class EmailModel(BaseModel):
     @property
     def compliance_deadline(self) -> date | None:
         return self._convert_string_to_date(self.compliance_deadline_str) if self.compliance_deadline_str else None
+    
+    @field_validator("violation_types", "required_changes", mode="before")
+    @classmethod
+    def coerce_to_list(cls, v: object) -> list[str] | None:
+        if v is None:
+            return None
+        if isinstance(v, str):
+            return [v]
+        return v  # type: ignore[return-value]

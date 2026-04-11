@@ -96,6 +96,7 @@ class RAGAgent():
     _healthcare_subagent: CompiledSubAgent = None
     _rag_subagent: CompiledSubAgent = None
     _agent = None
+    _in_thinking: bool = False
     # Class constructor
     def __init__(self, db_pool:AsyncConnectionPool = None, store: AsyncPostgresStore = None, checkpointer: AsyncPostgresSaver = None):
         """
@@ -122,9 +123,9 @@ class RAGAgent():
         # self._tools = [self._vectorStore.retriever_tool, upsert_memory, think_tool]
         self._tools = [self._vectorStore.retriever_tool, RAGMemoryManager, RAGMemorySearcher, think_tool]
         if appconfig.BASE_URI:
-            self._llm = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider=appconfig.MODEL_PROVIDER, base_url=appconfig.BASE_URI, api_key=appconfig.OLLAMA_API_KEY, streaming=True, temperature=0, reasoning=True)
+            self._llm = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider=appconfig.MODEL_PROVIDER, base_url=appconfig.BASE_URI, api_key=appconfig.OLLAMA_API_KEY, streaming=True, temperature=0, think="high")
         else:
-            self._llm = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider=appconfig.MODEL_PROVIDER, api_key=appconfig.OLLAMA_API_KEY, streaming=True, temperature=0, reasoning=True)
+            self._llm = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider=appconfig.MODEL_PROVIDER, api_key=appconfig.OLLAMA_API_KEY, streaming=True, temperature=0, think="high")
 
     #def Cleanup(self):
     #    https://github.com/minrk/asyncio-atexit/issues/11
@@ -255,9 +256,20 @@ class RAGAgent():
                 ):
                     logging.debug(f"stream_mode: {stream_mode}")
                     if stream_mode == "values":
-                        #logging.debug(f"data type: {type(data["messages"][-1])}")
-                        messages.append(data["messages"][-1])
-                        data["messages"][-1].pretty_print()
+                        # Print thinking if available
+                        if 'thinking' in data['messages'][-1]:
+                            if not self._in_thinking:
+                                self._in_thinking = True
+                                logging.debug('Thinking:\n', end='')
+                            logging.debug(data['messages'][-1]['thinking'], end='')
+                        else:
+                            if self._in_thinking:
+                                logging.debug('\n\nAnswer:\n', end='')
+                                self._in_thinking = False
+                            #logging.debug(data['messages'][-1]['content'], end='')
+                            #logging.debug(f"data type: {type(data["messages"][-1])}")
+                            messages.append(data["messages"][-1])
+                            data["messages"][-1].pretty_print()
                     elif stream_mode == "updates":
                         for source, update in data.items():
                             #if source in ("model", "tools"):

@@ -50,6 +50,7 @@ class EmailRAG():
     _llm = None
     _chainLLM = None
     _config = None
+    _in_thinking = False
     _email_parser_prompt = ChatPromptTemplate.from_messages(
         [
             (
@@ -60,6 +61,11 @@ class EmailRAG():
                 phone number, site location, violation type, required changes, compliance deadline, and maximum potential fine from the email body text.
                 If any of the fields aren't present, don't populate them. Don't populate fields if they're not present in the email.
                 Try to cast dates into the dd-mm-YYYY format. Ignore the timestamp and timezone part of the Date.
+                IMPORTANT: All fields must be plain scalar values (string, number, or null). Never use nested objects, dicts, or arrays for any field.
+                For site_location, produce a single address string (e.g. "456 Sunset Boulevard, Los Angeles, CA").
+                For required_changes, join all corrective actions into one string separated by semicolons.
+                For violation_types, return each distinct violation as a separate list entry.
+                For required_changes, return each distinct corrective action as a separate list entry.
 
                 Here's the email:
                 {email}
@@ -76,6 +82,16 @@ class EmailRAG():
                 """
                 Determine whether the following email received from a regulatory body requires immediate escalation.
                 Immediate escalation is required when {escalation_criteria}.
+                Populate escalation_reason with a concise explanation referencing the specific criteria met.
+                If escalation is warranted, set escalation_priority to one of:
+                - 'immediate' — safety risk or stop-work order threat
+                - 'urgent'    — large potential fine or tight compliance deadline
+                - 'standard'  — other criteria met
+                Leave escalation_priority null and explain in escalation_reason when escalation is not required.
+
+                You MUST respond with a single valid JSON object only.
+                Do NOT use markdown, bullet points, bold text, headings, or any formatting outside the JSON.                                
+
                 Here's the email:
                 {email}
                 """,
@@ -124,18 +140,18 @@ class EmailRAG():
             )
         self._vectorStore = VectorStore(model=appconfig.EMBEDDING_MODEL, chunk_size=1000, chunk_overlap=0)
         if appconfig.BASE_URI:
-            self._llm = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider=appconfig.MODEL_PROVIDER, base_url=appconfig.BASE_URI, api_key=appconfig.OLLAMA_API_KEY, streaming=True, temperature=0, reasoning=True)
-            self._chainLLM = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider=appconfig.MODEL_PROVIDER, base_url=appconfig.BASE_URI, api_key=appconfig.OLLAMA_API_KEY, temperature=0, reasoning=True)
+            self._llm = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider=appconfig.MODEL_PROVIDER, base_url=appconfig.BASE_URI, api_key=appconfig.OLLAMA_API_KEY, streaming=True, temperature=0, think="high")
+            self._chainLLM = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider=appconfig.MODEL_PROVIDER, base_url=appconfig.BASE_URI, api_key=appconfig.OLLAMA_API_KEY, temperature=0, think="high")
         else:
-            self._llm = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider=appconfig.MODEL_PROVIDER, api_key=appconfig.OLLAMA_API_KEY, streaming=True, temperature=0, reasoning=True)
-            self._chainLLM = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider=appconfig.MODEL_PROVIDER, api_key=appconfig.OLLAMA_API_KEY, temperature=0, reasoning=True)
+            self._llm = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider=appconfig.MODEL_PROVIDER, api_key=appconfig.OLLAMA_API_KEY, streaming=True, temperature=0, think="high")
+            self._chainLLM = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider=appconfig.MODEL_PROVIDER, api_key=appconfig.OLLAMA_API_KEY, temperature=0, think="high")
         self._email_parser_chain = (
             self._email_parser_prompt
-            | self._chainLLM.with_structured_output(EmailModel)
+            | self._chainLLM.with_structured_output(EmailModel, method="json_schema")
         )
         self._escalation_chain = (
             self._escalation_prompt
-            | self._chainLLM.with_structured_output(EscalationCheckModel)
+            | self._chainLLM.with_structured_output(EscalationCheckModel, method="json_schema")
         )
     #async def Cleanup(self):
     #    https://github.com/minrk/asyncio-atexit/issues/11
@@ -287,13 +303,24 @@ class EmailRAG():
         message += f"Here's the email: {email_state['email']}"
         result: List[str] = []
         config = RunnableConfig(run_name="Email RAG", configurable={"thread_id": uuid7str(), "user_id": uuid7str(),  "timestamp": timestamp})
-        async for step in self._agent.with_config(config).astream(
+        async for chunk in self._agent.astream(
             {"messages": [{"role": "user", "content": message}]},
             stream_mode="values",
-            #config = config
+            config = config
         ):
-            result.append(step["messages"][-1])
-            step["messages"][-1].pretty_print()
+            # Print thinking if available
+            if 'thinking' in chunk['messages'][-1]:
+                if not self._in_thinking:
+                    self._in_thinking = True
+                    logging.debug('Thinking:\n', end='')
+                logging.debug(chunk['messages'][-1]['thinking'], end='')
+            else:
+                if self._in_thinking:
+                    logging.debug('\n\nAnswer:\n', end='')
+                    self._in_thinking = False
+                #logging.debug(chunk['messages'][-1]['content'], end='')
+                result.append(chunk["messages"][-1])
+                chunk["messages"][-1].pretty_print()
         return result[-1]
 
 async def make_graph(config: RunnableConfig) -> CompiledStateGraph:

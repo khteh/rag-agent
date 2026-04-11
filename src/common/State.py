@@ -33,7 +33,7 @@ class CustomAgentState(AgentState):
     context: List[Document]
 
 @dataclass
-class EmailRAGState(TypedDict):
+class EmailRAGState(TypedDict, total=False):
     email: str
     extract: EmailModel | None
     escalation_text_criteria: str # A text description of how to determine whether an email notice requires immediate escalation.
