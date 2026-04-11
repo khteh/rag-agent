@@ -30,7 +30,7 @@ async def HealthcareReview(
     logging.info(f"\n=== HealthcareReview ===")
     try:
         neo4j_vector_index = Neo4jVector.from_existing_graph(
-            embedding = OllamaEmbeddings(model=appconfig.EMBEDDING_MODEL, base_url=appconfig.BASE_URI, num_ctx=appconfig.OLLAMA_CONTEXT_LENGTH, num_gpu=1, temperature=0),
+            embedding = OllamaEmbeddings(model=appconfig.EMBEDDING_MODEL, base_url=appconfig.OLLAMA_LOCAL_URI, num_ctx=appconfig.OLLAMA_CONTEXT_LENGTH, num_gpu=1, temperature=0),
             url = appconfig.NEO4J_URI,
             username = appconfig.NEO4J_USERNAME,
             password = appconfig.NEO4J_PASSWORD,
@@ -55,8 +55,8 @@ async def HealthcareReview(
         review_prompt = ChatPromptTemplate(
             input_variables=["context", "input"], messages=messages
         )
-        if appconfig.BASE_URI:
-            llm = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider=appconfig.MODEL_PROVIDER, base_url=appconfig.BASE_URI, streaming=True, temperature=0)
+        if appconfig.OLLAMA_CLOUD_URI:
+            llm = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider=appconfig.MODEL_PROVIDER, base_url=appconfig.OLLAMA_CLOUD_URI, streaming=True, temperature=0)
         else:
             llm = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider=appconfig.MODEL_PROVIDER, streaming=True, temperature=0)
         #create_stuff_documents_chain():
@@ -94,8 +94,8 @@ async def HealthcareCypher(
             qa_generation_prompt = PromptTemplate(
                 input_variables=["context", "question"], template=configuration.qa_generation_prompt
             )
-            if appconfig.BASE_URI:
-                llm = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider=appconfig.MODEL_PROVIDER, base_url=appconfig.BASE_URI, streaming=True, temperature=0)
+            if appconfig.OLLAMA_CLOUD_URI:
+                llm = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider=appconfig.MODEL_PROVIDER, base_url=appconfig.OLLAMA_CLOUD_URI, streaming=True, temperature=0)
             else:
                 llm = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider=appconfig.MODEL_PROVIDER, streaming=True, temperature=0)
             hospital_cypher_chain = GraphCypherQAChain.from_llm( # 'GraphCypherQAChain' object does not support the context manager protocol"

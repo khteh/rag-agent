@@ -122,8 +122,8 @@ class RAGAgent():
         # Use it as a custom subagent
         # self._tools = [self._vectorStore.retriever_tool, upsert_memory, think_tool]
         self._tools = [self._vectorStore.retriever_tool, RAGMemoryManager, RAGMemorySearcher, think_tool]
-        if appconfig.BASE_URI:
-            self._llm = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider=appconfig.MODEL_PROVIDER, base_url=appconfig.BASE_URI, api_key=appconfig.OLLAMA_API_KEY, streaming=True, temperature=0, think="high")
+        if appconfig.OLLAMA_CLOUD_URI:
+            self._llm = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider=appconfig.MODEL_PROVIDER, base_url=appconfig.OLLAMA_CLOUD_URI, api_key=appconfig.OLLAMA_API_KEY, streaming=True, temperature=0, think="high")
         else:
             self._llm = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider=appconfig.MODEL_PROVIDER, api_key=appconfig.OLLAMA_API_KEY, streaming=True, temperature=0, think="high")
 
@@ -157,7 +157,7 @@ class RAGAgent():
             await self._db_pool.open()
             if self._store is None:
                 self._store = AsyncPostgresStore(self._db_pool, index={
-                            "embed": OllamaEmbeddings(model=appconfig.EMBEDDING_MODEL, base_url=appconfig.BASE_URI, num_ctx=appconfig.OLLAMA_CONTEXT_LENGTH, num_gpu=1, temperature=0),
+                            "embed": OllamaEmbeddings(model=appconfig.EMBEDDING_MODEL, base_url=appconfig.OLLAMA_LOCAL_URI, num_ctx=appconfig.OLLAMA_CONTEXT_LENGTH, num_gpu=1, temperature=0),
                             "dims": appconfig.EMBEDDING_DIMENSIONS, # Note: Every time when this value changes, remove the store<foo> tables in the DB so that store.setup() runs to recreate them with the right dimensions.
                         }
                 )

@@ -80,7 +80,7 @@ async def create_app() -> Quart:
         # -- For the vector store table version
         # SELECT max(v) FROM vector_migrations;        
         app.store = AsyncPostgresStore(app.db_pool, index={
-                    "embed": OllamaEmbeddings(model=appconfig.EMBEDDING_MODEL, base_url=appconfig.BASE_URI, num_ctx=appconfig.OLLAMA_CONTEXT_LENGTH, num_gpu=1, temperature=0),
+                    "embed": OllamaEmbeddings(model=appconfig.EMBEDDING_MODEL, base_url=appconfig.OLLAMA_LOCAL_URI, num_ctx=appconfig.OLLAMA_CONTEXT_LENGTH, num_gpu=1, temperature=0),
                     "dims": appconfig.EMBEDDING_DIMENSIONS,
                 }
         )
