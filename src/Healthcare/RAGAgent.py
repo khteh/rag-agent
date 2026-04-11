@@ -66,7 +66,6 @@ class RAGAgent():
     #    https://github.com/minrk/asyncio-atexit/issues/11
     #    logging.info(f"\n=== {self.Cleanup.__name__} ===")
     #    await self._db_pool.close()
-
     async def CreateGraph(self) -> CompiledStateGraph:
         logging.info(f"\n=== Healthcare {self.CreateGraph.__name__} ===")
         try:

@@ -272,6 +272,7 @@ class RAGAgent():
                             data["messages"][-1].pretty_print()
                     elif stream_mode == "updates":
                         for source, update in data.items():
+                            print(f"source: {source}, update: {update}", flush = True)
                             logging.debug(f"source: {source}, update: {update}")
                             #if source in ("model", "tools"):
                             if source == "model":
