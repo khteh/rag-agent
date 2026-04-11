@@ -63,7 +63,6 @@ class EmailRAG():
                 Try to cast dates into the dd-mm-YYYY format. Ignore the timestamp and timezone part of the Date.
                 IMPORTANT: All fields must be plain scalar values (string, number, or null). Never use nested objects, dicts, or arrays for any field.
                 For site_location, produce a single address string (e.g. "456 Sunset Boulevard, Los Angeles, CA").
-                For required_changes, join all corrective actions into one string separated by semicolons.
                 For violation_types, return each distinct violation as a separate list entry.
                 For required_changes, return each distinct corrective action as a separate list entry.
 
