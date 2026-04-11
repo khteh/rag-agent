@@ -272,11 +272,12 @@ class RAGAgent():
                             data["messages"][-1].pretty_print()
                     elif stream_mode == "updates":
                         for source, update in data.items():
+                            logging.debug(f"source: {source}, update: {update}")
                             #if source in ("model", "tools"):
                             if source == "model":
-                                logging.debug(f"source: {source}, type: {type(update)}")
                                 #update["messages"][-1].pretty_print() This will clutter the stream output at the console
-                                await output_queue.put(update) # Queue the state object. Not the message: update["messages"][-1]
+                                if output_queue is not None:
+                                    await output_queue.put(update) # Queue the state object. Not the message: update["messages"][-1]
                 #2026-04-12 20:23:19 DEBUG    /invoke respose: content='Task decomposition is a process of breaking down complex tasks or problems into smaller, more manageable steps or subtasks. This technique is used to simplify complicated tasks, making them easier to understand, plan, and execute. 
                 #            It involves identifying the individual components or steps required to complete a task, and then organizing these steps in a logical order.\n\nTask decomposition can be applied in various contexts, including project management, problem-solving, and decision-making. 
                 #            It helps individuals or teams to:\n\n1. Clarify complex tasks: By breaking down complex tasks into smaller steps, individuals can better understand what needs to be done.\n2. Identify priorities: Task decomposition helps to identify the most critical steps that need to be completed first.\n3. 
