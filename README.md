@@ -269,7 +269,7 @@ Which hospital has the shortest wait time?
 
 ### Answering questions from Postgres Vector Store:
 
-- `output/user_questions.md`:
+- `output/user_request_{timestamp}.md`:
 
 ```
 What is task decomposition?
@@ -315,7 +315,7 @@ These methods collectively provide a toolkit for turning a single, complex instr
 [1] Task decomposition blog post – discusses CoT, ToT, LLM+P, and tool use.
 ```
 
-- `output/user_questions.md`:
+- `output/user_request_{timestamp}.md`:
 
 ```
 What is MLFLow?
@@ -714,19 +714,9 @@ MATCH (v:Visit)-[r]-(n) where v.id=56 return v,r,n
 - Total visits and bill paid by payer Aetna in Texas:
 
 ```
-
 MATCH (p:Payer)<-[c:COVERED_BY]-(v:Visit)-[:AT]->(h:Hospital)
 WHERE p.name = "Aetna"
 AND h.state_name = "TX"
 RETURN COUNT(\*) as num_visits,
 SUM(c.billing_amount) as total_billing_amount;
-
-```
-
-```
-
-```
-
-```
-
 ```
