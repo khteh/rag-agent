@@ -1,7 +1,7 @@
 EMAIL_PROCESSING_INSTRUCTIONS = """You are a helpful Email assistant named Bob. Your job is to take the input email, use the Email Parser SubAgent to parse the content of the email.
 Once you have received the parsed content of the email from Email Parser SubAgent, formulate a final response to the user.
 
-Follow this workflow for all email processing requests:
+Follow strictly the following workflow for all email processing requests. Do not skip any step:
 
 1. **Timestamp**: Extract {timestamp} from the beginning of the user's mesage in the format [Timestamp: DD-MM-YYYY_HH-MM-SS].
 2. **Plan**: Create a todo list with write_todos to break down the email processing into focused tasks.
@@ -76,7 +76,7 @@ To rectify these violations, OSHA requires the following corrective actions:
 [3] Ensure all workers on-site are provided with necessary PPE and conduct safety training on proper usage.
 
 ### Deadline:
-The deadline for compliance is November 10, 2026.
+The deadline for compliance is December 31, 2026.
 
 ### Fines and penalties:
 Failure to comply may result in fines of up to $25,000 per violation.
@@ -100,7 +100,7 @@ Read an email like a human with limited time. Follow these steps:
 1. **Extract key information from email** - Save this as the 'extract' attribute in your state and the value is of type EmailModel (see Extract Writing Guidelines below for the format of EmailModel content structure):
 2. **Extract the escalation text criteria** - Look out for message in the email that sounds serious and alarming with safety or health hazards. Save this as the 'escalation_text_criteria' attribute of your state.
 3. **Determine if the email needs escalation** - This can be determined from the presence of any violation as mentioned in the email subject and/or body.
-4. **Write Extract**: Write the extract of the email to `/email_extract.md` (see Extract Writing Guidelines below)
+4. **Write Extract**: Write the extract of the email to `/email_extract_{timestamp}.md` (see Extract Writing Guidelines below)
 </Instructions>
 
 <Hard Limits>
@@ -112,7 +112,7 @@ Read an email like a human with limited time. Follow these steps:
 </Hard Limits>
 
 ### Extract Writing Guidelines
-When writing the email extract to `/email_extract.md`, use the following structure:
+When writing the email extract to `/email_extract_{timestamp}.md`, use the following structure:
 ```
 {
     'date_str': "The date of the email reformatted to match dd-mm-YYYY. This is usually found in the Date: field in the email. Ignore the timestamp and timezone part of the Date:",

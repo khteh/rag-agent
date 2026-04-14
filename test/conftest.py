@@ -11,7 +11,7 @@ async def EmailRAGFixture():
     logging.basicConfig(format='%(asctime)s %(levelname)-8s %(message)s', level=logging.DEBUG, datefmt='%Y-%m-%d %H:%M:%S')
     #vertexai.init(project=os.environ.get("GOOGLE_CLOUD_PROJECT"), location=os.environ.get("GOOGLE_CLOUD_LOCATION"))
     config = RunnableConfig(run_name="Email RAG", configurable={"thread_id": uuid7str()})
-    from src.rag_agent.EmailRAG import EmailRAG
+    from src.EmailRAG.EmailRAG import EmailRAG
     rag = EmailRAG(config)
     await rag.CreateGraph()
     return rag

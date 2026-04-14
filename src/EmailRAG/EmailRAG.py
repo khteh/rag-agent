@@ -29,7 +29,8 @@ https://github.com/langchain-ai/langgraph/blob/main/libs/langgraph/langgraph/gra
 https://langchain-ai.github.io/langgraph/how-tos/streaming/#values
 https://python.langchain.com/docs/how_to/configure/
 """
-from src.rag_agent.EmailPrompts import EMAIL_PARSER_INSTRUCTIONS, EMAIL_PROCESSING_INSTRUCTIONS
+from src.EmailRAG.EmailPrompts import EMAIL_PARSER_INSTRUCTIONS, EMAIL_PROCESSING_INSTRUCTIONS
+from src.EmailRAG.RobustEmailModelParser import RobustEmailModelParser
 from src.config import config as appconfig
 from src.common.State import EmailRAGState
 from src.common.ContextSchema import ContextSchema
@@ -51,6 +52,7 @@ class EmailRAG():
     _chainLLM = None
     _config = None
     _in_thinking = False
+    _email_model_parser: RobustEmailModelParser = None
     _email_parser_prompt = ChatPromptTemplate.from_messages(
         [
             (
@@ -82,13 +84,14 @@ class EmailRAG():
                 Immediate escalation is required when {escalation_criteria}.
                 Populate escalation_reason with a concise explanation referencing the specific criteria met.
                 If escalation is warranted, set escalation_priority to one of:
-                - 'immediate' — safety risk or stop-work order threat
-                - 'urgent'    — large potential fine or tight compliance deadline
-                - 'standard'  — other criteria met
+                  - 'immediate' — safety risk or stop-work order threat
+                  - 'urgent'    — large potential fine or tight compliance deadline
+                  - 'standard'  — other criteria met
                 Leave escalation_priority null and explain in escalation_reason when escalation is not required.
-
-                You MUST respond with a single valid JSON object only.
-                Do NOT use markdown, bullet points, bold text, headings, or any formatting outside the JSON.                                
+                You MUST respond with a single valid JSON object containing exactly these three keys:
+                  "needs_escalation" (boolean), "escalation_reason" (string or null), "escalation_priority" (string or null).
+                Do NOT rename or alias these keys. Do NOT use YAML, markdown, bullet points,
+                bold text, headings, or any formatting outside the JSON.
 
                 Here's the email:
                 {email}
@@ -135,6 +138,7 @@ class EmailRAG():
                 kwargs = appconfig.connection_kwargs,
                 open = False
             )
+        self._email_model_parser = RobustEmailModelParser()
         self._vectorStore = VectorStore(model=appconfig.EMBEDDING_MODEL, chunk_size=1000, chunk_overlap=0)
         if appconfig.OLLAMA_CLOUD_URI:
             self._llm = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider=appconfig.MODEL_PROVIDER, base_url=appconfig.OLLAMA_CLOUD_URI, api_key=appconfig.OLLAMA_API_KEY, streaming=True, temperature=0, think="high")
@@ -143,8 +147,8 @@ class EmailRAG():
             self._llm = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider=appconfig.MODEL_PROVIDER, api_key=appconfig.OLLAMA_API_KEY, streaming=True, temperature=0, think="high")
             self._chainLLM = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider=appconfig.MODEL_PROVIDER, api_key=appconfig.OLLAMA_API_KEY, temperature=0, think="high")
         self._email_parser_chain = (
-            self._email_parser_prompt
-            | self._chainLLM.with_structured_output(EmailModel, method="json_schema")
+            self._email_parser_prompt | self._chainLLM | self._email_model_parser
+            #| self._chainLLM.with_structured_output(EmailModel, method="json_schema")
         )
         self._escalation_chain = (
             self._escalation_prompt
@@ -168,13 +172,20 @@ class EmailRAG():
         with open(f"output/email_request_{timestamp}.md", 'r') as f:
             email:str = ""
             for l in f:
-                if "escalation criteria" in l.lower():
-                    state["escalation_text_criteria"] = l.split(":")[1].strip()
-                elif "escalation dollar criteria" in l.lower():
-                    state["escalation_dollar_criteria"] = l.split(":")[1].strip()
+                if "escalation dollar criteria" in l.lower():
+                    try:
+                        state["escalation_dollar_criteria"] = float(
+                            l.split(":", 1)[1].strip()
+                        )
+                    except ValueError as e:
+                        logging.critical(f"{self.ParseEmail.__name__} ValueError: {e}")
+                elif "escalation criteria" in l.lower():
+                    state["escalation_text_criteria"] = l.split(":", 1)[1].strip()
                 elif "escalation emails" in l.lower():
-                    state["escalation_emails"] = l.split(":")[1].strip()
-                elif l is not None and l != "":
+                    state["escalation_emails"] = [
+                        e.strip() for e in l.split(":", 1)[1].strip().split(",")
+                    ]
+                elif l and l.strip():
                     email += l
         state["email"] = email.strip()
         logging.debug(f"state: {state}")
@@ -193,7 +204,28 @@ class EmailRAG():
         logging.debug(f"state: {state}")
         result: EscalationCheckModel = await self._escalation_chain.with_config(config).ainvoke({"email": state["email"], "escalation_criteria": state["escalation_text_criteria"]})
         logging.debug(f"result: {result}")
-        state["escalate"] = (result.needs_escalation or ("max_potential_fine" in state and state["extract"].max_potential_fine and state["extract"].max_potential_fine >= state["escalation_dollar_criteria"]))
+        extract = state.get("extract")
+        dollar_threshold = state.get("escalation_dollar_criteria")
+        fine_exceeds_threshold = (
+            extract is not None
+            and extract.max_potential_fine is not None
+            and dollar_threshold is not None
+            and extract.max_potential_fine >= dollar_threshold
+        )
+
+        state["escalate"] = result.needs_escalation or fine_exceeds_threshold
+
+        reason = result.escalation_reason
+        if fine_exceeds_threshold and not result.needs_escalation:
+            fine_note = (
+                f"Fine of {extract.max_potential_fine} exceeds the "  # type: ignore[union-attr]
+                f"{dollar_threshold} threshold."
+            )
+            reason = f"{reason}; {fine_note}" if reason else fine_note
+
+        state["escalation_reason"] = reason
+        state["escalation_priority"] = result.escalation_priority
+
         logging.debug(f"state: {state}")
         return state
     
@@ -214,15 +246,28 @@ class EmailRAG():
         }
         """
         logging.info(f"\n=== {self.ParseEmailSummarizer.__name__} ===")
-        messages = state["extract"].model_dump_json(indent=4)
-        if state["escalate"]:
-            messages += f"\nThis email warrants an escalation"
-        else:
-            messages += f"\nThis email does NOT warrant an escalation"
-        state["messages"].append(messages)
+        config = ensure_config(config)
         timestamp = config.get("configurable", {}).get("timestamp")
-        with open(f"output/email_extract_{timestamp}.md", 'w+') as f:
-            f.write(messages)
+        extract = state.get("extract", "{}")
+        messages = extract.model_dump_json(indent=4)
+        if state.get("escalate"):
+            messages += "\nThis email warrants an escalation."
+            if state.get("escalation_priority"):
+                messages += f"\n  Priority : {state['escalation_priority']}"
+            if state.get("escalation_reason"):
+                messages += f"\n  Reason   : {state['escalation_reason']}"
+        else:
+            messages += "\nThis email does NOT warrant an escalation."
+            if state.get("escalation_reason"):
+                messages += f"\n  Reason   : {state['escalation_reason']}"
+
+        state["messages"] = [messages]  # type: ignore[list-item]
+        if timestamp:
+            Path("output").mkdir(exist_ok=True)
+            with open(f"output/email_extract_{timestamp}.md", "w+") as f:
+                f.write(messages)
+        else:
+            logging.warning(f"{self.ParseEmailSummarizer.__name__} No timestampe information!")
         logging.debug(f"state: {state}")
         return state
 
@@ -306,18 +351,19 @@ class EmailRAG():
             config = config
         ):
             # Print thinking if available
-            if 'thinking' in chunk['messages'][-1]:
+            last = chunk["messages"][-1]
+            if isinstance(last, dict) and "thinking" in last:
                 if not self._in_thinking:
                     self._in_thinking = True
-                    logging.debug('Thinking:\n', end='')
-                logging.debug(chunk['messages'][-1]['thinking'], end='')
+                    logging.debug("Thinking:\n")
+                logging.debug(last["thinking"])
             else:
                 if self._in_thinking:
-                    logging.debug('\n\nAnswer:\n', end='')
+                    logging.debug("\n\nAnswer:\n")
                     self._in_thinking = False
-                #logging.debug(chunk['messages'][-1]['content'], end='')
-                result.append(chunk["messages"][-1])
-                chunk["messages"][-1].pretty_print()
+                result.append(last)
+                if hasattr(last, "pretty_print"):
+                    last.pretty_print()
         return result[-1]
 
 async def make_graph(config: RunnableConfig) -> CompiledStateGraph:
@@ -333,9 +379,6 @@ async def main():
     img = Image.open("/tmp/checkpoint_graph.png")
     img.show()
     """
-    Path("output/email_request.md").unlink(missing_ok=True)
-    Path("output/email_extract.md").unlink(missing_ok=True)
-    Path("output/final_report.md").unlink(missing_ok=True)
     rag = EmailRAG()
     await rag.CreateGraph()
     email_state = {
