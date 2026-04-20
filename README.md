@@ -563,7 +563,20 @@ The following table summarizes the review(s) authored by patient **7674** in the
 - Takes about 8 minutes to run.
 
 ```
-$ uv run python -m src.rag_agent.EmailRAG
+$ uv run python -m src.EmailRAG.EmailRAG
+```
+
+- To run fuzz-testing using Google's atheris and coverage:
+
+```
+$ uv run coverage run -m src.EmailRAG.EmailRAG -atheris_runs=100
+```
+
+- Generate HTML report and view it:
+
+```
+$ uv run python -m coverage html
+$ (cd htmlcov && uv run python -m http.server 8000)
 ```
 
 ### Main Agent Outputs:

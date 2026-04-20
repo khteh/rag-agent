@@ -7,3 +7,4 @@
 **/.langgraph_api/
 **/output/
 **/crash-*
+**/.coverage
