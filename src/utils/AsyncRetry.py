@@ -8,7 +8,7 @@ https://realpython.com/primer-on-python-decorators/#defining-decorators-with-arg
 """
 def async_retry(max_retries: int=3, delay: int=0):
     def decorator(func):
-        @functools.wraps(func)
+        @functools.wraps(func) # preserve information about the original function. Useful for introspection to show the identity of the decorated function.
         async def wrapper(*args, **kwargs):
             for attempt in range(1, max_retries + 1):
                 try:
