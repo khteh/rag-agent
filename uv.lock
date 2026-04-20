@@ -222,6 +222,15 @@ wheels = [
 ]
 
 [[package]]
+name = "atheris"
+version = "3.0.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/f8/58/5965955898e16bee17c8379eae12194993bf641c4629016991248b862069/atheris-3.0.0.tar.gz", hash = "sha256:1f0929c7bc3040f3fe4102e557718734190cf2d7718bbb8e3ce6d3eb56ef5bb3", size = 373239, upload-time = "2025-11-24T23:54:02.15Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/db/48/df670f75f458cc7c1752a01a394fd59c830b08172dd59cf29d73f31050f9/atheris-3.0.0-cp313-cp313-manylinux2014_x86_64.manylinux_2_17_x86_64.whl", hash = "sha256:a402cdca8a650d1371050b1f9552eb4cdc488d2db64950d603c4560318365eac", size = 34858525, upload-time = "2025-11-24T23:53:59.925Z" },
+]
+
+[[package]]
 name = "attrs"
 version = "26.1.0"
 source = { registry = "https://pypi.org/simple" }
@@ -3307,6 +3316,7 @@ dependencies = [
 
 [package.dev-dependencies]
 dev = [
+    { name = "atheris" },
     { name = "langgraph-cli", extra = ["inmem"] },
     { name = "pytest" },
     { name = "pytest-asyncio" },
@@ -3357,6 +3367,7 @@ requires-dist = [
 
 [package.metadata.requires-dev]
 dev = [
+    { name = "atheris", specifier = ">=3.0.0" },
     { name = "langgraph-cli", extras = ["inmem"] },
     { name = "pytest" },
     { name = "pytest-asyncio" },

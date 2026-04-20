@@ -51,4 +51,5 @@ dev = [
     "pytest",
     "pytest-asyncio",
     "langgraph-cli[inmem]",
+    "atheris>=3.0.0",
 ]
