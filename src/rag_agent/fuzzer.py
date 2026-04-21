@@ -1,4 +1,5 @@
 import atheris, asyncio, sys
+from datetime import datetime
 from uuid_extensions import uuid7, uuid7str
 from langchain_core.runnables import RunnableConfig, ensure_config
 from src.models.schema import ChatMessage, UserInput, StreamInput
@@ -9,6 +10,8 @@ async def main(input_message):
     rag = RAGAgent()
     await rag.CreateGraph()
     config = RunnableConfig(run_name="RAG Deep Agent", configurable={"thread_id": uuid7str(), "user_id": uuid7str()})
+    timestamp = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
+    message = f"[Timestamp: {timestamp}]\n{input_message}\n"
     await rag.ChatAgent(config, input_message, ["values"], False)
 
 @atheris.instrument_func
