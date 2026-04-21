@@ -1,50 +1,48 @@
-import atheris, argparse
-with atheris.instrument_imports():
-    import asyncio, logging, sys
-    from datetime import datetime
-    from pathlib import Path
-    from uuid_extensions import uuid7, uuid7str
-    from google.api_core.exceptions import ResourceExhausted
-    from langchain.chat_models import init_chat_model
-    from langchain_core.runnables import RunnableConfig, ensure_config
-    from langgraph.graph import StateGraph, MessagesState
-    from langgraph.types import CachePolicy
-    from langgraph.cache.memory import InMemoryCache
-    from langgraph.graph import (
-        END,
-        START,
-    )
-    from langgraph.graph.state import CompiledStateGraph
-    from langgraph.store.postgres.aio import AsyncPostgresStore
-    from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
-    from psycopg_pool import AsyncConnectionPool, ConnectionPool
-    from langchain_core.prompts import ChatPromptTemplate, HumanMessagePromptTemplate, PromptTemplate, SystemMessagePromptTemplate
-    from typing_extensions import List, TypedDict
-    from deepagents import create_deep_agent, CompiledSubAgent
-    from langchain_ollama import OllamaEmbeddings
-    """
-    https://langchain-ai.github.io/langgraph/tutorials/rag/langgraph_agentic_rag/
-    https://cloud.google.com/vertex-ai/generative-ai/docs/embeddings/get-text-embeddings
-    https://python.langchain.com/docs/tutorials/qa_chat_history/
-    https://python.langchain.com/api_reference/langchain/chat_models/langchain.chat_models.base.init_chat_model.html
-    https://github.com/langchain-ai/langgraph/blob/main/libs/langgraph/langgraph/graph/message.py
-    https://langchain-ai.github.io/langgraph/how-tos/streaming/#values
-    https://python.langchain.com/docs/how_to/configure/
-    """
-    from src.EmailRAG.EmailPrompts import EMAIL_PARSER_INSTRUCTIONS, EMAIL_PROCESSING_INSTRUCTIONS
-    from src.EmailRAG.RobustEmailModelParser import RobustEmailModelParser
-    from src.config import config as appconfig
-    from src.common.State import EmailRAGState
-    from src.common.ContextSchema import ContextSchema
-    from src.utils.image import show_graph
-    from src.models import ChatMessage
-    from src.models.EmailModel import EmailModel
-    from src.models.EscalationModel import EscalationCheckModel
-    from src.Infrastructure.VectorStore import VectorStore
-    from src.Infrastructure.PostgreSQLSetup import PostgreSQLCheckpointerSetup, PostgreSQLStoreSetup
-    from src.Infrastructure.Backend import composite_backend
-    from src.rag_agent.Tools import upsert_memory, think_tool, RAGMemoryManager, RAGMemorySearcher
-    from data.sample_emails import EMAILS
+import asyncio, logging, sys
+from datetime import datetime
+from pathlib import Path
+from uuid_extensions import uuid7, uuid7str
+from google.api_core.exceptions import ResourceExhausted
+from langchain.chat_models import init_chat_model
+from langchain_core.runnables import RunnableConfig, ensure_config
+from langgraph.graph import StateGraph, MessagesState
+from langgraph.types import CachePolicy
+from langgraph.cache.memory import InMemoryCache
+from langgraph.graph import (
+    END,
+    START,
+)
+from langgraph.graph.state import CompiledStateGraph
+from langgraph.store.postgres.aio import AsyncPostgresStore
+from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
+from psycopg_pool import AsyncConnectionPool, ConnectionPool
+from langchain_core.prompts import ChatPromptTemplate, HumanMessagePromptTemplate, PromptTemplate, SystemMessagePromptTemplate
+from typing_extensions import List, TypedDict
+from deepagents import create_deep_agent, CompiledSubAgent
+from langchain_ollama import OllamaEmbeddings
+"""
+https://langchain-ai.github.io/langgraph/tutorials/rag/langgraph_agentic_rag/
+https://cloud.google.com/vertex-ai/generative-ai/docs/embeddings/get-text-embeddings
+https://python.langchain.com/docs/tutorials/qa_chat_history/
+https://python.langchain.com/api_reference/langchain/chat_models/langchain.chat_models.base.init_chat_model.html
+https://github.com/langchain-ai/langgraph/blob/main/libs/langgraph/langgraph/graph/message.py
+https://langchain-ai.github.io/langgraph/how-tos/streaming/#values
+https://python.langchain.com/docs/how_to/configure/
+"""
+from src.EmailRAG.EmailPrompts import EMAIL_PARSER_INSTRUCTIONS, EMAIL_PROCESSING_INSTRUCTIONS
+from src.EmailRAG.RobustEmailModelParser import RobustEmailModelParser
+from src.config import config as appconfig
+from src.common.State import EmailRAGState
+from src.common.ContextSchema import ContextSchema
+from src.utils.image import show_graph
+from src.models import ChatMessage
+from src.models.EmailModel import EmailModel
+from src.models.EscalationModel import EscalationCheckModel
+from src.Infrastructure.VectorStore import VectorStore
+from src.Infrastructure.PostgreSQLSetup import PostgreSQLCheckpointerSetup, PostgreSQLStoreSetup
+from src.Infrastructure.Backend import composite_backend
+from src.rag_agent.Tools import upsert_memory, think_tool, RAGMemoryManager, RAGMemorySearcher
+from data.sample_emails import EMAILS
 # https://realpython.com/langgraph-python/
 
 class EmailRAG():
@@ -336,7 +334,6 @@ class EmailRAG():
         show_graph(self._parser_graph, self._graphName) # This blocks
         show_graph(self._agent, self._agentName) # This blocks
 
-    @atheris.instrument_func
     async def Chat(self, criteria, email_state) -> List[str]:
         logging.info(f"\n=== {self.Chat.__name__} ===")
         timestamp = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
@@ -395,20 +392,5 @@ async def main(criteria):
     assert not ai_message.tool_calls
     assert ai_message.content
 
-@atheris.instrument_func
-def FuzzEntryPoint(data):
-    # Initialize the provider with raw bytes from the fuzzer
-    fdp = atheris.FuzzedDataProvider(data)    
-    # Consume structured data
-    number = fdp.ConsumeIntInRange(100, 100000)
-    criteria = fdp.ConsumeUnicodeNoSurrogates(128)
-    asyncio.run(main(criteria))
-
 if __name__ == "__main__":
-    print(f"argv 1: {sys.argv}")
-    if len(sys.argv) > 1 and any("-atheris_runs" in s for s in sys.argv):
-        atheris.Setup(sys.argv, FuzzEntryPoint)
-        atheris.instrument_all()    
-        atheris.Fuzz()    
-    else:
-        asyncio.run(main("There's an immediate risk of electrical, water, or fire damage"))
+    asyncio.run(main("There's an immediate risk of electrical, water, or fire damage"))

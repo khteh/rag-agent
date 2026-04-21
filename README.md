@@ -569,7 +569,7 @@ $ uv run python -m src.EmailRAG.EmailRAG
 - To run fuzz-testing using Google's atheris and coverage:
 
 ```
-$ uv run coverage run -m src.EmailRAG.EmailRAG -atheris_runs=100
+$ uv run coverage run -m src.EmailRAG.fuzzer -atheris_runs=100
 ```
 
 - Generate HTML report and view it:
