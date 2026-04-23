@@ -5,7 +5,6 @@ from langchain_core.runnables import RunnableConfig, ensure_config
 from src.models.schema import ChatMessage, UserInput, StreamInput
 from src.rag_agent.RAGAgent import RAGAgent
 
-@atheris.instrument_func
 async def main(input_message):
     rag = RAGAgent()
     await rag.CreateGraph()
@@ -14,7 +13,6 @@ async def main(input_message):
     message = f"[Timestamp: {timestamp}]\n{input_message}\n"
     await rag.ChatAgent(config, message, ["values"], False)
 
-@atheris.instrument_func
 def FuzzEntryPoint(data):
     # Initialize the provider with raw bytes from the fuzzer
     fdp = atheris.FuzzedDataProvider(data)    
@@ -25,6 +23,6 @@ def FuzzEntryPoint(data):
     asyncio.run(main(input_message))
 
 if __name__ == "__main__":
-    atheris.Setup(sys.argv, FuzzEntryPoint)
     atheris.instrument_all()    
+    atheris.Setup(sys.argv, FuzzEntryPoint)
     atheris.Fuzz()    

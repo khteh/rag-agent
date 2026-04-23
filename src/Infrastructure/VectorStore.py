@@ -30,7 +30,6 @@ class VectorStore(): #metaclass=VectorStoreSingleton):
     https://cloud.google.com/vertex-ai/generative-ai/docs/embeddings/get-text-embeddings
     https://docs.langchain.com/oss/python/integrations/vectorstores/pgvector
     """
-    _model: str = None
     _embeddings: OllamaEmbeddings = None
     _chunk_size: int = None
     _chunk_overlap: int = None
@@ -44,8 +43,7 @@ class VectorStore(): #metaclass=VectorStoreSingleton):
     _docs = set()
     #def __new__(cls, *args, **kwargs):
     #    return super().__new__(cls)
-    def __init__(self, model, chunk_size, chunk_overlap, tenant="khteh", database="LLM-RAG-Agent", collection="LLM-RAG-Agent"):
-        self._model = model
+    def __init__(self, chunk_size, chunk_overlap, tenant="khteh", database="LLM-RAG-Agent", collection="LLM-RAG-Agent"):
         self._chunk_size = chunk_size
         self._chunk_overlap = chunk_overlap
         self._collection = collection

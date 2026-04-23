@@ -117,7 +117,7 @@ class RAGAgent():
                     )
         self._store = store
         self._checkpointer = checkpointer
-        self._vectorStore = VectorStore(model=appconfig.EMBEDDING_MODEL, chunk_size=1000, chunk_overlap=0)
+        self._vectorStore = VectorStore(chunk_size=1000, chunk_overlap=0)
         self._healthcare_rag = HealthAgent(self._db_pool, self._store, self._checkpointer)
         # GoogleSearch ground_search works well but it will sometimes take precedence and overwrite the ingested data into Chhroma and Neo4J. So, exclude it for now until it is really needed.
         # Use it as a custom subagent
