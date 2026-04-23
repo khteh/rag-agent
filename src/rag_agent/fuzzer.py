@@ -2,7 +2,6 @@ import atheris, asyncio, sys, logging
 from datetime import datetime
 from uuid_extensions import uuid7, uuid7str
 from langchain_core.runnables import RunnableConfig, ensure_config
-from src.models.schema import ChatMessage, UserInput, StreamInput
 from src.rag_agent.RAGAgent import RAGAgent
 
 async def main(input_message):
