@@ -97,6 +97,7 @@ class RAGAgent():
     _rag_subagent: CompiledSubAgent = None
     _agent = None
     _in_thinking: bool = False
+    _closed = False
     # Class constructor
     def __init__(self, db_pool:AsyncConnectionPool = None, store: AsyncPostgresStore = None, checkpointer: AsyncPostgresSaver = None):
         """
@@ -126,6 +127,20 @@ class RAGAgent():
             self._llm = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider=appconfig.MODEL_PROVIDER, base_url=appconfig.OLLAMA_CLOUD_URI, api_key=appconfig.OLLAMA_API_KEY, streaming=True, temperature=0, think="high")
         else:
             self._llm = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider=appconfig.MODEL_PROVIDER, api_key=appconfig.OLLAMA_API_KEY, streaming=True, temperature=0, think="high")
+
+    def __del__(self):
+        #self._in_memory_store.close()
+        if not self._closed:
+            try:
+                loop = asyncio.get_event_loop()
+                if loop.is_running():
+                    loop.create_task(self._Cleanup())
+            except Exception as e:
+                logging.exception(f"{self.__del__.__name__} exception! {e}")
+
+    async def _Cleanup(self):
+        #await self._store.close() AttributeError: 'AsyncPostgresStore' object has no attribute 'close'
+        await self._db_pool.close()
 
     #def Cleanup(self):
     #    https://github.com/minrk/asyncio-atexit/issues/11

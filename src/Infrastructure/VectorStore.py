@@ -1,6 +1,7 @@
 import atexit, bs4, hashlib, logging
 #from chromadb.config import Settings
 from typing_extensions import List, TypedDict, Optional, Any
+from langchain_postgres import PGEngine
 from langchain_core.tools.retriever import create_retriever_tool
 #from langchain_google_vertexai import VertexAIEmbeddings
 from langchain_postgres.vectorstores import PGVector

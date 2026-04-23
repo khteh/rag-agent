@@ -5,6 +5,7 @@
 **/.env
 **/__pycache__/
 **/.langgraph_api/
+**/.coverage
 **/output/
 **/crash-*
-**/.coverage
+**/slow-unit-*
