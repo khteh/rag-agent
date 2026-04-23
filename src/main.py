@@ -63,8 +63,9 @@ async def create_app() -> Quart:
             conninfo = appconfig.POSTGRESQL_DATABASE_URI,
             max_size = appconfig.DB_MAX_CONNECTIONS,
             kwargs = appconfig.connection_kwargs,
+            open = True
         )
-        await app.db_pool.open()
+        #await app.db_pool.open()
         logging.debug(f"EMBEDDING_DIMENSIONS: {appconfig.EMBEDDING_DIMENSIONS}")
         # Note: Every time when this value changes, remove the following tables (https://github.com/langchain-ai/langgraph/issues/6687)
         # -- Drop the table containing the vectors with the wrong dimension

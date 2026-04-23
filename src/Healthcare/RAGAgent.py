@@ -30,11 +30,13 @@ class RAGAgent():
     # placeholder:
     # Means the template will receive an optional list of messages under the "messages" key.
     # A list of the names of the variables for placeholder or MessagePlaceholder that are optional. These variables are auto inferred from the prompt and user need not provide them.
+    _closed: bool = False
     _db_pool: AsyncConnectionPool = None
     _store: AsyncPostgresStore = None
     _checkpointer = None
     _tools: List[Callable[..., Any]] = None
     agent: CompiledStateGraph = None
+    _self_managed_db_pool: bool = False
     # Class constructor
     def __init__(self, db_pool:AsyncConnectionPool = None, store: AsyncPostgresStore = None, checkpointer: AsyncPostgresSaver = None):
         """
@@ -46,11 +48,12 @@ class RAGAgent():
         # For VertexAI, use VertexAIEmbeddings, model="text-embedding-005"; "gemini-2.0-flash" model_provider="google_genai"
         # not a vector store but a LangGraph store object.
         #atexit.register(self.Cleanup)
+        self._self_managed_db_pool = db_pool is None
         self._db_pool = db_pool or AsyncConnectionPool(
                         conninfo = appconfig.POSTGRESQL_DATABASE_URI,
                         max_size = appconfig.DB_MAX_CONNECTIONS,
                         kwargs = appconfig.connection_kwargs,
-                        open = False
+                        open = False # Opening an async pool in the constructor (using open=True on init) will become an error in a future pool versions. 
                     )
         self._store = store
         self._checkpointer = checkpointer
@@ -61,6 +64,21 @@ class RAGAgent():
         else:
             self._llm = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider=appconfig.MODEL_PROVIDER, api_key=appconfig.OLLAMA_API_KEY, streaming=True, temperature=0, think="high")
         # https://python.langchain.com/docs/integrations/chat/google_vertex_ai_palm/
+    def __del__(self):
+        #self._in_memory_store.close()
+        if not self._closed:
+            try:
+                loop = asyncio.get_event_loop()
+                if loop.is_running():
+                    loop.create_task(self._Cleanup())
+            except Exception as e:
+                logging.exception(f"{self.__del__.__name__} exception! {e}")
+
+    async def _Cleanup(self):
+        #await self._store.close() AttributeError: 'AsyncPostgresStore' object has no attribute 'close'
+        if self._self_managed_db_pool:
+            await self._db_pool.close()
+        self._closed = True
 
     #async def Cleanup(self):
     #    https://github.com/minrk/asyncio-atexit/issues/11
@@ -73,7 +91,7 @@ class RAGAgent():
             # https://github.com/langchain-ai/langchain/issues/30723
             # https://langchain-ai.github.io/langgraph/how-tos/cross-thread-persistence/
             # https://github.com/langchain-ai/langgraph/blob/main/libs/prebuilt/langgraph/prebuilt/chat_agent_executor.py#L241
-            await self._db_pool.open()
+            #await self._db_pool.open()
             if self._store is None:
                 self._store = AsyncPostgresStore(self._db_pool, index={
                             "embed": OllamaEmbeddings(model=appconfig.EMBEDDING_MODEL, base_url=appconfig.OLLAMA_LOCAL_URI, num_ctx=appconfig.OLLAMA_CONTEXT_LENGTH, num_gpu=1, temperature=0),

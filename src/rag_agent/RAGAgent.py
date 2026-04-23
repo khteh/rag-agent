@@ -98,6 +98,7 @@ class RAGAgent():
     _agent = None
     _in_thinking: bool = False
     _closed = False
+    _self_managed_db_pool: bool = False
     # Class constructor
     def __init__(self, db_pool:AsyncConnectionPool = None, store: AsyncPostgresStore = None, checkpointer: AsyncPostgresSaver = None):
         """
@@ -109,16 +110,16 @@ class RAGAgent():
         # If the agent LLM determines that its input requires a tool call, it’ll return a JSON tool message with the name of the tool it wants to use, along with the input arguments.
         # For VertexAI, use VertexAIEmbeddings, model="text-embedding-005"; "gemini-2.0-flash" model_provider="google_genai"
         # not a vector store but a LangGraph store object. https://github.com/langchain-ai/langchain/issues/30723
+        self._self_managed_db_pool = db_pool is None
         self._db_pool = db_pool or AsyncConnectionPool(
                         conninfo = appconfig.POSTGRESQL_DATABASE_URI,
                         max_size = appconfig.DB_MAX_CONNECTIONS,
                         kwargs = appconfig.connection_kwargs,
-                        open = False
+                        open = False # Opening an async pool in the constructor (using open=True on init) will become an error in a future pool versions. 
                     )
         self._store = store
         self._checkpointer = checkpointer
         self._vectorStore = VectorStore(chunk_size=1000, chunk_overlap=0)
-        self._healthcare_rag = HealthAgent(self._db_pool, self._store, self._checkpointer)
         # GoogleSearch ground_search works well but it will sometimes take precedence and overwrite the ingested data into Chhroma and Neo4J. So, exclude it for now until it is really needed.
         # Use it as a custom subagent
         # self._tools = [self._vectorStore.retriever_tool, upsert_memory, think_tool]
@@ -140,7 +141,9 @@ class RAGAgent():
 
     async def _Cleanup(self):
         #await self._store.close() AttributeError: 'AsyncPostgresStore' object has no attribute 'close'
-        await self._db_pool.close()
+        if self._self_managed_db_pool:
+            await self._db_pool.close()
+        self._closed = True
 
     #def Cleanup(self):
     #    https://github.com/minrk/asyncio-atexit/issues/11
@@ -164,51 +167,53 @@ class RAGAgent():
 
     async def CreateGraph(self) -> CompiledStateGraph:
         logging.info(f"\n=== {self.CreateGraph.__name__} ===")
-        try:
-            # https://langchain-ai.github.io/langgraph/reference/prebuilt/#langgraph.prebuilt.chat_agent_executor.create_react_agent
-            # https://github.com/langchain-ai/langchain/issues/30723
-            # https://langchain-ai.github.io/langgraph/how-tos/cross-thread-persistence/
-            # https://github.com/langchain-ai/langgraph/blob/main/libs/prebuilt/langgraph/prebuilt/chat_agent_executor.py#L241
-            await self._db_pool.open()
-            if self._store is None:
-                self._store = AsyncPostgresStore(self._db_pool, index={
-                            "embed": OllamaEmbeddings(model=appconfig.EMBEDDING_MODEL, base_url=appconfig.OLLAMA_LOCAL_URI, num_ctx=appconfig.OLLAMA_CONTEXT_LENGTH, num_gpu=1, temperature=0),
-                            "dims": appconfig.EMBEDDING_DIMENSIONS, # Note: Every time when this value changes, remove the store<foo> tables in the DB so that store.setup() runs to recreate them with the right dimensions.
-                        }
+        if self._agent is None:
+            try:
+                # https://langchain-ai.github.io/langgraph/reference/prebuilt/#langgraph.prebuilt.chat_agent_executor.create_react_agent
+                # https://github.com/langchain-ai/langchain/issues/30723
+                # https://langchain-ai.github.io/langgraph/how-tos/cross-thread-persistence/
+                # https://github.com/langchain-ai/langgraph/blob/main/libs/prebuilt/langgraph/prebuilt/chat_agent_executor.py#L241
+                await self._db_pool.open()
+                if self._store is None:
+                    self._store = AsyncPostgresStore(self._db_pool, index={
+                                "embed": OllamaEmbeddings(model=appconfig.EMBEDDING_MODEL, base_url=appconfig.OLLAMA_LOCAL_URI, num_ctx=appconfig.OLLAMA_CONTEXT_LENGTH, num_gpu=1, temperature=0),
+                                "dims": appconfig.EMBEDDING_DIMENSIONS, # Note: Every time when this value changes, remove the store<foo> tables in the DB so that store.setup() runs to recreate them with the right dimensions.
+                            }
+                    )
+                    await PostgreSQLStoreSetup(self._db_pool, self._store) # store is needed when creating the ReAct agent / StateGraph for InjectedStore to work
+                if self._checkpointer is None:
+                    self._checkpointer = AsyncPostgresSaver(self._db_pool)
+                    await PostgreSQLCheckpointerSetup(self._db_pool, self._checkpointer)
+                self._ragagent = create_agent(self._llm, self._tools, context_schema = Configuration, state_schema = CustomAgentState, name = self._name, system_prompt = RAG_INSTRUCTIONS, store = self._store, checkpointer = self._checkpointer)
+                # Use it as a custom subagent
+                self._rag_subagent = CompiledSubAgent(
+                    name="RAG Sub-Agent",
+                    description="Specialized agent which answers users' questions based on the information in the vector store",
+                    system_prompt = RAG_INSTRUCTIONS, # developer provided instructions
+                    runnable=self._ragagent
                 )
-                await PostgreSQLStoreSetup(self._db_pool, self._store) # store is needed when creating the ReAct agent / StateGraph for InjectedStore to work
-            if self._checkpointer is None:
-                self._checkpointer = AsyncPostgresSaver(self._db_pool)
-                await PostgreSQLCheckpointerSetup(self._db_pool, self._checkpointer)
-            self._ragagent = create_agent(self._llm, self._tools, context_schema = Configuration, state_schema = CustomAgentState, name = self._name, system_prompt = RAG_INSTRUCTIONS, store = self._store, checkpointer = self._checkpointer)
-            # Use it as a custom subagent
-            self._rag_subagent = CompiledSubAgent(
-                name="RAG Sub-Agent",
-                description="Specialized agent which answers users' questions based on the information in the vector store",
-                system_prompt = RAG_INSTRUCTIONS, # developer provided instructions
-                runnable=self._ragagent
-            )            
-            self._healthcare_agent = await self._healthcare_rag.CreateGraph()
-            self._healthcare_subagent = CompiledSubAgent(
-                name="Healthcare Sub-Agent",
-                description= "Specialized healthcare AI assistant",
-                system_prompt = HEALTHCARE_INSTRUCTIONS, # developer provided instructions
-                runnable= self._healthcare_agent
-            )
-            self._subagents = [self._healthcare_subagent, self._rag_subagent]
-            self._agent = create_deep_agent(
-                model = self._llm,
-                #tools = [upsert_memory, think_tool], # [ground_search]
-                tools = [RAGMemoryManager, RAGMemorySearcher, think_tool],
-                backend = composite_backend,
-                checkpointer = self._checkpointer, # https://github.com/langchain-ai/langgraph/blob/main/libs/langgraph/langgraph/graph/state.py#L828
-                store = self._store,
-                system_prompt = self._INSTRUCTIONS, # developer provided instructions
-                subagents = self._subagents
-            )
-            # self.ShowGraph() # This blocks
-        except Exception as e:
-            logging.exception(f"Exception! {e}")
+                self._healthcare_rag = HealthAgent(self._db_pool, self._store, self._checkpointer)
+                self._healthcare_agent = await self._healthcare_rag.CreateGraph()
+                self._healthcare_subagent = CompiledSubAgent(
+                    name="Healthcare Sub-Agent",
+                    description= "Specialized healthcare AI assistant",
+                    system_prompt = HEALTHCARE_INSTRUCTIONS, # developer provided instructions
+                    runnable= self._healthcare_agent
+                )
+                self._subagents = [self._healthcare_subagent, self._rag_subagent]
+                self._agent = create_deep_agent(
+                    model = self._llm,
+                    #tools = [upsert_memory, think_tool], # [ground_search]
+                    tools = [RAGMemoryManager, RAGMemorySearcher, think_tool],
+                    backend = composite_backend,
+                    checkpointer = self._checkpointer, # https://github.com/langchain-ai/langgraph/blob/main/libs/langgraph/langgraph/graph/state.py#L828
+                    store = self._store,
+                    system_prompt = self._INSTRUCTIONS, # developer provided instructions
+                    subagents = self._subagents
+                )
+                # self.ShowGraph() # This blocks
+            except Exception as e:
+                logging.exception(f"Exception! {e}")
         return self._agent
 
     def ShowGraph(self):

@@ -3,9 +3,18 @@ from datetime import datetime
 from uuid_extensions import uuid7, uuid7str
 from langchain_core.runnables import RunnableConfig, ensure_config
 from src.rag_agent.RAGAgent import RAGAgent
-
+from src.config import config
+from psycopg_pool import AsyncConnectionPool
+db_pool = AsyncConnectionPool(
+                conninfo = config.POSTGRESQL_DATABASE_URI,
+                max_size = config.DB_MAX_CONNECTIONS,
+                kwargs = config.connection_kwargs,
+                open = False # RuntimeError: AsyncConnectionPool open with no running loop if set to True
+            )
+# rag = RAGAgent(db_pool)  ChatAgent exception! Event loop is closed, repr: RuntimeError('Event loop is closed')
+# ChatAgent exception! <asyncio.locks.Lock object at 0x7ce41dbdf460 [locked]> is bound to a different event loop, repr: RuntimeError('<asyncio.locks.Lock object at 0x7ce41dbdf460 [locked]> is bound to a different event loop')
 async def main(input_message):
-    rag = RAGAgent()
+    rag = RAGAgent(db_pool)
     await rag.CreateGraph()
     config = RunnableConfig(run_name="RAG Deep Agent", configurable={"thread_id": uuid7str(), "user_id": uuid7str()})
     timestamp = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
@@ -23,5 +32,5 @@ def FuzzEntryPoint(data):
 
 if __name__ == "__main__":
     atheris.instrument_all()    
-    atheris.Setup(sys.argv, FuzzEntryPoint)
+    atheris.Setup(sys.argv, FuzzEntryPoint, enable_python_coverage=True)
     atheris.Fuzz()    
