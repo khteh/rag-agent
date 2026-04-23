@@ -85,6 +85,7 @@ class RAGAgent():
         )
     )
     _db_pool: AsyncConnectionPool = None
+    _self_managed_db_pool: bool = False
     _store: AsyncPostgresStore = None
     _checkpointer = None
     _vectorStore = None
@@ -98,7 +99,6 @@ class RAGAgent():
     _agent = None
     _in_thinking: bool = False
     _closed = False
-    _self_managed_db_pool: bool = False
     # Class constructor
     def __init__(self, db_pool:AsyncConnectionPool = None, store: AsyncPostgresStore = None, checkpointer: AsyncPostgresSaver = None):
         """

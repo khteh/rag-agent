@@ -101,7 +101,9 @@ class EmailRAG():
         ]
     )
     # https://realpython.com/build-llm-rag-chatbot-with-langchain/#chains-and-langchain-expression-language-lcel
+    _closed: bool = False
     _db_pool: AsyncConnectionPool = None
+    _self_managed_db_pool: bool = False
     _store: AsyncPostgresStore = None
     _checkpointer = None
     _vectorStore = None
@@ -113,11 +115,11 @@ class EmailRAG():
     _subagents = None
     _agent: CompiledStateGraph = None
     # Class constructor
-    def __init__(self, config: RunnableConfig={}):
+    def __init__(self, db_pool:AsyncConnectionPool = None):
         """
         Class EmailRAG Constructor
         """
-        self._config = config
+        self._self_managed_db_pool = db_pool is None
         # https://python.langchain.com/api_reference/langchain/chat_models/langchain.chat_models.base.init_chat_model.html
         # https://python.langchain.com/docs/integrations/chat/google_vertex_ai_palm/
         # https://python.langchain.com/docs/how_to/structured_output/
@@ -132,14 +134,14 @@ class EmailRAG():
         #    }
         #)
         #asyncio_atexit.register(self.Cleanup)
-        self._db_pool = AsyncConnectionPool(
+        self._db_pool = db_pool or AsyncConnectionPool(
                 conninfo = appconfig.POSTGRESQL_DATABASE_URI,
                 max_size = appconfig.DB_MAX_CONNECTIONS,
                 kwargs = appconfig.connection_kwargs,
-                open = False
+                open = False # Opening an async pool in the constructor (using open=True on init) will become an error in a future pool versions. 
             )
         self._email_model_parser = RobustEmailModelParser()
-        self._vectorStore = VectorStore(model=appconfig.EMBEDDING_MODEL, chunk_size=1000, chunk_overlap=0)
+        self._vectorStore = VectorStore(chunk_size=1000, chunk_overlap=0)
         if appconfig.OLLAMA_CLOUD_URI:
             self._llm = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider=appconfig.MODEL_PROVIDER, base_url=appconfig.OLLAMA_CLOUD_URI, api_key=appconfig.OLLAMA_API_KEY, streaming=True, temperature=0, think="high")
             self._chainLLM = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider=appconfig.MODEL_PROVIDER, base_url=appconfig.OLLAMA_CLOUD_URI, api_key=appconfig.OLLAMA_API_KEY, temperature=0, think="high")
@@ -154,6 +156,22 @@ class EmailRAG():
             self._escalation_prompt
             | self._chainLLM.with_structured_output(EscalationCheckModel, method="json_schema")
         )
+    def __del__(self):
+        #self._in_memory_store.close()
+        if not self._closed:
+            try:
+                loop = asyncio.get_event_loop()
+                if loop.is_running():
+                    loop.create_task(self._Cleanup())
+            except Exception as e:
+                logging.exception(f"{self.__del__.__name__} exception! {e}")
+
+    async def _Cleanup(self):
+        #await self._store.close() AttributeError: 'AsyncPostgresStore' object has no attribute 'close'
+        if self._self_managed_db_pool:
+            await self._db_pool.close()
+        self._closed = True
+
     #async def Cleanup(self):
     #    https://github.com/minrk/asyncio-atexit/issues/11
     #    logging.info(f"\n=== {self.Cleanup.__name__} ===")
@@ -278,56 +296,57 @@ class EmailRAG():
         https://langchain-ai.github.io/langgraph/concepts/low_level/#node-caching
         """
         logging.info(f"\n=== {self.CreateGraph.__name__} ===")
-        try:
-            cache_policy = CachePolicy(ttl=600) # 10 minutes
-            await self._db_pool.open()
-            if self._store is None:
-                self._store = AsyncPostgresStore(self._db_pool, index={
-                            "embed": OllamaEmbeddings(model=appconfig.EMBEDDING_MODEL, base_url=appconfig.OLLAMA_LOCAL_URI, num_ctx=appconfig.OLLAMA_CONTEXT_LENGTH, num_gpu=1, temperature=0),
-                            "dims": appconfig.EMBEDDING_DIMENSIONS, # Note: Every time when this value changes, remove the store<foo> tables in the DB so that store.setup() runs to recreate them with the right dimensions.
-                        }
-                )
-                await PostgreSQLStoreSetup(self._db_pool, self._store) # store is needed when creating the ReAct agent / StateGraph for InjectedStore to work
-            if self._checkpointer is None:
-                self._checkpointer = AsyncPostgresSaver(self._db_pool)
-                await PostgreSQLCheckpointerSetup(self._db_pool, self._checkpointer)
-            # This should be a custom subagent.
-            graph_builder = StateGraph(EmailRAGState, ContextSchema)
-            graph_builder.add_node("ParseEmail", self.ParseEmail, cache_policy = cache_policy)
-            graph_builder.add_node("NeedsEscalation", self.NeedsEscalation, cache_policy = cache_policy)
-            graph_builder.add_node("ParseEmailSummarizer", self.ParseEmailSummarizer, cache_policy = cache_policy)
-            graph_builder.add_edge(START, "ParseEmail")
-            graph_builder.add_edge("ParseEmail", "NeedsEscalation")
-            graph_builder.add_edge("NeedsEscalation", "ParseEmailSummarizer")
-            graph_builder.add_edge("ParseEmailSummarizer", END)
-            self._parser_graph = graph_builder.compile(name=self._graphName, cache=InMemoryCache(), store = self._store, checkpointer = self._checkpointer)
-            # Use it as a custom subagent
-            self._parser_subagent = CompiledSubAgent(
-                name = "Email Parser SubAgent",
-                description = """Extract structured fields from a regulatory email.
-                            This should be used when the email message comes from
-                            a regulatory body or auditor regarding a property or
-                            construction site that the company works on.
+        if self._agent is None:
+            try:
+                cache_policy = CachePolicy(ttl=600) # 10 minutes
+                await self._db_pool.open()
+                if self._store is None:
+                    self._store = AsyncPostgresStore(self._db_pool, index={
+                                "embed": OllamaEmbeddings(model=appconfig.EMBEDDING_MODEL, base_url=appconfig.OLLAMA_LOCAL_URI, num_ctx=appconfig.OLLAMA_CONTEXT_LENGTH, num_gpu=1, temperature=0),
+                                "dims": appconfig.EMBEDDING_DIMENSIONS, # Note: Every time when this value changes, remove the store<foo> tables in the DB so that store.setup() runs to recreate them with the right dimensions.
+                            }
+                    )
+                    await PostgreSQLStoreSetup(self._db_pool, self._store) # store is needed when creating the ReAct agent / StateGraph for InjectedStore to work
+                if self._checkpointer is None:
+                    self._checkpointer = AsyncPostgresSaver(self._db_pool)
+                    await PostgreSQLCheckpointerSetup(self._db_pool, self._checkpointer)
+                # This should be a custom subagent.
+                graph_builder = StateGraph(EmailRAGState, ContextSchema)
+                graph_builder.add_node("ParseEmail", self.ParseEmail, cache_policy = cache_policy)
+                graph_builder.add_node("NeedsEscalation", self.NeedsEscalation, cache_policy = cache_policy)
+                graph_builder.add_node("ParseEmailSummarizer", self.ParseEmailSummarizer, cache_policy = cache_policy)
+                graph_builder.add_edge(START, "ParseEmail")
+                graph_builder.add_edge("ParseEmail", "NeedsEscalation")
+                graph_builder.add_edge("NeedsEscalation", "ParseEmailSummarizer")
+                graph_builder.add_edge("ParseEmailSummarizer", END)
+                self._parser_graph = graph_builder.compile(name=self._graphName, cache=InMemoryCache(), store = self._store, checkpointer = self._checkpointer)
+                # Use it as a custom subagent
+                self._parser_subagent = CompiledSubAgent(
+                    name = "Email Parser SubAgent",
+                    description = """Extract structured fields from a regulatory email.
+                                This should be used when the email message comes from
+                                a regulatory body or auditor regarding a property or
+                                construction site that the company works on.
 
-                            escalation_criteria is a description of which kinds of
-                            notices require immediate escalation.
-                        """,
-                system_prompt = EMAIL_PARSER_INSTRUCTIONS,
-                runnable = self._parser_graph
-            )
-            self._subagents = [self._parser_subagent]
-            self._agent = create_deep_agent(
-                model = self._llm,
-                tools = [RAGMemoryManager, RAGMemorySearcher],
-                backend = composite_backend,
-                store = self._store,
-                checkpointer = self._checkpointer,
-                system_prompt = EMAIL_PROCESSING_INSTRUCTIONS,
-                subagents = self._subagents
-            )
-            # self.ShowGraph()
-        except ResourceExhausted as e:
-            logging.exception(f"google.api_core.exceptions.ResourceExhausted")
+                                escalation_criteria is a description of which kinds of
+                                notices require immediate escalation.
+                            """,
+                    system_prompt = EMAIL_PARSER_INSTRUCTIONS,
+                    runnable = self._parser_graph
+                )
+                self._subagents = [self._parser_subagent]
+                self._agent = create_deep_agent(
+                    model = self._llm,
+                    tools = [RAGMemoryManager, RAGMemorySearcher],
+                    backend = composite_backend,
+                    store = self._store,
+                    checkpointer = self._checkpointer,
+                    system_prompt = EMAIL_PROCESSING_INSTRUCTIONS,
+                    subagents = self._subagents
+                )
+                # self.ShowGraph()
+            except ResourceExhausted as e:
+                logging.exception(f"google.api_core.exceptions.ResourceExhausted")
         return self._agent
     
     def ShowGraph(self):

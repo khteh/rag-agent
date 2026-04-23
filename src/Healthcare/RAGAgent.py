@@ -32,11 +32,11 @@ class RAGAgent():
     # A list of the names of the variables for placeholder or MessagePlaceholder that are optional. These variables are auto inferred from the prompt and user need not provide them.
     _closed: bool = False
     _db_pool: AsyncConnectionPool = None
+    _self_managed_db_pool: bool = False
     _store: AsyncPostgresStore = None
     _checkpointer = None
     _tools: List[Callable[..., Any]] = None
     agent: CompiledStateGraph = None
-    _self_managed_db_pool: bool = False
     # Class constructor
     def __init__(self, db_pool:AsyncConnectionPool = None, store: AsyncPostgresStore = None, checkpointer: AsyncPostgresSaver = None):
         """
