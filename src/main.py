@@ -65,8 +65,7 @@ async def create_app() -> Quart:
             kwargs = appconfig.connection_kwargs,
             open = True
         )
-        #await app.db_pool.open()
-        logging.debug(f"EMBEDDING_DIMENSIONS: {appconfig.EMBEDDING_DIMENSIONS}")
+        #logging.debug(f"EMBEDDING_DIMENSIONS: {appconfig.EMBEDDING_DIMENSIONS}")
         # Note: Every time when this value changes, remove the following tables (https://github.com/langchain-ai/langgraph/issues/6687)
         # -- Drop the table containing the vectors with the wrong dimension
         # DROP TABLE IF EXISTS store_vectors;
@@ -88,9 +87,6 @@ async def create_app() -> Quart:
         app.checkpointer = AsyncPostgresSaver(app.db_pool)
         await PostgreSQLStoreSetup(app.db_pool, app.store) # store is needed when creating the ReAct agent / StateGraph for InjectedStore to work
         await PostgreSQLCheckpointerSetup(app.db_pool, app.checkpointer)
-        #from src.rag_agent.RAGAgent import RAGAgent
-        #app.agent = RAGAgent(app.db_pool, app.store, app.checkpointer)
-        #await app.agent.CreateGraph()
 
     @app.after_serving
     async def after_serving():
