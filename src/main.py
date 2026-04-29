@@ -3,6 +3,8 @@ import logging, os, re, json, asyncio, psycopg, json
 from datetime import date, datetime, timedelta, timezone
 from hypercorn.config import Config
 from psycopg_pool import AsyncConnectionPool, ConnectionPool
+from sqlalchemy.exc import ProgrammingError
+from langchain_postgres import PGEngine, PGVectorStore
 from quart import Quart, Response, json, Blueprint, session, render_template, session, redirect, url_for, flash
 from src.common.Bcrypt import bcrypt
 from quart_wtf.csrf import CSRFProtect, CSRFError
@@ -59,6 +61,7 @@ async def create_app() -> Quart:
     @app.before_serving
     async def before_serving() -> None:
         logging.info(f"\n=== {before_serving.__name__} ===")
+        app.pg_engine = PGEngine.from_connection_string(url=appconfig.SQLALCHEMY_DATABASE_URI)
         app.db_pool = AsyncConnectionPool(
             conninfo = appconfig.POSTGRESQL_DATABASE_URI,
             max_size = appconfig.DB_MAX_CONNECTIONS,
@@ -85,10 +88,24 @@ async def create_app() -> Quart:
                 }
         )
         app.checkpointer = AsyncPostgresSaver(app.db_pool)
+        # https://docs.langchain.com/oss/python/integrations/vectorstores/pgvectorstore
+        try:
+            await app.pg_engine.ainit_vectorstore_table(
+                table_name = appconfig.VECTORSTORE_TABLE,
+                vector_size = appconfig.EMBEDDING_DIMENSIONS
+            )
+        except ProgrammingError:
+            logging.warning(f"{appconfig.VECTORSTORE_TABLE} already exist!")
+        app.vectorStore = await PGVectorStore.create(
+            engine = app.pg_engine,
+            table_name = appconfig.VECTORSTORE_TABLE,
+            # schema_name=SCHEMA_NAME,  # Default: "public"
+            embedding_service = OllamaEmbeddings(model=appconfig.EMBEDDING_MODEL, base_url=appconfig.OLLAMA_LOCAL_URI, num_ctx=appconfig.OLLAMA_CONTEXT_LENGTH, num_gpu=1, temperature=0),
+        )        
         await PostgreSQLStoreSetup(app.db_pool, app.store) # store is needed when creating the ReAct agent / StateGraph for InjectedStore to work
         await PostgreSQLCheckpointerSetup(app.db_pool, app.checkpointer)
         from src.rag_agent.RAGAgent import RAGAgent
-        app.agent = RAGAgent(app.db_pool, app.store, app.checkpointer)
+        app.agent = RAGAgent(app.vectorStore, app.db_pool, app.store, app.checkpointer)
         await app.agent.CreateGraph()
 
     @app.after_serving

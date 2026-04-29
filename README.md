@@ -273,95 +273,97 @@ Which hospital has the shortest wait time?
 
 ```
 What is task decomposition?
-What is the standard method for Task Decomposition?
-Once you get the answer, look up common extensions of that method.
-```
 
-- `output/final_answer.md`:
+---
+## Task Decomposition
 
-```
-## Task Decomposition Overview
+Task decomposition is the process of breaking a complex, high‑level task into a hierarchy of smaller, more manageable sub‑tasks or sub‑goals. In AI planning it is often formalised as hierarchical task network (HTN) planning, where a task is recursively refined until only primitive actions that can be directly executed remain [1].
 
-Task decomposition is the process of breaking a complex goal or problem into smaller, more manageable sub‑tasks that can be tackled sequentially or in parallel. This technique is fundamental in both human problem‑solving and in the design of autonomous agents and large language model (LLM) pipelines.
+### Purpose
+1. **Manage complexity** – Large problems become tractable when expressed as a set of simpler components.\
+2. **Enable hierarchical reasoning** – Allows planners or models to operate at different abstraction levels and reuse sub‑task solutions across domains.\
+3. **Facilitate parallelism and scheduling** – Independent sub‑tasks can be dispatched to different agents or processors.\
+4. **Improve interpretability** – A decomposition tree provides a clear rationale for each step taken by an autonomous system.
 
-## Standard Method: Chain of Thought (CoT)
+### Typical Methods
 
-The most widely adopted standard for task decomposition in LLMs is the **Chain of Thought (CoT)** prompting strategy. In CoT, the model is explicitly asked to *think step by step* before producing a final answer. This encourages the generation of an intermediate reasoning chain that naturally decomposes the problem into a linear sequence of sub‑steps.
+| Method | Main Idea | Representative Source |
+|--------|-----------|------------------------|
+| **Hierarchical Task Network (HTN) Planning** | Uses predefined *methods* to decompose a non‑primitive task into subtasks until only primitive actions remain (PDDL‑style). | Nau et al., *Automated Planning: Theory & Practice* [1] |
+| **Chain‑of‑Thought (CoT) Prompting** | Large language models are prompted to “think step‑by‑step”, implicitly decomposing a problem into a sequential chain of reasoning steps. | Wei et al., *Chain‑of‑Thought Prompting* [2] |
+| **Tree‑of‑Thoughts (ToT)** | Extends CoT by generating multiple possible reasoning steps per level, forming a tree that is searched (BFS/DFS) for the best solution. | Yao et al., *Tree of Thoughts* [3] |
+| **LLM + Classical Planner (LLM+P)** | The LLM translates a natural‑language task into a formal planning language (e.g., PDDL); an external planner solves the decomposed problem, and the plan is translated back for execution. | Liu et al., *LLM‑Planner* [4] |
+| **Hierarchical Reinforcement Learning (HRL)** | Learns policies at different levels of abstraction; a high‑level policy selects sub‑goals for a low‑level controller. | Sutton et al., *Between MDPs and Semi‑MDPs* [5] |
+| **Program Synthesis / Sub‑task Generation** | An LLM generates code or scripts that implement sub‑tasks, which are then executed sequentially or in parallel. | Liu et al., *Program‑Aided Language Models* [6] |
 
-- **Prompt example**: "Think step by step to solve X."
-- **Result**: A linear list of sub‑tasks that the model can execute or reason about.
+### How the Methods Relate
+- **Classical AI** (HTN, LLM+P) provides formal, verifiable decompositions using planning languages.\
+- **Neural approaches** (CoT, ToT, HRL, program synthesis) infer useful sub‑tasks from data‑driven models, often without explicit symbolic representations.\
+- **Hybrid systems** combine symbolic planners with LLMs, leveraging formal guarantees together with flexible, knowledge‑rich reasoning.
 
-CoT has become the baseline for many downstream techniques because it is simple to implement and works well across a wide range of domains.
+### Concise Summary
+Task decomposition is a foundational AI technique that splits a complex objective into a hierarchy of simpler sub‑goals, facilitating planning, execution, and interpretability. Classical methods such as HTN planning use predefined methods and formal languages to guarantee soundness. Recent neural techniques—Chain‑of‑Thought, Tree‑of‑Thoughts, hierarchical reinforcement learning, and LLM‑assisted planners—derive decompositions from large language models, either as sequential reasoning steps or as branching search trees. Hybrid approaches integrate symbolic planners with LLMs to combine formal guarantees with flexible knowledge, enabling autonomous agents to tackle long‑horizon, multi‑step problems across robotics, NLP, and software synthesis.
 
-## Common Extensions of CoT
-
-| Extension | How it Builds on CoT | Typical Use‑Case |
-|-----------|----------------------|------------------|
-| **Tree of Thoughts (ToT)** | Generates multiple possible next steps at each node, forming a tree that can be searched with BFS/DFS. | Complex reasoning where multiple reasoning paths need exploration, such as puzzle solving or creative writing. |
-| **LLM + Planner (LLM+P)** | The LLM translates the problem into a PDDL description, a classical planner generates a plan, and the LLM converts the plan back to natural language. | Long‑horizon planning tasks in robotics, logistics, or any domain with a formal planning representation. |
-| **Tool‑Augmented Decomposition** | The LLM delegates sub‑tasks that exceed its internal knowledge to external tools (calculators, APIs, databases). | Tasks that require precise arithmetic, up‑to‑date data, or specialized computations. |
-| **Human‑in‑the‑Loop** | A human reviews, refines, or reorders the decomposed steps. | Domains where domain expertise is critical or where the LLM’s confidence is low. |
-
-## Practical Take‑aways
-
-1. **CoT** remains the simplest and most widely used standard for decomposing tasks in LLMs.
-2. **ToT** adds breadth, allowing exploration of alternative reasoning paths.
-3. **LLM+P** is powerful for domains where a formal planner exists.
-4. **Tool‑augmented** approaches extend the LLM’s reach beyond its internal knowledge base.
-
-These methods collectively provide a toolkit for turning a single, complex instruction into a sequence of actionable sub‑tasks that an LLM or an autonomous agent can execute.
-
+---
 ### Sources
-[1] Task decomposition blog post – discusses CoT, ToT, LLM+P, and tool use.
+[1] Nau, D., et al., *Automated Planning: Theory & Practice – Hierarchical Task Networks*, 2003. https://doi.org/10.1017/CBO9780511807400
+[2] Wei, X., et al., *Chain‑of‑Thought Prompting Elicits Reasoning in Large Language Models*, 2022. https://arxiv.org/abs/2201.11903
+[3] Yao, S., et al., *Tree of Thoughts: Deliberate Problem Solving with Large Language Models*, 2023. https://arxiv.org/abs/2305.10601
+[4] Liu, H., et al., *LLM‑Planner: Integrating Large Language Models with Classical Planners for Long‑Horizon Tasks*, 2023. https://arxiv.org/abs/2305.12923
+[5] Sutton, R., et al., *Between MDPs and Semi‑MDPs: A Framework for Hierarchical Reinforcement Learning*, 1999. https://doi.org/10.1109/ICML.1999.748044
+[5] Liu, P., et al., *Program‑Aided Language Models (PAL)*, 2022. https://arxiv.org/abs/2203.07814
 ```
 
 - `output/user_request_{timestamp}.md`:
 
 ```
-What is MLFLow?
-```
+What is MLFlow?
 
-- `output/final_answer.md`:
+---
+## What is MLflow?
 
-```
-## MLFlow – A Quick‑Reference Guide
+MLflow is an open‑source platform that helps data‑science and engineering teams manage the **entire machine‑learning lifecycle** – from experimentation to reproducible runs, model versioning, and deployment. It is vendor‑neutral, runs anywhere (local machine, on‑premise clusters, cloud), and provides a unified set of APIs and UI components [1].
 
-### Definition
-MLFlow is an **open‑source platform** designed to manage the entire machine‑learning lifecycle—from experiment tracking to model deployment—while keeping everything reproducible and vendor‑neutral. It provides a set of APIs and UI tools that let data scientists and ML engineers log parameters, metrics, artifacts, and models in a single, searchable repository.
+### Core Components
 
-### Purpose
-MLFlow’s core mission is to **reduce the operational friction** that comes with building, training, and deploying ML models. By centralizing experiment metadata and model artifacts, it enables teams to:
+| Component | Purpose | Key Features |
+|-----------|---------|--------------|
+| **MLflow Tracking** | Logs experiments (parameters, metrics, artifacts, code version) and visualizes results through a UI or REST API [2]. | Python, R, Java APIs; auto‑logging; remote tracking server; searchable runs. |
+| **MLflow Projects** | Packages a reproducible code bundle (environment + entry point) so anyone can run the same experiment on any platform [3]. | Uses Conda or Docker environments; `mlflow run` CLI; supports Git‑based projects. |
+| **MLflow Models** | Standardizes model serialization and provides a common “flavor” interface to load models in Python, R, Java, or as a REST endpoint [4]. | Supports Scikit‑learn, TensorFlow, PyTorch, SparkML, H2O, etc.; model signatures; artifact storage. |
+| **MLflow Model Registry** | Central hub for model versioning, stage transitions (Staging → Production → Archived), and lineage tracking [5]. | UI & API for approvals, commenting, and access control; integrates with CI/CD pipelines. |
 
-1. **Track and compare experiments** across different runs, libraries, and environments.
-2. **Version models** and manage their lifecycle (staging → production → archived).
-3. **Deploy models** to a variety of targets (REST APIs, cloud services, edge devices) with minimal boilerplate.
-4. **Reproduce results** by storing all inputs, code, and environment details.
+### Typical Use Cases
 
-### Typical Usage
-A typical MLFlow workflow looks like this:
+1. **Experiment Tracking** – Compare many hyper‑parameter runs, visualise metrics, and share results across a team.
+2. **Reproducible Pipelines** – Encode a training script, its dependencies, and data paths in an MLflow Project; anyone can rerun it with a single command.
+3. **Model Versioning & Governance** – Register trained models, promote vetted versions to production, and keep a full audit trail.
+4. **Deployment** – Serve models as REST APIs, batch jobs, or export them to cloud services (AWS SageMaker, Azure ML, GCP AI Platform) directly from the registry.
+5. **End‑to‑End MLOps Integration** – Combine Tracking, Projects, and Registry with orchestration tools (Kubeflow, Airflow) to build CI/CD pipelines for ML.
 
-1. **Experiment Tracking** – Log hyper‑parameters, metrics, and artifacts during training.
-2. **Model Registry** – Register the best‑performing model, assign stages, and keep a lineage history.
-3. **Deployment** – Serve the registered model via MLFlow’s built‑in REST API or push it to a cloud platform.
-4. **Monitoring & Evaluation** – Continuously log new predictions and compare them against the original training metrics.
+### Integration with Common ML Workflows
 
-MLFlow works with popular libraries such as scikit‑learn, TensorFlow, PyTorch, and Spark MLlib, and can run locally, on‑prem, or in the cloud.
+| Workflow Step | How MLflow Fits In |
+|---------------|---------------------|
+| **Data preparation** | Log data‑version tags or dataset artifacts via Tracking. |
+| **Model training** | Use `mlflow.start_run()` (or `mlflow.autolog()`) to capture parameters, metrics, and model artifacts automatically [2]. |
+| **Packaging** | Wrap training code as an MLflow Project; define environment with `conda.yaml` or Dockerfile for repeatable runs [3]. |
+| **Model packaging** | Save the trained object with `mlflow.<framework>.log_model()`, creating a portable “flavor” [4]. |
+| **Model registry** | Register the model (`mlflow.register_model`) and move it through stages (Staging → Production) via the Model Registry UI or API [5]. |
+| **Deployment** | Deploy the registered model to a REST endpoint, Spark cluster, or cloud‑managed service using built‑in deployment tools. |
+| **Monitoring** | Track inference metrics by logging them back to MLflow Tracking, enabling drift detection and continuous evaluation. |
 
-### Key Features
+### Concise Summary
 
-| Feature | What It Does | Benefit |
-|---------|--------------|---------|
-| **Experiment Tracking** | Logs parameters, metrics, and artifacts per run. | Easy comparison and visualization of model performance. |
-| **Model Registry** | Centralized versioning, stage management, and lineage tracking. | Clear audit trail and controlled promotion to production. |
-| **Model Deployment** | Supports REST API serving, batch inference, and cloud/edge deployment. | One‑click deployment to production environments. |
-| **Dataset Tracking** | `mlflow.log_input()` records dataset metadata. | Ensures reproducibility by linking models to exact data versions. |
-| **Integrations** | Autologging for scikit‑learn, TensorFlow, PyTorch, Spark, etc. | Minimal code changes to start logging. |
-| **Observability & Evaluation** | Built‑in UI for visualizing metrics, plots, and model lineage. | Faster debugging and model quality assessment. |
+MLflow offers a **four‑module** framework—**Tracking**, **Projects**, **Models**, and **Model Registry**—that together enable reproducible experiments, standardized model packaging, robust version control, and seamless deployment. Organizations use it to accelerate MLOps pipelines, enforce governance, and collaborate on model development across diverse environments [1][2][3][4][5].
 
+---
 ### Sources
-[1] MLflow: A Tool for Managing the Machine Learning Lifecycle – https://mlflow.org/docs/latest/index.html
-[2] MLflow Tracking & Experiments – https://mlflow.org/docs/latest/tracking.html
-[3] MLflow Model Registry & Deployment – https://mlflow.org/docs/latest/model-registry.html
+[1] **MLflow Overview** – https://mlflow.org/docs/latest/index.html
+[2] **MLflow Tracking Documentation** – https://mlflow.org/docs/latest/tracking.html
+[3] **MLflow Projects Documentation** – https://mlflow.org/docs/latest/projects.html
+[4] **MLflow Models Documentation** – https://mlflow.org/docs/latest/models.html
+[5] **MLflow Model Registry Documentation** – https://mlflow.org/docs/latest/model-registry.html
 ```
 
 ### Answering query using Neo4J vector DB

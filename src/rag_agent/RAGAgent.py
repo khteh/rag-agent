@@ -5,6 +5,7 @@ from pathlib import Path
 from pprint import pprint
 from asyncio import Queue, run, create_task
 from typing import Any, Callable, List, AsyncGenerator
+from langchain_postgres import PGEngine, PGVectorStore
 from langchain_core.messages.base import BaseMessage, BaseMessageChunk
 from langchain.chat_models import init_chat_model
 from langchain_core.messages import HumanMessage, AIMessage, ToolMessage, SystemMessage, ToolCall
@@ -16,12 +17,13 @@ from langgraph.store.postgres.aio import AsyncPostgresStore
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
 from langchain_core.callbacks import AsyncCallbackHandler
 from psycopg_pool import AsyncConnectionPool
+from sqlalchemy.exc import ProgrammingError
 from langchain_ollama import OllamaEmbeddings
 from deepagents import create_deep_agent, CompiledSubAgent
 from src.config import config as appconfig
 from src.rag_agent.RAGPrompts import RAG_INSTRUCTIONS, SUBAGENT_DELEGATION_INSTRUCTIONS, RAG_WORKFLOW_INSTRUCTIONS
 from src.models.schema import ChatMessage, UserInput, StreamInput
-from src.rag_agent.Tools import upsert_memory, think_tool, RAGMemoryManager, RAGMemorySearcher
+from src.rag_agent.Tools import think_tool, RAGMemoryManager, RAGMemorySearcher
 from src.Infrastructure.VectorStore import VectorStore
 from src.common.State import CustomAgentState
 from src.utils.image import show_graph
@@ -87,6 +89,7 @@ class RAGAgent():
     _db_pool: AsyncConnectionPool = None
     _self_managed_db_pool: bool = False
     _store: AsyncPostgresStore = None
+    _pg_vectorStore: PGVectorStore = None
     _checkpointer = None
     _vectorStore = None
     _tools: List[Callable[..., Any]] = None
@@ -100,7 +103,7 @@ class RAGAgent():
     _in_thinking: bool = False
     _closed = False
     # Class constructor
-    def __init__(self, db_pool:AsyncConnectionPool = None, store: AsyncPostgresStore = None, checkpointer: AsyncPostgresSaver = None):
+    def __init__(self, vectorStore: PGVectorStore = None, db_pool:AsyncConnectionPool = None, store: AsyncPostgresStore = None, checkpointer: AsyncPostgresSaver = None):
         """
         Class RAGAgent Constructor
         """
@@ -119,7 +122,8 @@ class RAGAgent():
                     )
         self._store = store
         self._checkpointer = checkpointer
-        self._vectorStore = VectorStore(chunk_size=1000, chunk_overlap=0)
+        self._pg_vectorStore = vectorStore
+        self._vectorStore = VectorStore(self._pg_vectorStore, chunk_size=1000, chunk_overlap=0)
         # GoogleSearch ground_search works well but it will sometimes take precedence and overwrite the ingested data into Chhroma and Neo4J. So, exclude it for now until it is really needed.
         # Use it as a custom subagent
         # self._tools = [self._vectorStore.retriever_tool, upsert_memory, think_tool]
@@ -181,6 +185,23 @@ class RAGAgent():
                             }
                     )
                     await PostgreSQLStoreSetup(self._db_pool, self._store) # store is needed when creating the ReAct agent / StateGraph for InjectedStore to work
+                if self._pg_vectorStore is None:
+                    pg_engine = PGEngine.from_connection_string(url=appconfig.SQLALCHEMY_DATABASE_URI)
+                    try:
+                        await pg_engine.ainit_vectorstore_table(
+                            table_name=appconfig.VECTORSTORE_TABLE,
+                            vector_size=appconfig.EMBEDDING_DIMENSIONS
+                        )
+                    except ProgrammingError:
+                        logging.warning(f"{appconfig.VECTORSTORE_TABLE} already exist!")
+                    self._pg_vectorStore = await PGVectorStore.create(
+                        engine = pg_engine,
+                        table_name = appconfig.VECTORSTORE_TABLE,
+                        # schema_name=SCHEMA_NAME,  # Default: "public"
+                        embedding_service = OllamaEmbeddings(model=appconfig.EMBEDDING_MODEL, base_url=appconfig.OLLAMA_LOCAL_URI, num_ctx=appconfig.OLLAMA_CONTEXT_LENGTH, num_gpu=1, temperature=0),
+                    )        
+                    self._vectorStore = VectorStore(self._pg_vectorStore, chunk_size=1000, chunk_overlap=0)
+                    self._tools = [self._vectorStore.retriever_tool, RAGMemoryManager, RAGMemorySearcher, think_tool]
                 if self._checkpointer is None:
                     self._checkpointer = AsyncPostgresSaver(self._db_pool)
                     await PostgreSQLCheckpointerSetup(self._db_pool, self._checkpointer)
@@ -444,6 +465,7 @@ async def main():
     elif args.delete_threads:
         await rag.DeleteAllThreads()
         return
+    timestamp = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
     input_message: str = ""
     if args.ai_ml:
         input_message = ("What is task decomposition?\n" "What is the standard method for Task Decomposition?\n" "Once you get the answer, look up common extensions of that method.")
@@ -458,12 +480,13 @@ async def main():
     elif args.neo4j:
         input_message = "Query the graph database to show me the reviews written by patient 7674"
     config = RunnableConfig(run_name="RAG Deep Agent", configurable={"thread_id": uuid7str(), "user_id": uuid7str()})
+    user_message = f"[Timestamp: {timestamp}]\n{input_message}"
     if args.stream_updates:
-        input = StreamInput(message = input_message, thread_id = config["configurable"]["thread_id"], stream_tokens = True)
+        input = StreamInput(message = user_message, thread_id = config["configurable"]["thread_id"], stream_tokens = True)
         async for answer in rag.message_generator(input, config):
             print(answer, end = "", flush = True)
     else:
-        await rag.ChatAgent(config, input_message, ["values"], False)
+        await rag.ChatAgent(config, user_message, ["values"], False)
 
 if __name__ == "__main__":
     run(main())

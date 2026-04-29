@@ -2,10 +2,10 @@
 -- PostgreSQL database dump
 --
 
-\restrict Ax5YRBcWOrvqOzqHYbYvGoVY2yaFcXphvQfvhOiOgjrBetxSOQKc08bMWzjsV0j
+\restrict pAigZvDXVneOdDmNlATF2lVbynDu0lI1IaWOUaSRSg1vb120Hv7JXQT7THrj7LD
 
 -- Dumped from database version 18.0 (Debian 18.0-1.pgdg13+3)
--- Dumped by pg_dump version 18.1 (Ubuntu 18.1-1.pgdg25.10+2)
+-- Dumped by pg_dump version 18.0 (Debian 18.0-1.pgdg13+3)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -112,32 +112,18 @@ CREATE TABLE public.checkpoints (
 ALTER TABLE public.checkpoints OWNER TO guest;
 
 --
--- Name: langchain_pg_collection; Type: TABLE; Schema: public; Owner: guest
+-- Name: ragagent_vectorstore; Type: TABLE; Schema: public; Owner: guest
 --
 
-CREATE TABLE public.langchain_pg_collection (
-    uuid uuid NOT NULL,
-    name character varying NOT NULL,
-    cmetadata json
+CREATE TABLE public.ragagent_vectorstore (
+    langchain_id uuid NOT NULL,
+    content text NOT NULL,
+    embedding public.vector(768) NOT NULL,
+    langchain_metadata json
 );
 
 
-ALTER TABLE public.langchain_pg_collection OWNER TO guest;
-
---
--- Name: langchain_pg_embedding; Type: TABLE; Schema: public; Owner: guest
---
-
-CREATE TABLE public.langchain_pg_embedding (
-    id character varying NOT NULL,
-    collection_id uuid,
-    embedding public.vector,
-    document character varying,
-    cmetadata jsonb
-);
-
-
-ALTER TABLE public.langchain_pg_embedding OWNER TO guest;
+ALTER TABLE public.ragagent_vectorstore OWNER TO guest;
 
 --
 -- Name: store; Type: TABLE; Schema: public; Owner: guest
@@ -247,7 +233,7 @@ ALTER TABLE ONLY public.users ALTER COLUMN id SET DEFAULT nextval('public.users_
 --
 
 COPY public.alembic_version (version_num) FROM stdin;
-8991664a5b66
+12c3cd5b0d47
 \.
 
 
@@ -294,19 +280,10 @@ COPY public.checkpoints (thread_id, checkpoint_ns, checkpoint_id, parent_checkpo
 
 
 --
--- Data for Name: langchain_pg_collection; Type: TABLE DATA; Schema: public; Owner: guest
+-- Data for Name: ragagent_vectorstore; Type: TABLE DATA; Schema: public; Owner: guest
 --
 
-COPY public.langchain_pg_collection (uuid, name, cmetadata) FROM stdin;
-f5b393ff-3f1d-41f4-9594-e6483ad5295a	LLM-RAG-Agent	null
-\.
-
-
---
--- Data for Name: langchain_pg_embedding; Type: TABLE DATA; Schema: public; Owner: guest
---
-
-COPY public.langchain_pg_embedding (id, collection_id, embedding, document, cmetadata) FROM stdin;
+COPY public.ragagent_vectorstore (langchain_id, content, embedding, langchain_metadata) FROM stdin;
 \.
 
 
@@ -343,7 +320,8 @@ COPY public.store_vectors (prefix, key, field_name, embedding, created_at, updat
 --
 
 COPY public.users (id, firstname, lastname, email, phone, password, lastlogin, created_at, modified_at) FROM stdin;
-1	Kok How	Teh	khteh@email.com	\N	$2b$10$AC1Q.wtba453AKHEhqZfOO/pNhkDCqJ9E8eEUGnsL3t8sO7DEdMSK	\N	2026-01-31 03:49:39.623031+00	2026-01-31 03:49:39.623031+00
+1	Kok How	Teh	khteh@email.com	\N	$2b$10$fBHPNGkND06ksrmTULGAoewTRPuezEuJwrV9JFLQvDMGa.BC0fgQi	\N	2026-04-29 11:24:30.320056+00	2026-04-29 11:24:30.320056+00
+2	Mickey	Mouse	mickey@email.com	\N	$2b$10$zZ/95mFOS7.wMBfxPsbCYu3JQ3Y7X62thZToU0XX73IeOk0XXej9y	\N	2026-04-29 11:24:50.272816+00	2026-04-29 11:24:50.272816+00
 \.
 
 
@@ -362,7 +340,7 @@ COPY public.vector_migrations (v) FROM stdin;
 -- Name: users_id_seq; Type: SEQUENCE SET; Schema: public; Owner: guest
 --
 
-SELECT pg_catalog.setval('public.users_id_seq', 1, true);
+SELECT pg_catalog.setval('public.users_id_seq', 2, true);
 
 
 --
@@ -406,27 +384,11 @@ ALTER TABLE ONLY public.checkpoints
 
 
 --
--- Name: langchain_pg_collection langchain_pg_collection_name_key; Type: CONSTRAINT; Schema: public; Owner: guest
+-- Name: ragagent_vectorstore ragagent_vectorstore_pkey; Type: CONSTRAINT; Schema: public; Owner: guest
 --
 
-ALTER TABLE ONLY public.langchain_pg_collection
-    ADD CONSTRAINT langchain_pg_collection_name_key UNIQUE (name);
-
-
---
--- Name: langchain_pg_collection langchain_pg_collection_pkey; Type: CONSTRAINT; Schema: public; Owner: guest
---
-
-ALTER TABLE ONLY public.langchain_pg_collection
-    ADD CONSTRAINT langchain_pg_collection_pkey PRIMARY KEY (uuid);
-
-
---
--- Name: langchain_pg_embedding langchain_pg_embedding_pkey; Type: CONSTRAINT; Schema: public; Owner: guest
---
-
-ALTER TABLE ONLY public.langchain_pg_embedding
-    ADD CONSTRAINT langchain_pg_embedding_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY public.ragagent_vectorstore
+    ADD CONSTRAINT ragagent_vectorstore_pkey PRIMARY KEY (langchain_id);
 
 
 --
@@ -498,13 +460,6 @@ CREATE INDEX idx_store_expires_at ON public.store USING btree (expires_at) WHERE
 
 
 --
--- Name: ix_cmetadata_gin; Type: INDEX; Schema: public; Owner: guest
---
-
-CREATE INDEX ix_cmetadata_gin ON public.langchain_pg_embedding USING gin (cmetadata jsonb_path_ops);
-
-
---
 -- Name: ix_users_email; Type: INDEX; Schema: public; Owner: guest
 --
 
@@ -533,14 +488,6 @@ CREATE INDEX store_vectors_embedding_idx ON public.store_vectors USING hnsw (emb
 
 
 --
--- Name: langchain_pg_embedding langchain_pg_embedding_collection_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: guest
---
-
-ALTER TABLE ONLY public.langchain_pg_embedding
-    ADD CONSTRAINT langchain_pg_embedding_collection_id_fkey FOREIGN KEY (collection_id) REFERENCES public.langchain_pg_collection(uuid) ON DELETE CASCADE;
-
-
---
 -- Name: store_vectors store_vectors_prefix_key_fkey; Type: FK CONSTRAINT; Schema: public; Owner: guest
 --
 
@@ -552,5 +499,5 @@ ALTER TABLE ONLY public.store_vectors
 -- PostgreSQL database dump complete
 --
 
-\unrestrict Ax5YRBcWOrvqOzqHYbYvGoVY2yaFcXphvQfvhOiOgjrBetxSOQKc08bMWzjsV0j
+\unrestrict pAigZvDXVneOdDmNlATF2lVbynDu0lI1IaWOUaSRSg1vb120Hv7JXQT7THrj7LD
 

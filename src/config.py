@@ -43,6 +43,7 @@ class Config(metaclass=ConfigSingleton):
     MODEL_PROVIDER: str = None
     OLLAMA_CONTEXT_LENGTH: int = None
     LLM_RAG_MODEL: str = None
+    VECTORSTORE_TABLE: str = None
     connection_kwargs = None
     def __new__(cls, *args, **kwargs):
         return super().__new__(cls)
@@ -73,6 +74,7 @@ class Config(metaclass=ConfigSingleton):
         self.MODEL_PROVIDER = config["MODEL_PROVIDER"]
         self.LLM_RAG_MODEL = config["LLM_RAG_MODEL"]
         self.OLLAMA_CONTEXT_LENGTH = config["OLLAMA_CONTEXT_LENGTH"]
+        self.VECTORSTORE_TABLE = config["VECTORSTORE_TABLE"]
         self.connection_kwargs = {
             "autocommit": True,
             "prepare_threshold": 0,

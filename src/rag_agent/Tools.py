@@ -89,9 +89,14 @@ def ground_search(
     #return Document(page_content="\n\n".join(content.text for content in response.candidates[0].content.parts)) This doesn't work well. https://api.python.langchain.com/en/v0.0.339/schema/langchain.schema.document.Document.html
     return "\n\n".join(content.text for content in response.candidates[0].content.parts)
 
-@tool(response_format="content_and_artifact")
+@tool(parse_docstring=True, response_format="content_and_artifact")
 async def retrieve(query: str, *, config: Annotated[RunnableConfig, InjectedToolArg], store: Annotated[BaseStore, InjectedStore()]):
-    """Retrieve information related to a query."""
+    """Search and return information about the query from the documents available in the store
+
+    Args:
+        query: User's query/question which should be answered based on existing information in the store
+    """
+    logging.info(f"\n=== retrieve ===")
     retrieved_docs = await store.asimilarity_search(query, k=2)
     serialized = "\n\n".join(
         (f"Source: {doc.metadata}\n" f"Content: {doc.page_content}")
