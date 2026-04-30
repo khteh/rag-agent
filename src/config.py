@@ -29,8 +29,6 @@ class Config(metaclass=ConfigSingleton):
     POSTGRESQL_DATABASE_URI:str = None
     DB_MAX_CONNECTIONS:int = None
     JWT_SECRET_KEY:str = None
-    #CHROMA_URI:str = None
-    #CHROMA_TOKEN:str = None
     NEO4J_USERNAME:str = None
     NEO4J_PASSWORD:str = None
     NEO4J_URI:str = None
@@ -60,8 +58,6 @@ class Config(metaclass=ConfigSingleton):
         else:
             self.JWT_SECRET_KEY = secrets.token_hex(64) # SHA512 requirement
         credential = os.environ.get('NEO4J_AUTH').split('/')
-        #self.CHROMA_URI = config["CHROMA_URI"]
-        #self.CHROMA_TOKEN = os.environ.get("CHROMA_TOKEN")
         self.GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
         self.OLLAMA_API_KEY = os.environ.get("OLLAMA_API_KEY")
         self.NEO4J_USERNAME = credential[0]
@@ -98,5 +94,5 @@ class Config(metaclass=ConfigSingleton):
                 TimedRotatingFileHandler(filename='/var/log/ragagent/log', when='d', interval=1, backupCount=3),
                 logging.StreamHandler(sys.stdout)
             ], format='%(asctime)s %(levelname)-8s %(message)s', level=self.LOGLEVEL, datefmt='%Y-%m-%d %H:%M:%S')
-        logging.debug(f"OLLAMA_API_KEY: {self.OLLAMA_API_KEY}")
+        logging.info(f"OLLAMA_API_KEY: {self.OLLAMA_API_KEY}")
 config = Config()
