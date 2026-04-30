@@ -90,16 +90,16 @@ class VectorStore(): #metaclass=VectorStoreSingleton):
         if self._vectorStore is None:
             try:
                 await self._pg_engine.ainit_vectorstore_table(
-                    table_name=config.VECTORSTORE_TABLE,
-                    vector_size=config.EMBEDDING_DIMENSIONS
+                    table_name = config.VECTORSTORE_TABLE,
+                    vector_size = config.EMBEDDING_DIMENSIONS
                 )
             except ProgrammingError:
                 logging.warning(f"{config.VECTORSTORE_TABLE} already exist!")
             self._vectorStore = await PGVectorStore.create(
-                engine=self._pg_engine,
-                table_name=config.VECTORSTORE_TABLE,
+                engine = self._pg_engine,
+                table_name = config.VECTORSTORE_TABLE,
                 # schema_name=SCHEMA_NAME,  # Default: "public"
-                embedding_service=OllamaEmbeddings(model=config.EMBEDDING_MODEL, base_url=config.OLLAMA_LOCAL_URI, num_ctx=config.OLLAMA_CONTEXT_LENGTH, num_gpu=1, temperature=0),
+                embedding_service = OllamaEmbeddings(model=config.EMBEDDING_MODEL, base_url=config.OLLAMA_LOCAL_URI, num_ctx=config.OLLAMA_CONTEXT_LENGTH, num_gpu=1, temperature=0),
             )        
         count: int = 0
         for url in urls:

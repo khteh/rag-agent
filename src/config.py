@@ -47,7 +47,7 @@ class Config(metaclass=ConfigSingleton):
     connection_kwargs = None
     def __new__(cls, *args, **kwargs):
         return super().__new__(cls)
-    def __init__(self, environment="Development"):
+    def __init__(self):
         with open('/etc/ragagent_config.json', 'r') as f:
             config = json.load(f)
         self.LOGLEVEL = config['LOGLEVEL']
@@ -98,5 +98,5 @@ class Config(metaclass=ConfigSingleton):
                 TimedRotatingFileHandler(filename='/var/log/ragagent/log', when='d', interval=1, backupCount=3),
                 logging.StreamHandler(sys.stdout)
             ], format='%(asctime)s %(levelname)-8s %(message)s', level=self.LOGLEVEL, datefmt='%Y-%m-%d %H:%M:%S')
-
+        logging.debug(f"OLLAMA_API_KEY: {self.OLLAMA_API_KEY}")
 config = Config()
