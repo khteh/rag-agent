@@ -314,54 +314,73 @@ Task decomposition is a foundational AI technique that splits a complex objectiv
 
 - `output/user_request_{timestamp}.md`:
 
-```
+````
 What is MLFlow?
 
 ---
-## What is MLflow?
+## MLflow Overview
 
-MLflow is an open‑source platform that helps data‑science and engineering teams manage the **entire machine‑learning lifecycle** – from experimentation to reproducible runs, model versioning, and deployment. It is vendor‑neutral, runs anywhere (local machine, on‑premise clusters, cloud), and provides a unified set of APIs and UI components [1].
+MLflow is an open‑source platform that standardizes and automates the **machine‑learning lifecycle**—from experiment tracking to reproducible packaging, model versioning, and deployment. It is vendor‑neutral and integrates with most ML libraries, enabling teams to reliably develop, evaluate, and ship models at scale【1】.
 
-### Core Components
+### Purpose
+- **Centralize experiment metadata** (parameters, metrics, artifacts) for reproducibility.
+- **Package code and dependencies** so experiments can be rerun anywhere.
+- **Provide a universal model format** that works across frameworks.
+- **Manage model versions and lifecycle** (staging, production, archiving) in a single registry.
 
-| Component | Purpose | Key Features |
-|-----------|---------|--------------|
-| **MLflow Tracking** | Logs experiments (parameters, metrics, artifacts, code version) and visualizes results through a UI or REST API [2]. | Python, R, Java APIs; auto‑logging; remote tracking server; searchable runs. |
-| **MLflow Projects** | Packages a reproducible code bundle (environment + entry point) so anyone can run the same experiment on any platform [3]. | Uses Conda or Docker environments; `mlflow run` CLI; supports Git‑based projects. |
-| **MLflow Models** | Standardizes model serialization and provides a common “flavor” interface to load models in Python, R, Java, or as a REST endpoint [4]. | Supports Scikit‑learn, TensorFlow, PyTorch, SparkML, H2O, etc.; model signatures; artifact storage. |
-| **MLflow Model Registry** | Central hub for model versioning, stage transitions (Staging → Production → Archived), and lineage tracking [5]. | UI & API for approvals, commenting, and access control; integrates with CI/CD pipelines. |
+## Core Components
 
-### Typical Use Cases
+| Component | What It Does | Key Features |
+|-----------|--------------|---------------|
+| **MLflow Tracking** | API + UI for logging runs (parameters, metrics, artifacts) and visualizing results. | Supports Python, R, Java, REST; autologging for many libraries【5】. |
+| **MLflow Projects** | Standard way to package ML code with a descriptor (`MLproject`) and environment specifications. | Enables reproducible execution locally, on a cluster, or in the cloud. |
+| **MLflow Models** | A generic “model packaging” format that bundles a model with a flavor‑specific loader (e.g., `sklearn`, `tensorflow`). | Simplifies downstream serving, batch scoring, or conversion to other formats. |
+| **MLflow Model Registry** | Centralized model store that tracks versions, stages (Staging, Production, Archived), and lineage. | UI & API for registering, transitioning, annotating, and accessing models【2】. |
 
-1. **Experiment Tracking** – Compare many hyper‑parameter runs, visualise metrics, and share results across a team.
-2. **Reproducible Pipelines** – Encode a training script, its dependencies, and data paths in an MLflow Project; anyone can rerun it with a single command.
-3. **Model Versioning & Governance** – Register trained models, promote vetted versions to production, and keep a full audit trail.
-4. **Deployment** – Serve models as REST APIs, batch jobs, or export them to cloud services (AWS SageMaker, Azure ML, GCP AI Platform) directly from the registry.
-5. **End‑to‑End MLOps Integration** – Combine Tracking, Projects, and Registry with orchestration tools (Kubeflow, Airflow) to build CI/CD pipelines for ML.
+## Typical Workflow
+1. **Define an MLflow Project** → write an `MLproject` file that lists entry points and required environments.
+2. **Run Experiments** → execute the project; each run is recorded by **Tracking** (params, metrics, artifacts).
+3. **Log a Model** → after training, call `mlflow.<flavor>.log_model()` to store the model artifact.
+4. **Register the Model** → use the **Model Registry** to create a new version and assign a stage (e.g., “Staging”).
+5. **Deploy / Serve** → retrieve the model from the registry for batch inference, REST serving, or integration into production pipelines.
 
-### Integration with Common ML Workflows
+## Example Usage (Python, scikit‑learn)
+```python
+import mlflow
+import mlflow.sklearn
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.metrics import mean_squared_error
+from sklearn.datasets import load_diabetes
+from sklearn.model_selection import train_test_split
 
-| Workflow Step | How MLflow Fits In |
-|---------------|---------------------|
-| **Data preparation** | Log data‑version tags or dataset artifacts via Tracking. |
-| **Model training** | Use `mlflow.start_run()` (or `mlflow.autolog()`) to capture parameters, metrics, and model artifacts automatically [2]. |
-| **Packaging** | Wrap training code as an MLflow Project; define environment with `conda.yaml` or Dockerfile for repeatable runs [3]. |
-| **Model packaging** | Save the trained object with `mlflow.<framework>.log_model()`, creating a portable “flavor” [4]. |
-| **Model registry** | Register the model (`mlflow.register_model`) and move it through stages (Staging → Production) via the Model Registry UI or API [5]. |
-| **Deployment** | Deploy the registered model to a REST endpoint, Spark cluster, or cloud‑managed service using built‑in deployment tools. |
-| **Monitoring** | Track inference metrics by logging them back to MLflow Tracking, enabling drift detection and continuous evaluation. |
+mlflow.set_experiment("Diabetes-Regression")
+with mlflow.start_run():
+    X, y = load_diabetes(return_X_y=True)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    model = RandomForestRegressor(n_estimators=100, random_state=42)
+    model.fit(X_train, y_train)
+    mlflow.log_param("n_estimators", 100)
+    preds = model.predict(X_test)
+    mse = mean_squared_error(y_test, preds)
+    mlflow.log_metric("mse", mse)
+    mlflow.sklearn.log_model(model, artifact_path="model")
+    model_uri = f"runs:/{mlflow.active_run().info.run_id}/model"
+    mlflow.register_model(model_uri, "DiabetesRF")
+````
 
-### Concise Summary
+- The run appears in the **MLflow UI** where you can compare metrics across experiments.
+- The model is stored under `artifact_path="model"` and can be **registered** for lifecycle management【2】.
 
-MLflow offers a **four‑module** framework—**Tracking**, **Projects**, **Models**, and **Model Registry**—that together enable reproducible experiments, standardized model packaging, robust version control, and seamless deployment. Organizations use it to accelerate MLOps pipelines, enforce governance, and collaborate on model development across diverse environments [1][2][3][4][5].
+## Concise Summary
 
----
+MLflow delivers a unified, open‑source stack for managing the entire ML lifecycle. Its four pillars—**Tracking**, **Projects**, **Models**, and **Model Registry**—enable reproducible experiments, portable code packaging, framework‑agnostic model handling, and systematic version control. A typical workflow involves defining a project, running experiments with tracking, logging models, registering versions, and then deploying or serving the selected model. The Python example above illustrates the core API calls needed to log a scikit‑learn model and push it to the registry.
+
 ### Sources
-[1] **MLflow Overview** – https://mlflow.org/docs/latest/index.html
-[2] **MLflow Tracking Documentation** – https://mlflow.org/docs/latest/tracking.html
-[3] **MLflow Projects Documentation** – https://mlflow.org/docs/latest/projects.html
-[4] **MLflow Models Documentation** – https://mlflow.org/docs/latest/models.html
-[5] **MLflow Model Registry Documentation** – https://mlflow.org/docs/latest/model-registry.html
+
+[1] MLflow official documentation – “MLflow Overview” – https://mlflow.org/docs/latest/index.html
+[2] MLflow Model Registry guide – https://mlflow.org/docs/latest/model-registry.html
+[5] MLflow Tracking documentation – https://mlflow.org/docs/latest/tracking.html
+
 ```
 
 ### Answering query using Neo4J vector DB
@@ -369,12 +388,15 @@ MLflow offers a **four‑module** framework—**Tracking**, **Projects**, **Mode
 - `output/user_questions.md`:
 
 ```
+
 What have patients said about their quality of rest during their stay?
+
 ```
 
 - `output/final_answer.md`:
 
 ```
+
 ## Patient Feedback on Quality of Rest During Hospital Stay
 
 Patients consistently report negative experiences with sleep quality during their hospital stay. The primary issues cited are:
@@ -383,44 +405,52 @@ Patients consistently report negative experiences with sleep quality during thei
 2. **Environmental noise** – constant machine beeping and nighttime interruptions.
 
 ### Key Review Excerpts
-- **Crystal Johnson** (Smith, Edwards & Obrien): *"The uncomfortable beds made it difficult to get a good night’s sleep during my stay."*
-- **Miranda Frey** (Brown‑Golden): *"The uncomfortable beds made it difficult to get a good night’s sleep during my stay."*
-- **Jesse Tucker** (Wallace‑Hamilton): *"The constant interruptions during the night, however, affected my ability to rest."*
-- **Heather Lewis** (Brown‑Golden): *"The constant beeping of machines in the ward was bothersome and made it difficult to get quality rest."*
+
+- **Crystal Johnson** (Smith, Edwards & Obrien): _"The uncomfortable beds made it difficult to get a good night’s sleep during my stay."_
+- **Miranda Frey** (Brown‑Golden): _"The uncomfortable beds made it difficult to get a good night’s sleep during my stay."_
+- **Jesse Tucker** (Wallace‑Hamilton): _"The constant interruptions during the night, however, affected my ability to rest."_
+- **Heather Lewis** (Brown‑Golden): _"The constant beeping of machines in the ward was bothersome and made it difficult to get quality rest."_
 
 ### Overall Sentiment
+
 Patients consistently report negative experiences with sleep quality during their hospital stay, citing physical discomfort and environmental noise as the main contributors.
 
 ### Sources
+
 [1] HealthcareCypher: Patient Reviews – https://healthcarecypher.com/patient-reviews
+
 ```
 
 - `output/user_questions.md`:
 
 ```
+
 What have patients said about hospital efficiency? Highlight details from specific reviews.
+
 ```
 
 - `output/final_answer.md`:
 
 ```
+
 ## Hospital Efficiency – Patient Review Highlights
 
 Patients have commented on the efficiency of care at several hospitals. The following excerpts illustrate specific observations:
 
-- **Brown Inc.** – *Jennifer McCall, Stephen Hernandez*: “The medical team was **efficient**.” This direct praise indicates that patients perceived the care process as swift and well‑coordinated.
+- **Brown Inc.** – _Jennifer McCall, Stephen Hernandez_: “The medical team was **efficient**.” This direct praise indicates that patients perceived the care process as swift and well‑coordinated.
 
-- **Little‑Spencer** – *Shawn Ellis, Tracy Dalton*: “The well‑organized approach to my treatment contributed to a positive overall experience.” The phrase “well‑organized” implies streamlined processes and timely care, suggesting efficient workflow.
+- **Little‑Spencer** – _Shawn Ellis, Tracy Dalton_: “The well‑organized approach to my treatment contributed to a positive overall experience.” The phrase “well‑organized” implies streamlined processes and timely care, suggesting efficient workflow.
 
-- **Smith, Edwards and Obrien** – *Nancy Nichols, Martin Gilbert*: “The hospital staff went above and beyond to make me comfortable during my stay. They even organized daily activities to keep patients engaged.” While this review focuses on comfort and engagement, it does not explicitly mention efficiency.
+- **Smith, Edwards and Obrien** – _Nancy Nichols, Martin Gilbert_: “The hospital staff went above and beyond to make me comfortable during my stay. They even organized daily activities to keep patients engaged.” While this review focuses on comfort and engagement, it does not explicitly mention efficiency.
 
-- **Smith, Edwards and Obrien** – *Tara Harris, Garrett Gomez*: “My experience at the hospital was positive overall. The medical team was competent, and the facilities were modern and well‑equipped.” This review highlights competence and modern facilities but lacks mention of efficiency.
+- **Smith, Edwards and Obrien** – _Tara Harris, Garrett Gomez_: “My experience at the hospital was positive overall. The medical team was competent, and the facilities were modern and well‑equipped.” This review highlights competence and modern facilities but lacks mention of efficiency.
 
 These insights are drawn from patient reviews retrieved via the HealthcareReview tool.
 
 ### Sources
 
 [1] HealthcareReview – Hospital efficiency patient reviews.
+
 ```
 
 ### Answering question from Neo4J graph DB
@@ -428,27 +458,35 @@ These insights are drawn from patient reviews retrieved via the HealthcareReview
 - `output/user_questions.md`:
 
 ```
+
 Which physician has treated the most patients covered by Cigna?
+
 ```
 
 - `output/final_answer.md`:
 
 ```
+
 The physician who has treated the most patients covered by Cigna is **Kayla Lawson**, who has seen **10 patients**.
 
 ### Sources
+
 [1] HealthcareCypher: Physician Coverage Data – https://healthcarecypher.com/physician-coverage
+
 ```
 
 - `output/user_questions.md`:
 
 ```
+
 What is the average visit duration for emergency visits in North Carolina?
+
 ```
 
 - `output/final_answer.md`:
 
 ```
+
 ## Average Emergency Visit Duration in North Carolina
 
 The HealthcareCypher sub‑agent reports an average duration of **≈ 21,705 minutes** (about **15 days**) for emergency department visits in North Carolina. This figure likely reflects the total time patients spend in the hospital following an ED visit, rather than the time spent in the ED itself. No specific data source or time period was provided, so the number should be interpreted with caution.
@@ -456,6 +494,7 @@ The HealthcareCypher sub‑agent reports an average duration of **≈ 21,705�
 ### Sources
 
 [1] HealthcareCypher: Average ED visit duration in North Carolina – 21,705 minutes (no source cited).
+
 ```
 
 ### Accummulation
@@ -463,12 +502,15 @@ The HealthcareCypher sub‑agent reports an average duration of **≈ 21,705�
 - `output/user_questions.md`:
 
 ```
+
 Which state had the largest percent increase in Medicaid visits from 2022 to 2023?
+
 ```
 
 - `output/final_answer.md`:
 
 ```
+
 ## Largest Percent Increase in Medicaid Visits (2022‑2023)
 
 The HealthcareCypher sub‑agent reports that **Texas (TX)** had the largest percentage increase in Medicaid visits between 2022 and 2023, with an increase of **≈ 8.82 %**. This figure comes from the HealthcareCypher database’s Medicaid visit statistics by state for the two years.
@@ -476,57 +518,69 @@ The HealthcareCypher sub‑agent reports that **Texas (TX)** had the largest per
 ### Sources
 
 [1] HealthcareCypher: Medicaid visit statistics by state – 2022 and 2023.
+
 ```
 
 - `output/user_questions.md`:
 
 ```
+
 Which payer provides the most coverage in terms of total billing amount?
+
 ```
 
 - `output/final_answer.md`:
 
 ```
+
 ## Payer with the Highest Total Coverage Amount
 
 The payer that provides the most coverage in terms of total billing amount is **UnitedHealthcare**, with a total coverage amount of **$52,221,646.74**.
 
 ### Summary of Coverage Totals
-| Payer | Total Coverage Amount |
-|-------|------------------------|
-| UnitedHealthcare | $52,221,646.74 |
-| Cigna | $52,161,684.47 |
-| Blue Cross | $51,440,502.96 |
-| Medicaid | $50,464,204.50 |
-| Aetna | $48,806,964.29 |
+
+| Payer            | Total Coverage Amount |
+| ---------------- | --------------------- |
+| UnitedHealthcare | $52,221,646.74        |
+| Cigna            | $52,161,684.47        |
+| Blue Cross       | $51,440,502.96        |
+| Medicaid         | $50,464,204.50        |
+| Aetna            | $48,806,964.29        |
 
 The figures above are derived from the healthcare database query on payer coverage totals.
 
 ### Source
+
 [1] HealthcareCypher query result.
+
 ```
 
 - `output/user_questions.md`:
 
 ```
+
 Categorize all patients' reviews into "Positive", "Neutral", and "Negative". Provide totals and percentage of the categories.
+
 ```
 
 - `output/final_answer.md`:
 
 ```
+
 ## Sentiment Categorization of Patient Reviews
 
 The dataset contains four patient reviews, all of which are classified as **Positive**. No reviews were classified as **Neutral** or **Negative**.
 
 | Sentiment | Count | Percentage |
-|-----------|-------|------------|
-| Positive | 4 | 100 % |
-| Neutral | 0 | 0 % |
-| Negative | 0 | 0 % |
+| --------- | ----- | ---------- |
+| Positive  | 4     | 100 %      |
+| Neutral   | 0     | 0 %        |
+| Negative  | 0     | 0 %        |
 
 ### Source
+
 [1] HealthcareCypher query result on patient reviews.
+
 ```
 
 ### Answering question from Neo4J graph AND vector DB
@@ -534,22 +588,27 @@ The dataset contains four patient reviews, all of which are classified as **Posi
 - `output/user_questions.md`:
 
 ```
+
 Query the graph database to show me the reviews written by patient 7674
+
 ```
 
 - `output/final_answer.md`:
 
 ```
+
 ## Reviews Written by Patient 7674
 
 The following table summarizes the review(s) authored by patient **7674** in the healthcare graph database:
 
-| Review ID | Hospital | Physician | Review Text |
-|-----------|----------|-----------|-------------|
-| 644 | Jones, Brown and Murray | Sandra Porter | “The hospital provided exceptional care, but the billing process was confusing and frustrating. Clearer communication about costs would have been appreciated.” |
+| Review ID | Hospital                | Physician     | Review Text                                                                                                                                                     |
+| --------- | ----------------------- | ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 644       | Jones, Brown and Murray | Sandra Porter | “The hospital provided exceptional care, but the billing process was confusing and frustrating. Clearer communication about costs would have been appreciated.” |
 
 ### Sources
+
 [1] HealthcareCypher query “reviews written by patient 7674”
+
 ```
 
 ## Email RAG Deep Agent
@@ -563,7 +622,9 @@ The following table summarizes the review(s) authored by patient **7674** in the
 - Takes about 8 minutes to run.
 
 ```
+
 $ uv run python -m src.EmailRAG.EmailRAG
+
 ```
 
 ### Main Agent Outputs:
@@ -571,6 +632,7 @@ $ uv run python -m src.EmailRAG.EmailRAG
 - `output/email_request_{timestamp}.md`:
 
 ```
+
 Escalation Criteria: There's an immediate risk of electrical, water, or fire damage
 Escalation Dollar Criteria: 100000
 Escalation Emails: brog@abc.com, bigceo@company.com
@@ -595,34 +657,43 @@ Install additional fire extinguishers in compliance with fire code requirements.
 Deadline for Compliance: Violations must be addressed no later than December 31.
 Failure to comply may result be a stop-work order and additional fines.
 Contact: For questions or to schedule a re-inspection, please contact the Building and Safety Department at (555) 456-7890 or email inspections@lacity.gov.
+
 ---
+
 ## Key Findings
 
 The email from **City of Los Angeles Building and Safety Department** concerning **Project 345678123 - Sunset Luxury Condominiums** at **456 Sunset Boulevard, Los Angeles, CA** outlines several critical building code violations that pose an immediate risk of electrical, water, or fire damage.
 
 ### Violations
+
 [1] **Electrical Wiring**: Exposed wiring found in the underground parking garage, creating a safety hazard.
 [2] **Fire Safety**: Insufficient fire extinguishers across multiple floors of the structure under construction.
 [3] **Structural Integrity**: Temporary support beams in the eastern wing do not meet load‑bearing standards per local building codes.
 
 ### Required Corrective Actions
+
 [1] Replace or properly secure exposed wiring to meet electrical safety standards.
 [2] Install additional fire extinguishers in compliance with fire code requirements.
 [3] Reinforce or replace temporary support beams to ensure structural stability.
 
 ### Deadline for Compliance
+
 Violations must be addressed no later than **December 31, 2026**.
 
 ### Potential Penalties
+
 Failure to comply may result in a stop‑work order and additional fines (amount not specified).
 
 ### Escalation Criteria
+
 - Immediate risk of electrical, water, or fire damage.
 - Escalation dollar threshold: **$100,000**.
 - Escalation contacts: **brog@abc.com**, **bigceo@company.com**.
 
 ### Contact Information
+
 Building and Safety Department: (555) 456‑7890, email: inspections@lacity.gov.
+
 ```
 
 ### Sub-agent Outputs:
@@ -630,27 +701,29 @@ Building and Safety Department: (555) 456‑7890, email: inspections@lacity.gov.
 - `output/email_extract.md`:
 
 ```
+
 {
-    "name": null,
-    "phone": null,
-    "email": null,
-    "project_id": 345678123,
-    "site_location": "456 Sunset Boulevard, Los Angeles, CA",
-    "violation_types": [
-        "Electrical Wiring",
-        "Fire Safety",
-        "Structural Integrity"
-    ],
-    "required_changes": [
-        "Replace or properly secure exposed wiring to meet electrical safety standards.",
-        "Install additional fire extinguishers in compliance with fire code requirements.",
-        "Reinforce or replace temporary support beams to ensure structural stability."
-    ],
-    "max_potential_fine": null,
-    "date_of_email": null,
-    "compliance_deadline": null
+"name": null,
+"phone": null,
+"email": null,
+"project_id": 345678123,
+"site_location": "456 Sunset Boulevard, Los Angeles, CA",
+"violation_types": [
+"Electrical Wiring",
+"Fire Safety",
+"Structural Integrity"
+],
+"required_changes": [
+"Replace or properly secure exposed wiring to meet electrical safety standards.",
+"Install additional fire extinguishers in compliance with fire code requirements.",
+"Reinforce or replace temporary support beams to ensure structural stability."
+],
+"max_potential_fine": null,
+"date_of_email": null,
+"compliance_deadline": null
 }
 This email warrants an escalation
+
 ```
 
 ## LangSmith Application trace
@@ -714,11 +787,13 @@ MATCH (v:Visit)-[r]-(n) where v.id=56 return v,r,n
 - Total visits and bill paid by payer Aetna in Texas:
 
 ```
+
 MATCH (p:Payer)<-[c:COVERED_BY]-(v:Visit)-[:AT]->(h:Hospital)
 WHERE p.name = "Aetna"
 AND h.state_name = "TX"
 RETURN COUNT(\*) as num_visits,
 SUM(c.billing_amount) as total_billing_amount;
+
 ```
 
 ## Coverage-Guided Fuzz Testing
@@ -726,16 +801,24 @@ SUM(c.billing_amount) as total_billing_amount;
 - To run fuzz-testing using Google's atheris and coverage:
 
 ```
+
 $ uv run coverage run -m src.EmailRAG.fuzzer -atheris_runs=100
+
 ```
 
 ```
+
 $ uv run coverage run -m src.rag_agent.fuzzer -atheris_runs=100
+
 ```
 
 - Generate HTML report and view it:
 
 ```
+
 $ uv run python -m coverage html
 $ (cd htmlcov && uv run python -m http.server 8000)
+
+```
+
 ```

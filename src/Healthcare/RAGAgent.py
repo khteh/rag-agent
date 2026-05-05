@@ -20,6 +20,7 @@ from langchain_ollama import OllamaEmbeddings
 from .prompts import HEALTHCARE_INSTRUCTIONS
 from .Tools import HealthcareReview, HealthcareCypher, HealthcareMemoryManager, HealthcareMemorySearcher
 from src.rag_agent.Tools import upsert_memory, think_tool
+from src.Infrastructure.VectorStore import VectorStore
 from src.common.Configuration import Configuration
 from src.utils.image import show_graph
 from src.Infrastructure.PostgreSQLSetup import PostgreSQLCheckpointerSetup, PostgreSQLStoreSetup
@@ -33,14 +34,18 @@ class RAGAgent():
     _closed: bool = False
     _db_pool: AsyncConnectionPool = None
     _self_managed_db_pool: bool = False
-    _store: AsyncPostgresStore = None
+    _vectorStore = None
     _checkpointer = None
     _tools: List[Callable[..., Any]] = None
     agent: CompiledStateGraph = None
-    # Class constructor
-    def __init__(self, db_pool:AsyncConnectionPool = None, store: AsyncPostgresStore = None, checkpointer: AsyncPostgresSaver = None):
+    def __init__(self, db_pool:AsyncConnectionPool = None, store: VectorStore = None, checkpointer: AsyncPostgresSaver = None):
         """
         Class RAGAgent Constructor
+
+        Args:
+           db_pool: Provided by main module app.db_pool if run as hypercorn ASGI application.
+           store: Provided by rag_agent.RAGAgent.CreateGraph()
+           checkpointer: Provided by rag_agent.RAGAgent.CreateGraph()
         """
         #vertexai.init(project=os.environ.get("GOOGLE_CLOUD_PROJECT"), location=os.environ.get("GOOGLE_CLOUD_LOCATION"))
         # .bind_tools() gives the agent LLM descriptions of each tool from their docstring and input arguments. 
@@ -55,7 +60,7 @@ class RAGAgent():
                         kwargs = appconfig.connection_kwargs,
                         open = False # Opening an async pool in the constructor (using open=True on init) will become an error in a future pool versions. 
                     )
-        self._store = store
+        self._vectorStore = store
         self._checkpointer = checkpointer
         #self._tools = [HealthcareReview, HealthcareCypher, get_current_wait_times, get_most_available_hospital, upsert_memory, think_tool]
         self._tools = [HealthcareReview, HealthcareCypher, get_current_wait_times, get_most_available_hospital, HealthcareMemoryManager, HealthcareMemorySearcher, think_tool]
@@ -76,33 +81,27 @@ class RAGAgent():
 
     async def _Cleanup(self):
         #await self._store.close() AttributeError: 'AsyncPostgresStore' object has no attribute 'close'
+        logging.info(f"\n=== {self.__class__.__name__}.{self._Cleanup.__name__} ===")
         if self._self_managed_db_pool:
             await self._db_pool.close()
         self._closed = True
 
-    #async def Cleanup(self):
-    #    https://github.com/minrk/asyncio-atexit/issues/11
-    #    logging.info(f"\n=== {self.Cleanup.__name__} ===")
-    #    await self._db_pool.close()
     async def CreateGraph(self) -> CompiledStateGraph:
-        logging.info(f"\n=== Healthcare {self.CreateGraph.__name__} ===")
+        logging.info(f"\n=== {self.__class__.__name__}.{self.CreateGraph.__name__} ===")
         try:
             # https://langchain-ai.github.io/langgraph/reference/prebuilt/#langgraph.prebuilt.chat_agent_executor.create_react_agent
             # https://github.com/langchain-ai/langchain/issues/30723
             # https://langchain-ai.github.io/langgraph/how-tos/cross-thread-persistence/
             # https://github.com/langchain-ai/langgraph/blob/main/libs/prebuilt/langgraph/prebuilt/chat_agent_executor.py#L241
             #await self._db_pool.open()
-            if self._store is None:
-                self._store = AsyncPostgresStore(self._db_pool, index={
-                            "embed": OllamaEmbeddings(model=appconfig.EMBEDDING_MODEL, base_url=appconfig.OLLAMA_LOCAL_URI, num_ctx=appconfig.OLLAMA_CONTEXT_LENGTH, num_gpu=1, temperature=0),
-                            "dims": appconfig.EMBEDDING_DIMENSIONS, # Note: Every time when this value changes, remove the store<foo> tables in the DB so that store.setup() runs to recreate them with the right dimensions.
-                        }
-                )
-                await PostgreSQLStoreSetup(self._db_pool, self._store) # store is needed when creating the ReAct agent / StateGraph for InjectedStore to work
+            if self._vectorStore is None:
+                self._vectorStore = VectorStore(self._db_pool, chunk_size=512, chunk_overlap=0)
+                await self._vectorStore.CreateResources()
             if self._checkpointer is None:
                 self._checkpointer = AsyncPostgresSaver(self._db_pool)
                 await PostgreSQLCheckpointerSetup(self._db_pool, self._checkpointer)
-            self._agent = create_agent(self._llm, self._tools, context_schema = Configuration, state_schema = CustomAgentState, name = self._name, system_prompt = HEALTHCARE_INSTRUCTIONS.format(timestamp=datetime.now()), store = self._store, checkpointer = self._checkpointer)
+            self._agent = create_agent(self._llm, self._tools, context_schema = Configuration, state_schema = CustomAgentState, name = self._name, system_prompt = HEALTHCARE_INSTRUCTIONS.format(timestamp=datetime.now()), 
+                                       store = self._vectorStore.store, checkpointer = self._checkpointer)
             # self.ShowGraph() # This blocks
         except Exception as e:
             logging.exception(f"Exception! {e}")

@@ -62,57 +62,15 @@ async def create_app() -> Quart:
     @app.before_serving
     async def before_serving() -> None:
         logging.info(f"\n=== {before_serving.__name__} ===")
-        app.pg_engine = PGEngine.from_connection_string(url=appconfig.SQLALCHEMY_DATABASE_URI)
+        # This stays here as it is needed by k8s healthcheck endpoint
         app.db_pool = AsyncConnectionPool(
             conninfo = appconfig.POSTGRESQL_DATABASE_URI,
             max_size = appconfig.DB_MAX_CONNECTIONS,
             kwargs = appconfig.connection_kwargs,
             open = True
         )
-        #logging.debug(f"EMBEDDING_DIMENSIONS: {appconfig.EMBEDDING_DIMENSIONS}")
-        # Note: Every time when this value changes, remove the following tables (https://github.com/langchain-ai/langgraph/issues/6687)
-        # -- Drop the table containing the vectors with the wrong dimension
-        # DROP TABLE IF EXISTS store_vectors;
-
-        #-- Remove the migration record so setup() runs the table creation script again
-        # -- (Assumes the CREATE TABLE migration is version 2, which matches current source)
-        # DELETE FROM vector_migrations WHERE v >= 2;
-
-        # -- For the main store table version
-        # SELECT max(v) FROM store_migrations;
-
-        # -- For the vector store table version
-        # SELECT max(v) FROM vector_migrations;        
-        app.store = AsyncPostgresStore(app.db_pool, index={
-                    "embed": OllamaEmbeddings(model=appconfig.EMBEDDING_MODEL, base_url=appconfig.OLLAMA_LOCAL_URI, num_ctx=appconfig.OLLAMA_CONTEXT_LENGTH, num_gpu=1, temperature=0),
-                    "dims": appconfig.EMBEDDING_DIMENSIONS,
-                }
-        )
-        app.checkpointer = AsyncPostgresSaver(app.db_pool)
-        # https://docs.langchain.com/oss/python/integrations/vectorstores/pgvectorstore
-        try:
-            await app.pg_engine.ainit_vectorstore_table(
-                table_name = appconfig.VECTORSTORE_TABLE,
-                vector_size = appconfig.EMBEDDING_DIMENSIONS
-            )
-        except ProgrammingError:
-            logging.warning(f"Vector store table {appconfig.VECTORSTORE_TABLE} already exists!")
-        app.vectorStore = await PGVectorStore.create(
-            engine = app.pg_engine,
-            table_name = appconfig.VECTORSTORE_TABLE,
-            # schema_name=SCHEMA_NAME,  # Default: "public"
-            embedding_service = OllamaEmbeddings(model=appconfig.EMBEDDING_MODEL, base_url=appconfig.OLLAMA_LOCAL_URI, num_ctx=appconfig.OLLAMA_CONTEXT_LENGTH, num_gpu=1, temperature=0),
-        )
-        # Check if index exists
-        if not app.vectorStore.is_valid_index("ragagent_index"):           
-            logging.debug(f"Creating index ragagent_index...")
-            await app.vectorStore.aapply_vector_index(HNSWIndex(name="ragagent_index"))
-        else:
-            logging.warning(f"Index ragagent_index already exists!")
-        await PostgreSQLStoreSetup(app.db_pool, app.store) # store is needed when creating the ReAct agent / StateGraph for InjectedStore to work
-        await PostgreSQLCheckpointerSetup(app.db_pool, app.checkpointer)
         from src.rag_agent.RAGAgent import RAGAgent
-        app.agent = RAGAgent(app.vectorStore, app.db_pool, app.store, app.checkpointer)
+        app.agent = RAGAgent(app.db_pool)
         await app.agent.CreateGraph()
 
     @app.after_serving

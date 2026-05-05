@@ -1,8 +1,10 @@
 import atexit, bs4, hashlib, logging
 from uuid_extensions import uuid7, uuid7str
+from psycopg_pool import AsyncConnectionPool, ConnectionPool
 from sqlalchemy.exc import ProgrammingError
 from typing_extensions import List, TypedDict, Optional, Any
 from langchain_postgres import PGEngine
+from langchain_postgres.v2.indexes import HNSWIndex
 from langchain_core.tools.retriever import create_retriever_tool
 #from langchain_postgres.vectorstores import PGVector
 from langchain_ollama import OllamaEmbeddings
@@ -10,6 +12,9 @@ from langchain_core.documents import Document
 from langchain_postgres import PGEngine, PGVectorStore
 from langchain_community.document_loaders import WebBaseLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langgraph.store.postgres.aio import AsyncPostgresStore
+from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
+from src.Infrastructure.PostgreSQLSetup import PostgreSQLCheckpointerSetup, PostgreSQLStoreSetup
 from src.config import config
 #https://cloud.google.com/vertex-ai/generative-ai/docs/embeddings/get-text-embeddings
 #https://realpython.com/python-class-constructor/
@@ -30,21 +35,19 @@ class VectorStore(): #metaclass=VectorStoreSingleton):
     https://cloud.google.com/vertex-ai/generative-ai/docs/embeddings/get-text-embeddings
     https://docs.langchain.com/oss/python/integrations/vectorstores/pgvector
     """
+    _db_pool: AsyncConnectionPool = None
     _embeddings: OllamaEmbeddings = None
     _chunk_size: int = None
     _chunk_overlap: int = None
-    #vector_store: PGVector = None
     _pg_engine = None
     retriever_tool = None
-    _collection: str = None
-    _tenant: str = None
-    _database: str = None
     _pg_engine = None
     _vectorStore: PGVectorStore = None
+    store: AsyncPostgresStore = None
     _docs = set()
     #def __new__(cls, *args, **kwargs):
     #    return super().__new__(cls)
-    def __init__(self, vectorStore:PGVectorStore, chunk_size, chunk_overlap, tenant="khteh", database="LLM-RAG-Agent", collection="LLM-RAG-Agent"):
+    def __init__(self, db_pool: AsyncConnectionPool, chunk_size, chunk_overlap):
         """
         Class Constructor
 
@@ -54,12 +57,10 @@ class VectorStore(): #metaclass=VectorStoreSingleton):
         logging.info(f"\n=== {self.__class__.__name__}.{self.__init__.__name__} ===")
         # https://reference.langchain.com/python/langchain-postgres/v2/indexes/HNSWIndex
         # https://cloud.google.com/blog/products/databases/faster-similarity-search-performance-with-pgvector-indexes
-        self._vectorStore = vectorStore
+        self._db_pool = db_pool
+        #self._vectorStore = vectorStore
         self._chunk_size = chunk_size
         self._chunk_overlap = chunk_overlap
-        self._collection = collection
-        self._tenant = tenant
-        self._database = database
         #https://python.langchain.com/api_reference/_modules/langchain_ollama/embeddings.html#OllamaEmbeddings
         #https://huggingface.co/blog/matryoshka
         #https://ollama.com/library/nomic-embed-text
@@ -73,14 +74,55 @@ class VectorStore(): #metaclass=VectorStoreSingleton):
         #    async_mode = True
         #)
         # https://api.python.langchain.com/en/latest/tools/langchain.tools.retriever.create_retriever_tool.html
-        if self._vectorStore is not None:
+        atexit.register(self.Cleanup)
+
+    async def CreateResources(self):
+        """
+        Create the following resources:
+        (1) PostgreSQL Vector Store
+        (2) Checkpoint
+        """
+        logging.info(f"\n=== {self.__class__.__name__}.{self.CreateResources.__name__} ===")
+        # https://docs.langchain.com/oss/python/integrations/vectorstores/pgvectorstore
+        try:
+            await self._pg_engine.ainit_vectorstore_table(
+                table_name = config.VECTORSTORE_TABLE,
+                vector_size = config.EMBEDDING_DIMENSIONS
+            )
+        except ProgrammingError:
+            logging.warning(f"Vector store table {config.VECTORSTORE_TABLE} already exists!")
+        if self._vectorStore is None:
+            try:
+                await self._pg_engine.ainit_vectorstore_table(
+                    table_name = config.VECTORSTORE_TABLE,
+                    vector_size = config.EMBEDDING_DIMENSIONS
+                )
+            except ProgrammingError:
+                logging.warning(f"{config.VECTORSTORE_TABLE} already exist!")
+            self._vectorStore = await PGVectorStore.create(
+                engine = self._pg_engine,
+                table_name = config.VECTORSTORE_TABLE,
+                # schema_name=SCHEMA_NAME,  # Default: "public"
+                embedding_service = OllamaEmbeddings(model=config.EMBEDDING_MODEL, base_url=config.OLLAMA_LOCAL_URI, num_ctx=config.OLLAMA_CONTEXT_LENGTH, num_gpu=1, temperature=0),
+            )
             self.retriever_tool = create_retriever_tool(
-                #self.vector_store.as_retriever(),
                 self._vectorStore.as_retriever(),
                 "retrieve_blog_posts",
                 "Search and return information about the query from the documents available in the store",
             )
-        atexit.register(self.Cleanup)
+        # Check if index exists
+        if not self._vectorStore.is_valid_index("ragagent_index"):           
+            logging.debug(f"Creating index ragagent_index...")
+            await self._vectorStore.aapply_vector_index(HNSWIndex(name="ragagent_index"))
+        else:
+            logging.warning(f"Index ragagent_index already exists!")
+        if self.store is None:
+            self.store = AsyncPostgresStore(self._db_pool, index={
+                        "embed": OllamaEmbeddings(model=config.EMBEDDING_MODEL, base_url=config.OLLAMA_LOCAL_URI, num_ctx=config.OLLAMA_CONTEXT_LENGTH, num_gpu=1, temperature=0),
+                        "dims": config.EMBEDDING_DIMENSIONS,
+                    }
+            )
+            await PostgreSQLStoreSetup(self._db_pool, self.store) # store is needed when creating the ReAct agent / StateGraph for InjectedStore to work
 
     def Cleanup(self):
         logging.info(f"\n=== {self.__class__.__name__}.{self.Cleanup.__name__} ===")
@@ -95,20 +137,6 @@ class VectorStore(): #metaclass=VectorStoreSingleton):
         https://docs.langchain.com/oss/python/langchain/rag
         https://docs.langchain.com/oss/python/integrations/document_loaders
         """
-        if self._vectorStore is None:
-            try:
-                await self._pg_engine.ainit_vectorstore_table(
-                    table_name = config.VECTORSTORE_TABLE,
-                    vector_size = config.EMBEDDING_DIMENSIONS
-                )
-            except ProgrammingError:
-                logging.warning(f"{config.VECTORSTORE_TABLE} already exist!")
-            self._vectorStore = await PGVectorStore.create(
-                engine = self._pg_engine,
-                table_name = config.VECTORSTORE_TABLE,
-                # schema_name=SCHEMA_NAME,  # Default: "public"
-                embedding_service = OllamaEmbeddings(model=config.EMBEDDING_MODEL, base_url=config.OLLAMA_LOCAL_URI, num_ctx=config.OLLAMA_CONTEXT_LENGTH, num_gpu=1, temperature=0),
-            )        
         count: int = 0
         for url in urls:
             if url["url"] not in self._docs:
@@ -141,9 +169,11 @@ class VectorStore(): #metaclass=VectorStoreSingleton):
     def _SplitDocuments(self, docs):
         """
         Embedding models have a fixed-size context window, and as the size of the text grows, an embedding’s ability to accurately represent the text decreases.
+        https://docs.langchain.com/oss/python/integrations/splitters/recursive_text_splitter
+        Overlapping chunks helps to mitigate loss of information when context is divided between chunks.
         """
         logging.info(f"\n=== {self._SplitDocuments.__name__} ===")
-        text_splitter = RecursiveCharacterTextSplitter(chunk_size=self._chunk_size, chunk_overlap=self._chunk_overlap)
+        text_splitter = RecursiveCharacterTextSplitter(chunk_size=self._chunk_size, chunk_overlap=self._chunk_overlap, separators=[".", "\n"], length_function=len, is_separator_regex=False, add_start_index=True)
         subdocs = text_splitter.split_documents(docs)
         logging.debug(f"Split blog post into {len(subdocs)} sub-documents.")
         return subdocs

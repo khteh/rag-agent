@@ -89,7 +89,6 @@ class RAGAgent():
     )
     _db_pool: AsyncConnectionPool = None
     _self_managed_db_pool: bool = False
-    _store: AsyncPostgresStore = None
     _pg_vectorStore: PGVectorStore = None
     _checkpointer = None
     _vectorStore = None
@@ -103,17 +102,12 @@ class RAGAgent():
     _agent = None
     _in_thinking: bool = False
     _closed = False
-    # Class constructor
-    def __init__(self, vectorStore: PGVectorStore = None, db_pool:AsyncConnectionPool = None, store: AsyncPostgresStore = None, checkpointer: AsyncPostgresSaver = None):
+    def __init__(self, db_pool:AsyncConnectionPool = None):
         """
         Class RAGAgent Constructor
-        app.agent = RAGAgent(app.vectorStore, app.db_pool, app.store, app.checkpointer)
 
         Args:
-            vectorStore: provided by main module app.vectorStore if run as hypercorn ASGI application.
-            db_pool:  provided by main module app.db_pool if run as hypercorn ASGI application.
-            store: provided by main module app.store if run as hypercorn ASGI application.
-            checkpointer: provided by main module app.checkpointer if run as hypercorn ASGI application.
+            db_pool: Provided by main module app.db_pool if run as hypercorn ASGI application.
         """
         #atexit.register(self.Cleanup)
         #vertexai.init(project=os.environ.get("GOOGLE_CLOUD_PROJECT"), location=os.environ.get("GOOGLE_CLOUD_LOCATION"))
@@ -128,14 +122,8 @@ class RAGAgent():
                         kwargs = appconfig.connection_kwargs,
                         open = False # Opening an async pool in the constructor (using open=True on init) will become an error in a future pool versions. 
                     )
-        self._store = store
-        self._checkpointer = checkpointer
-        self._pg_vectorStore = vectorStore
-        self._vectorStore = VectorStore(self._pg_vectorStore, chunk_size=1000, chunk_overlap=0)
         # GoogleSearch ground_search works well but it will sometimes take precedence and overwrite the ingested data into Chhroma and Neo4J. So, exclude it for now until it is really needed.
         # Use it as a custom subagent
-        # self._tools = [self._vectorStore.retriever_tool, upsert_memory, think_tool]
-        self._tools = [self._vectorStore.retriever_tool, RAGMemoryManager, RAGMemorySearcher, think_tool]
         if appconfig.OLLAMA_CLOUD_URI:
             self._llm = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider=appconfig.MODEL_PROVIDER, base_url=appconfig.OLLAMA_CLOUD_URI, api_key=appconfig.OLLAMA_API_KEY, streaming=True, temperature=0, think="high")
         else:
@@ -152,17 +140,13 @@ class RAGAgent():
                 logging.exception(f"{self.__del__.__name__} exception! {e}")
 
     async def _Cleanup(self):
+        # https://github.com/minrk/asyncio-atexit/issues/11
         #await self._store.close() AttributeError: 'AsyncPostgresStore' object has no attribute 'close'
+        logging.info(f"\n=== {self.__class__.__name__}.{self._Cleanup.__name__} ===")
         if self._self_managed_db_pool:
             await self._db_pool.close()
         self._closed = True
 
-    #def Cleanup(self):
-    #    https://github.com/minrk/asyncio-atexit/issues/11
-    #    logging.info(f"\n=== {self.Cleanup.__name__} ===")
-    #    self._store.close()
-    #    self._db_pool.close()
-        #self._in_memory_store.close()
     async def prepare_model_inputs(self, state: CustomAgentState, config: RunnableConfig, store: BaseStore):
         # Retrieve user memories and add them to the system message
         # This function is called **every time** the model is prompted. It converts the state to a prompt
@@ -178,51 +162,23 @@ class RAGAgent():
         await self._vectorStore.LoadDocuments(self._urls)
 
     async def CreateGraph(self) -> CompiledStateGraph:
-        logging.info(f"\n=== {self.CreateGraph.__name__} ===")
+        logging.info(f"\n=== {self.__class__.__name__}.{self.CreateGraph.__name__} ===")
         if self._agent is None:
             try:
-                # https://langchain-ai.github.io/langgraph/reference/prebuilt/#langgraph.prebuilt.chat_agent_executor.create_react_agent
                 # https://github.com/langchain-ai/langchain/issues/30723
                 # https://langchain-ai.github.io/langgraph/how-tos/cross-thread-persistence/
                 # https://github.com/langchain-ai/langgraph/blob/main/libs/prebuilt/langgraph/prebuilt/chat_agent_executor.py#L241
                 await self._db_pool.open()
-                if self._store is None:
-                    logging.debug(f"Creating AsyncPostgresStore...")
-                    self._store = AsyncPostgresStore(self._db_pool, index={
-                                "embed": OllamaEmbeddings(model=appconfig.EMBEDDING_MODEL, base_url=appconfig.OLLAMA_LOCAL_URI, num_ctx=appconfig.OLLAMA_CONTEXT_LENGTH, num_gpu=1, temperature=0),
-                                "dims": appconfig.EMBEDDING_DIMENSIONS, # Note: Every time when this value changes, remove the store<foo> tables in the DB so that store.setup() runs to recreate them with the right dimensions.
-                            }
-                    )
-                    await PostgreSQLStoreSetup(self._db_pool, self._store) # store is needed when creating the ReAct agent / StateGraph for InjectedStore to work
-                if self._pg_vectorStore is None:
-                    logging.debug(f"Creating PGVectorStore...")
-                    pg_engine = PGEngine.from_connection_string(url=appconfig.SQLALCHEMY_DATABASE_URI)
-                    try:
-                        await pg_engine.ainit_vectorstore_table(
-                            table_name=appconfig.VECTORSTORE_TABLE,
-                            vector_size=appconfig.EMBEDDING_DIMENSIONS
-                        )
-                    except ProgrammingError:
-                        logging.warning(f"{appconfig.VECTORSTORE_TABLE} already exist!")
-                    self._pg_vectorStore = await PGVectorStore.create(
-                        engine = pg_engine,
-                        table_name = appconfig.VECTORSTORE_TABLE,
-                        # schema_name=SCHEMA_NAME,  # Default: "public"
-                        embedding_service = OllamaEmbeddings(model=appconfig.EMBEDDING_MODEL, base_url=appconfig.OLLAMA_LOCAL_URI, num_ctx=appconfig.OLLAMA_CONTEXT_LENGTH, num_gpu=1, temperature=0),
-                    )
-                    # Check if index exists
-                    if not self._pg_vectorStore.is_valid_index("ragagent_index"):           
-                        print(f"Creating index ragagent_index...")
-                        await self._pg_vectorStore.aapply_vector_index(HNSWIndex(name="ragagent_index"))
-                    else:
-                        print(f"Index ragagent_index already exists!")
-                    self._vectorStore = VectorStore(self._pg_vectorStore, chunk_size=1000, chunk_overlap=0)
-                    self._tools = [self._vectorStore.retriever_tool, RAGMemoryManager, RAGMemorySearcher, think_tool]
+                if self._vectorStore is None:
+                    self._vectorStore = VectorStore(self._db_pool, chunk_size=1000, chunk_overlap=100)
+                    await self._vectorStore.CreateResources()
+                self._tools = [self._vectorStore.retriever_tool, RAGMemoryManager, RAGMemorySearcher, think_tool]
                 if self._checkpointer is None:
                     logging.debug(f"Creating AsyncPostgresSaver...")
                     self._checkpointer = AsyncPostgresSaver(self._db_pool)
                     await PostgreSQLCheckpointerSetup(self._db_pool, self._checkpointer)
-                self._ragagent = create_agent(self._llm, self._tools, context_schema = Configuration, state_schema = CustomAgentState, name = self._name, system_prompt = RAG_INSTRUCTIONS, store = self._store, checkpointer = self._checkpointer)
+                self._ragagent = create_agent(self._llm, self._tools, context_schema = Configuration, state_schema = CustomAgentState, name = self._name, system_prompt = RAG_INSTRUCTIONS, 
+                                              store = self._vectorStore.store, checkpointer = self._checkpointer)
                 # Use it as a custom subagent
                 self._rag_subagent = CompiledSubAgent(
                     name="RAG Sub-Agent",
@@ -230,7 +186,7 @@ class RAGAgent():
                     system_prompt = RAG_INSTRUCTIONS, # developer provided instructions
                     runnable=self._ragagent
                 )
-                self._healthcare_rag = HealthAgent(self._db_pool, self._store, self._checkpointer)
+                self._healthcare_rag = HealthAgent(self._db_pool, self._vectorStore, self._checkpointer)
                 self._healthcare_agent = await self._healthcare_rag.CreateGraph()
                 self._healthcare_subagent = CompiledSubAgent(
                     name="Healthcare Sub-Agent",
@@ -245,7 +201,7 @@ class RAGAgent():
                     tools = [RAGMemoryManager, RAGMemorySearcher, think_tool],
                     backend = composite_backend,
                     checkpointer = self._checkpointer, # https://github.com/langchain-ai/langgraph/blob/main/libs/langgraph/langgraph/graph/state.py#L828
-                    store = self._store,
+                    store = self._vectorStore.store,
                     system_prompt = self._INSTRUCTIONS, # developer provided instructions
                     subagents = self._subagents
                 )
