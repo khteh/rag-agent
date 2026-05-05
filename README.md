@@ -345,7 +345,6 @@ MLflow is an open‑source platform that standardizes and automates the **machin
 5. **Deploy / Serve** → retrieve the model from the registry for batch inference, REST serving, or integration into production pipelines.
 
 ## Example Usage (Python, scikit‑learn)
-```python
 import mlflow
 import mlflow.sklearn
 from sklearn.ensemble import RandomForestRegressor
@@ -366,7 +365,6 @@ with mlflow.start_run():
     mlflow.sklearn.log_model(model, artifact_path="model")
     model_uri = f"runs:/{mlflow.active_run().info.run_id}/model"
     mlflow.register_model(model_uri, "DiabetesRF")
-````
 
 - The run appears in the **MLflow UI** where you can compare metrics across experiments.
 - The model is stored under `artifact_path="model"` and can be **registered** for lifecycle management【2】.
@@ -822,3 +820,4 @@ $ (cd htmlcov && uv run python -m http.server 8000)
 ```
 
 ```
+````
