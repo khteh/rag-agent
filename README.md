@@ -378,7 +378,6 @@ MLflow delivers a unified, open‑source stack for managing the entire ML lifecy
 [1] MLflow official documentation – “MLflow Overview” – https://mlflow.org/docs/latest/index.html
 [2] MLflow Model Registry guide – https://mlflow.org/docs/latest/model-registry.html
 [5] MLflow Tracking documentation – https://mlflow.org/docs/latest/tracking.html
-
 ```
 
 ### Answering query using Neo4J vector DB
