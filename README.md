@@ -7,9 +7,8 @@ Python LLM-RAG deep agent using LangChain, LangGraph and LangSmith built on Quar
 - All of the following components run on k8s cluster:
 
 1. PostgreSQL for checkpoints and vector DB
-2. (Optional) Chroma for vector DB
-3. Neo4J for graph query
-4. Ollama as LLM model server
+2. Neo4J for graph query
+3. Ollama as LLM model server
 
 ## Sources of information for RAG
 
@@ -32,7 +31,6 @@ ENVIRONMENT=development
 DB_USERNAME=
 DB_PASSWORD=
 NEO4J_AUTH=username/password
-CHROMA_TOKEN=
 LANGSMITH_TRACING="true"
 LANGSMITH_API_KEY=
 LANGSMITH_ENDPOINT="https://api.smith.langchain.com"
