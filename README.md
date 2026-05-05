@@ -816,7 +816,3 @@ $ uv run python -m coverage html
 $ (cd htmlcov && uv run python -m http.server 8000)
 
 ```
-
-```
-
-```
