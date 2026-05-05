@@ -314,7 +314,7 @@ Task decomposition is a foundational AI technique that splits a complex objectiv
 
 - `output/user_request_{timestamp}.md`:
 
-````
+```
 What is MLFlow?
 
 ---
@@ -819,4 +819,5 @@ $ (cd htmlcov && uv run python -m http.server 8000)
 ```
 
 ```
-````
+
+```
