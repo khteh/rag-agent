@@ -31,6 +31,7 @@ from src.Healthcare.RAGAgent import RAGAgent as HealthAgent
 from src.Healthcare.prompts import HEALTHCARE_INSTRUCTIONS
 from src.common.Configuration import Configuration
 from src.Infrastructure.Backend import composite_backend
+from langchain_postgres.v2.indexes import HNSWIndex
 from src.Infrastructure.PostgreSQLSetup import PostgreSQLCheckpointerSetup, PostgreSQLStoreSetup
 # https://github.com/langchain-ai/deepagents
 # https://python.langchain.com/docs/tutorials/qa_chat_history/
@@ -106,6 +107,13 @@ class RAGAgent():
     def __init__(self, vectorStore: PGVectorStore = None, db_pool:AsyncConnectionPool = None, store: AsyncPostgresStore = None, checkpointer: AsyncPostgresSaver = None):
         """
         Class RAGAgent Constructor
+        app.agent = RAGAgent(app.vectorStore, app.db_pool, app.store, app.checkpointer)
+
+        Args:
+            vectorStore: provided by main module app.vectorStore if run as hypercorn ASGI application.
+            db_pool:  provided by main module app.db_pool if run as hypercorn ASGI application.
+            store: provided by main module app.store if run as hypercorn ASGI application.
+            checkpointer: provided by main module app.checkpointer if run as hypercorn ASGI application.
         """
         #atexit.register(self.Cleanup)
         #vertexai.init(project=os.environ.get("GOOGLE_CLOUD_PROJECT"), location=os.environ.get("GOOGLE_CLOUD_LOCATION"))
@@ -179,6 +187,7 @@ class RAGAgent():
                 # https://github.com/langchain-ai/langgraph/blob/main/libs/prebuilt/langgraph/prebuilt/chat_agent_executor.py#L241
                 await self._db_pool.open()
                 if self._store is None:
+                    logging.debug(f"Creating AsyncPostgresStore...")
                     self._store = AsyncPostgresStore(self._db_pool, index={
                                 "embed": OllamaEmbeddings(model=appconfig.EMBEDDING_MODEL, base_url=appconfig.OLLAMA_LOCAL_URI, num_ctx=appconfig.OLLAMA_CONTEXT_LENGTH, num_gpu=1, temperature=0),
                                 "dims": appconfig.EMBEDDING_DIMENSIONS, # Note: Every time when this value changes, remove the store<foo> tables in the DB so that store.setup() runs to recreate them with the right dimensions.
@@ -186,6 +195,7 @@ class RAGAgent():
                     )
                     await PostgreSQLStoreSetup(self._db_pool, self._store) # store is needed when creating the ReAct agent / StateGraph for InjectedStore to work
                 if self._pg_vectorStore is None:
+                    logging.debug(f"Creating PGVectorStore...")
                     pg_engine = PGEngine.from_connection_string(url=appconfig.SQLALCHEMY_DATABASE_URI)
                     try:
                         await pg_engine.ainit_vectorstore_table(
@@ -199,10 +209,17 @@ class RAGAgent():
                         table_name = appconfig.VECTORSTORE_TABLE,
                         # schema_name=SCHEMA_NAME,  # Default: "public"
                         embedding_service = OllamaEmbeddings(model=appconfig.EMBEDDING_MODEL, base_url=appconfig.OLLAMA_LOCAL_URI, num_ctx=appconfig.OLLAMA_CONTEXT_LENGTH, num_gpu=1, temperature=0),
-                    )        
+                    )
+                    # Check if index exists
+                    if not self._pg_vectorStore.is_valid_index("ragagent_index"):           
+                        print(f"Creating index ragagent_index...")
+                        await self._pg_vectorStore.aapply_vector_index(HNSWIndex(name="ragagent_index"))
+                    else:
+                        print(f"Index ragagent_index already exists!")
                     self._vectorStore = VectorStore(self._pg_vectorStore, chunk_size=1000, chunk_overlap=0)
                     self._tools = [self._vectorStore.retriever_tool, RAGMemoryManager, RAGMemorySearcher, think_tool]
                 if self._checkpointer is None:
+                    logging.debug(f"Creating AsyncPostgresSaver...")
                     self._checkpointer = AsyncPostgresSaver(self._db_pool)
                     await PostgreSQLCheckpointerSetup(self._db_pool, self._checkpointer)
                 self._ragagent = create_agent(self._llm, self._tools, context_schema = Configuration, state_schema = CustomAgentState, name = self._name, system_prompt = RAG_INSTRUCTIONS, store = self._store, checkpointer = self._checkpointer)

@@ -45,7 +45,15 @@ class VectorStore(): #metaclass=VectorStoreSingleton):
     #def __new__(cls, *args, **kwargs):
     #    return super().__new__(cls)
     def __init__(self, vectorStore:PGVectorStore, chunk_size, chunk_overlap, tenant="khteh", database="LLM-RAG-Agent", collection="LLM-RAG-Agent"):
+        """
+        Class Constructor
+
+        Args:
+            vectorStore: provided by main module app.vectorStore if run as hypercorn ASGI application.
+        """
         logging.info(f"\n=== {self.__class__.__name__}.{self.__init__.__name__} ===")
+        # https://reference.langchain.com/python/langchain-postgres/v2/indexes/HNSWIndex
+        # https://cloud.google.com/blog/products/databases/faster-similarity-search-performance-with-pgvector-indexes
         self._vectorStore = vectorStore
         self._chunk_size = chunk_size
         self._chunk_overlap = chunk_overlap

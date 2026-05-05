@@ -4,6 +4,7 @@ from datetime import date, datetime, timedelta, timezone
 from hypercorn.config import Config
 from psycopg_pool import AsyncConnectionPool, ConnectionPool
 from sqlalchemy.exc import ProgrammingError
+from langchain_postgres.v2.indexes import HNSWIndex
 from langchain_postgres import PGEngine, PGVectorStore
 from quart import Quart, Response, json, Blueprint, session, render_template, session, redirect, url_for, flash
 from src.common.Bcrypt import bcrypt
@@ -95,13 +96,19 @@ async def create_app() -> Quart:
                 vector_size = appconfig.EMBEDDING_DIMENSIONS
             )
         except ProgrammingError:
-            logging.warning(f"{appconfig.VECTORSTORE_TABLE} already exist!")
+            logging.warning(f"Vector store table {appconfig.VECTORSTORE_TABLE} already exists!")
         app.vectorStore = await PGVectorStore.create(
             engine = app.pg_engine,
             table_name = appconfig.VECTORSTORE_TABLE,
             # schema_name=SCHEMA_NAME,  # Default: "public"
             embedding_service = OllamaEmbeddings(model=appconfig.EMBEDDING_MODEL, base_url=appconfig.OLLAMA_LOCAL_URI, num_ctx=appconfig.OLLAMA_CONTEXT_LENGTH, num_gpu=1, temperature=0),
-        )        
+        )
+        # Check if index exists
+        if not app.vectorStore.is_valid_index("ragagent_index"):           
+            logging.debug(f"Creating index ragagent_index...")
+            await app.vectorStore.aapply_vector_index(HNSWIndex(name="ragagent_index"))
+        else:
+            logging.warning(f"Index ragagent_index already exists!")
         await PostgreSQLStoreSetup(app.db_pool, app.store) # store is needed when creating the ReAct agent / StateGraph for InjectedStore to work
         await PostgreSQLCheckpointerSetup(app.db_pool, app.checkpointer)
         from src.rag_agent.RAGAgent import RAGAgent
