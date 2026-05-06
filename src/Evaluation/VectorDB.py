@@ -1,4 +1,4 @@
-import ast, os, mlflow, mlflow.deployments, pandas
+import ast, pandas
 
 EVALUATION_DATASET_PATH = "https://raw.githubusercontent.com/mlflow/mlflow/master/examples/llms/RAG/static_evaluation_dataset.csv"
 
