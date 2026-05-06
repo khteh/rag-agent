@@ -52,6 +52,7 @@ class EmailRAG():
     _chainLLM = None
     _config = None
     _in_thinking = False
+    _vectorStore = None
     _email_model_parser: RobustEmailModelParser = None
     _email_parser_prompt = ChatPromptTemplate.from_messages(
         [
@@ -104,7 +105,6 @@ class EmailRAG():
     _closed: bool = False
     _db_pool: AsyncConnectionPool = None
     _self_managed_db_pool: bool = False
-    _store: AsyncPostgresStore = None
     _checkpointer = None
     _vectorStore = None
     _email_parser_chain = None
@@ -118,6 +118,9 @@ class EmailRAG():
     def __init__(self, db_pool:AsyncConnectionPool = None):
         """
         Class EmailRAG Constructor
+
+        Args:
+            db_pool: Provided by main module app.db_pool if run as hypercorn ASGI application.
         """
         self._self_managed_db_pool = db_pool is None
         # https://python.langchain.com/api_reference/langchain/chat_models/langchain.chat_models.base.init_chat_model.html
@@ -141,7 +144,6 @@ class EmailRAG():
                 open = False # Opening an async pool in the constructor (using open=True on init) will become an error in a future pool versions. 
             )
         self._email_model_parser = RobustEmailModelParser()
-        self._vectorStore = VectorStore(chunk_size=1000, chunk_overlap=0)
         if appconfig.OLLAMA_CLOUD_URI:
             self._llm = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider=appconfig.MODEL_PROVIDER, base_url=appconfig.OLLAMA_CLOUD_URI, api_key=appconfig.OLLAMA_API_KEY, streaming=True, temperature=0, think="high")
             self._chainLLM = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider=appconfig.MODEL_PROVIDER, base_url=appconfig.OLLAMA_CLOUD_URI, api_key=appconfig.OLLAMA_API_KEY, temperature=0, think="high")
@@ -295,19 +297,16 @@ class EmailRAG():
         https://langchain-ai.github.io/langgraph/tutorials/rag/langgraph_agentic_rag/
         https://langchain-ai.github.io/langgraph/concepts/low_level/#node-caching
         """
-        logging.info(f"\n=== {self.CreateGraph.__name__} ===")
+        logging.info(f"\n=== {self.__class__.__name__}.{self.CreateGraph.__name__} ===")
         if self._agent is None:
             try:
                 cache_policy = CachePolicy(ttl=600) # 10 minutes
                 await self._db_pool.open()
-                if self._store is None:
-                    self._store = AsyncPostgresStore(self._db_pool, index={
-                                "embed": OllamaEmbeddings(model=appconfig.EMBEDDING_MODEL, base_url=appconfig.OLLAMA_LOCAL_URI, num_ctx=appconfig.OLLAMA_CONTEXT_LENGTH, num_gpu=1, temperature=0),
-                                "dims": appconfig.EMBEDDING_DIMENSIONS, # Note: Every time when this value changes, remove the store<foo> tables in the DB so that store.setup() runs to recreate them with the right dimensions.
-                            }
-                    )
-                    await PostgreSQLStoreSetup(self._db_pool, self._store) # store is needed when creating the ReAct agent / StateGraph for InjectedStore to work
+                if self._vectorStore is None:
+                    self._vectorStore = VectorStore(self._db_pool)
+                    await self._vectorStore.CreateResources()
                 if self._checkpointer is None:
+                    logging.debug(f"Creating AsyncPostgresSaver...")
                     self._checkpointer = AsyncPostgresSaver(self._db_pool)
                     await PostgreSQLCheckpointerSetup(self._db_pool, self._checkpointer)
                 # This should be a custom subagent.
@@ -319,7 +318,7 @@ class EmailRAG():
                 graph_builder.add_edge("ParseEmail", "NeedsEscalation")
                 graph_builder.add_edge("NeedsEscalation", "ParseEmailSummarizer")
                 graph_builder.add_edge("ParseEmailSummarizer", END)
-                self._parser_graph = graph_builder.compile(name=self._graphName, cache=InMemoryCache(), store = self._store, checkpointer = self._checkpointer)
+                self._parser_graph = graph_builder.compile(name=self._graphName, cache=InMemoryCache(), store = self._vectorStore.store, checkpointer = self._checkpointer)
                 # Use it as a custom subagent
                 self._parser_subagent = CompiledSubAgent(
                     name = "Email Parser SubAgent",
@@ -339,14 +338,14 @@ class EmailRAG():
                     model = self._llm,
                     tools = [RAGMemoryManager, RAGMemorySearcher],
                     backend = composite_backend,
-                    store = self._store,
+                    store = self._vectorStore.store,
                     checkpointer = self._checkpointer,
                     system_prompt = EMAIL_PROCESSING_INSTRUCTIONS,
                     subagents = self._subagents
                 )
                 # self.ShowGraph()
-            except ResourceExhausted as e:
-                logging.exception(f"google.api_core.exceptions.ResourceExhausted")
+            except Exception as e:
+                logging.exception(f"Exception! {e}")
         return self._agent
     
     def ShowGraph(self):
