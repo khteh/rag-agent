@@ -1,4 +1,6 @@
 import mlflow, pandas
+from asyncio import Queue, run, create_task
+from psycopg_pool import AsyncConnectionPool, ConnectionPool
 #from langchain.embeddings.sentence_transformer import SentenceTransformerEmbeddings
 from src.Infrastructure.VectorStore import VectorStore
 from src.config import config
@@ -35,10 +37,9 @@ _eval_data = pandas.DataFrame(
   }
 )
 
-def evaluate_embedding():
+def evaluate_embedding(vector_store: VectorStore, chunk_size):
     # For VertexAI, use VertexAIEmbeddings, model="text-embedding-005"; "gemini-2.0-flash" model_provider="google_genai"
-    vector_store = VectorStore(model=config.EMBEDDING_MODEL, chunk_size=1000, chunk_overlap=0)
-    vector_store.load(_urls)
+    vector_store.LoadDocuments(_urls, chunk_size, 0)
     def retrieve_doc_ids(question: str) -> list[str]:
         docs = vector_store.retriever.get_relevant_documents(question)
         return [doc.metadata["source"] for doc in docs]
@@ -78,8 +79,16 @@ def evaluate_k_nearest_neighbours(data):
             ],
         )
 
-if __name__ == "__main__":
-    result = evaluate_embedding()
+async def main():
+    db_pool = AsyncConnectionPool(
+        conninfo = config.POSTGRESQL_DATABASE_URI,
+        max_size = config.DB_MAX_CONNECTIONS,
+        kwargs = config.connection_kwargs,
+        open = True
+    )
+    vector_store = VectorStore(db_pool)
+    await vector_store.CreateResources()
+    result = evaluate_embedding(vector_store, 1000)
     # To validate the results of a different model, comment out the above line and uncomment the below line:
     # result2 = evaluate_embedding(SentenceTransformerEmbeddings(model_name="all-MiniLM-L6-v2"))
 
@@ -90,3 +99,6 @@ if __name__ == "__main__":
     result = evaluate_k_nearest_neighbours(eval_results_of_retriever_df_bge)
     print(f"evaluate_k_nearest_neighbours result: {result.tables['eval_results_table']}")
 
+
+if __name__ == "__main__":
+    run(main())

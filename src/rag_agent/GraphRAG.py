@@ -104,7 +104,7 @@ class GraphRAG():
                 max_size = appconfig.DB_MAX_CONNECTIONS,
                 kwargs = appconfig.connection_kwargs,
             )
-        self._vectorStore = VectorStore(model=appconfig.EMBEDDING_MODEL, chunk_size=1000, chunk_overlap=0)
+        self._vectorStore = VectorStore(model=appconfig.EMBEDDING_MODEL)
         # .bind_tools() gives the agent LLM descriptions of each tool from their docstring and input arguments. 
         # If the agent LLM determines that its input requires a tool call, it’ll return a JSON tool message with the name of the tool it wants to use, along with the input arguments.
         # For VertexAI, use VertexAIEmbeddings, model="text-embedding-005"; "gemini-2.0-flash" model_provider="google_genai"

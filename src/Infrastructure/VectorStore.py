@@ -37,8 +37,6 @@ class VectorStore(): #metaclass=VectorStoreSingleton):
     """
     _db_pool: AsyncConnectionPool = None
     _embeddings: OllamaEmbeddings = None
-    _chunk_size: int = None
-    _chunk_overlap: int = None
     _pg_engine = None
     retriever_tool = None
     _pg_engine = None
@@ -47,7 +45,7 @@ class VectorStore(): #metaclass=VectorStoreSingleton):
     _docs = set()
     #def __new__(cls, *args, **kwargs):
     #    return super().__new__(cls)
-    def __init__(self, db_pool: AsyncConnectionPool, chunk_size, chunk_overlap):
+    def __init__(self, db_pool: AsyncConnectionPool):
         """
         Class Constructor
 
@@ -59,8 +57,6 @@ class VectorStore(): #metaclass=VectorStoreSingleton):
         # https://cloud.google.com/blog/products/databases/faster-similarity-search-performance-with-pgvector-indexes
         self._db_pool = db_pool
         #self._vectorStore = vectorStore
-        self._chunk_size = chunk_size
-        self._chunk_overlap = chunk_overlap
         #https://python.langchain.com/api_reference/_modules/langchain_ollama/embeddings.html#OllamaEmbeddings
         #https://huggingface.co/blog/matryoshka
         #https://ollama.com/library/nomic-embed-text
@@ -131,7 +127,7 @@ class VectorStore(): #metaclass=VectorStoreSingleton):
         # self.vector_store.close()
         self.retriever_tool = None
 
-    async def LoadDocuments(self, urls: List[dict]) -> int:
+    async def LoadDocuments(self, urls: List[dict], chunk_size, chunk_overlap) -> int:
         """
         Load and chunk contents of the blog
         https://docs.langchain.com/oss/python/langchain/rag
@@ -161,19 +157,19 @@ class VectorStore(): #metaclass=VectorStoreSingleton):
                     assert len(docs) == 1
                     logging.debug(f"Total characters: {len(docs[0].page_content)}")
                     if len(docs[0].page_content):
-                        subdocs = self._SplitDocuments(docs)
+                        subdocs = self._SplitDocuments(docs, chunk_size, chunk_overlap)
                         count += await self._IndexChunks(subdocs)
                         self._docs.add(url["url"])
         return count
 
-    def _SplitDocuments(self, docs):
+    def _SplitDocuments(self, docs, chunk_size, chunk_overlap):
         """
         Embedding models have a fixed-size context window, and as the size of the text grows, an embedding’s ability to accurately represent the text decreases.
         https://docs.langchain.com/oss/python/integrations/splitters/recursive_text_splitter
         Overlapping chunks helps to mitigate loss of information when context is divided between chunks.
         """
         logging.info(f"\n=== {self._SplitDocuments.__name__} ===")
-        text_splitter = RecursiveCharacterTextSplitter(chunk_size=self._chunk_size, chunk_overlap=self._chunk_overlap, separators=[".", "\n"], length_function=len, is_separator_regex=False, add_start_index=True)
+        text_splitter = RecursiveCharacterTextSplitter(chunk_size = chunk_size, chunk_overlap = chunk_overlap, separators=[".", "\n"], length_function=len, is_separator_regex=False, add_start_index=True)
         subdocs = text_splitter.split_documents(docs)
         logging.debug(f"Split blog post into {len(subdocs)} sub-documents.")
         return subdocs

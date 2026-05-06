@@ -70,7 +70,8 @@ class RAGAgent():
         {"url": "https://mlflow.org/docs/latest/ml/", "type": "article", "filter": ("theme-doc-markdown markdown")},
         {"url": "https://mlflow.org/docs/latest/ml/tracking/autolog/", "type": "article", "filter": ("theme-doc-markdown markdown")},
         {"url": "https://mlflow.org/docs/latest/ml/tracking/", "type": "article", "filter": ("theme-doc-markdown markdown")},
-        {"url": "https://mlflow.org/docs/latest/python_api/mlflow.deployments.html", "type": "class", "filter": ("section")}
+        {"url": "https://mlflow.org/docs/latest/python_api/mlflow.deployments.html", "type": "class", "filter": ("section")},
+        {"url": "https://www.databricks.com/blog/mlops-frameworks-complete-guide-tools-and-platforms-production-ml", "type": "class", "filter": ("article--content")}
     ]
     # Limits
     _max_concurrent_research_units = 3
@@ -159,7 +160,7 @@ class RAGAgent():
 
     async def LoadDocuments(self):
         logging.info(f"\n=== {self.LoadDocuments.__name__} ===")
-        await self._vectorStore.LoadDocuments(self._urls)
+        await self._vectorStore.LoadDocuments(self._urls, 1000, 100)
 
     async def CreateGraph(self) -> CompiledStateGraph:
         logging.info(f"\n=== {self.__class__.__name__}.{self.CreateGraph.__name__} ===")
@@ -170,7 +171,7 @@ class RAGAgent():
                 # https://github.com/langchain-ai/langgraph/blob/main/libs/prebuilt/langgraph/prebuilt/chat_agent_executor.py#L241
                 await self._db_pool.open()
                 if self._vectorStore is None:
-                    self._vectorStore = VectorStore(self._db_pool, chunk_size=1000, chunk_overlap=100)
+                    self._vectorStore = VectorStore(self._db_pool)
                     await self._vectorStore.CreateResources()
                 self._tools = [self._vectorStore.retriever_tool, RAGMemoryManager, RAGMemorySearcher, think_tool]
                 if self._checkpointer is None:

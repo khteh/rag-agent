@@ -95,7 +95,7 @@ class RAGAgent():
             # https://github.com/langchain-ai/langgraph/blob/main/libs/prebuilt/langgraph/prebuilt/chat_agent_executor.py#L241
             #await self._db_pool.open()
             if self._vectorStore is None:
-                self._vectorStore = VectorStore(self._db_pool, chunk_size=512, chunk_overlap=0)
+                self._vectorStore = VectorStore(self._db_pool)
                 await self._vectorStore.CreateResources()
             if self._checkpointer is None:
                 self._checkpointer = AsyncPostgresSaver(self._db_pool)

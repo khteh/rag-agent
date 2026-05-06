@@ -1,4 +1,6 @@
-import mlflow
+import mlflow, asyncio
+from asyncio import Queue, run, create_task
+from psycopg_pool import AsyncConnectionPool, ConnectionPool
 from pandas import DataFrame, Series
 #from langchain.embeddings.sentence_transformer import SentenceTransformerEmbeddings
 from src.Infrastructure.VectorStore import VectorStore
@@ -35,12 +37,9 @@ _eval_data = DataFrame(
       ],
   }
 )
-def evaluate_chunk_size(chunk_size):
+async def evaluate_chunk_size(vector_store: VectorStore, chunk_size):
     # For VertexAI, use VertexAIEmbeddings, model="text-embedding-005"; "gemini-2.0-flash" model_provider="google_genai"
-    vector_store = VectorStore(model=config.EMBEDDING_MODEL, chunk_size=chunk_size, chunk_overlap=0)
-    vector_store.load(_urls)
-    #embedding_function = SentenceTransformerEmbeddings(model_name="all-MiniLM-L6-v2")
-    #retriever = Chroma.from_documents(docs, embedding_function).as_retriever()
+    vector_store.LoadDocuments(_urls, chunk_size, 0)
     mlflow.set_experiment(evaluate_chunk_size.__name__)
     mlflow.langchain.autolog()
     def retrieve_doc_ids(question: str) -> list[str]:
@@ -51,7 +50,7 @@ def evaluate_chunk_size(chunk_size):
         return question_df["question"].apply(retrieve_doc_ids)
 
     with mlflow.start_run():
-        return mlflow.evaluate(
+        return mlflow.models.evaluate(
           model=retriever_model_function,
           data=_eval_data,
           model_type="retriever",
@@ -59,8 +58,19 @@ def evaluate_chunk_size(chunk_size):
           evaluators="default",
         )
 
-if __name__ == "__main__":
-    result = evaluate_chunk_size(1000)
+async def main():
+    db_pool = AsyncConnectionPool(
+        conninfo = config.POSTGRESQL_DATABASE_URI,
+        max_size = config.DB_MAX_CONNECTIONS,
+        kwargs = config.connection_kwargs,
+        open = True
+    )
+    vector_store = VectorStore(db_pool)
+    await vector_store.CreateResources()
+    result = evaluate_chunk_size(vector_store, 1000)
     print(f"1000 chunk_size: {result.tables['eval_results_table']}")
-    result = evaluate_chunk_size(2000)
+    result = evaluate_chunk_size(vector_store, 2000)
     print(f"2000 chunk_size: {result.tables['eval_results_table']}")
+
+if __name__ == "__main__":
+    run(main())
