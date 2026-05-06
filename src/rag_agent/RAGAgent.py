@@ -71,7 +71,7 @@ class RAGAgent():
         {"url": "https://mlflow.org/docs/latest/ml/tracking/autolog/", "type": "article", "filter": ("theme-doc-markdown markdown")},
         {"url": "https://mlflow.org/docs/latest/ml/tracking/", "type": "article", "filter": ("theme-doc-markdown markdown")},
         {"url": "https://mlflow.org/docs/latest/python_api/mlflow.deployments.html", "type": "class", "filter": ("section")},
-        {"url": "https://www.databricks.com/blog/mlops-frameworks-complete-guide-tools-and-platforms-production-ml", "type": "class", "filter": ("article--content")}
+        {"url": "https://www.databricks.com/blog/mlops-frameworks-complete-guide-tools-and-platforms-production-ml", "type": "class", "filter": ("article--content rich-text-blog blog-body-serif")}
     ]
     # Limits
     _max_concurrent_research_units = 3
