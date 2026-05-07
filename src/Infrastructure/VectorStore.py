@@ -5,6 +5,7 @@ from sqlalchemy.exc import ProgrammingError
 from typing_extensions import List, TypedDict, Optional, Any
 from langchain_postgres import PGEngine
 from langchain_postgres.v2.indexes import HNSWIndex
+from langchain_core.vectorstores import VectorStoreRetriever
 from langchain_core.tools.retriever import create_retriever_tool
 #from langchain_postgres.vectorstores import PGVector
 from langchain_ollama import OllamaEmbeddings
@@ -40,6 +41,7 @@ class VectorStore(): #metaclass=VectorStoreSingleton):
     _pg_engine = None
     retriever_tool = None
     _pg_engine = None
+    retriever: VectorStoreRetriever = None
     _vectorStore: PGVectorStore = None
     store: AsyncPostgresStore = None
     _docs = set()
@@ -69,7 +71,6 @@ class VectorStore(): #metaclass=VectorStoreSingleton):
         #    use_jsonb = True,
         #    async_mode = True
         #)
-        # https://api.python.langchain.com/en/latest/tools/langchain.tools.retriever.create_retriever_tool.html
         atexit.register(self.Cleanup)
 
     async def CreateResources(self):
@@ -101,8 +102,10 @@ class VectorStore(): #metaclass=VectorStoreSingleton):
                 # schema_name=SCHEMA_NAME,  # Default: "public"
                 embedding_service = OllamaEmbeddings(model=config.EMBEDDING_MODEL, base_url=config.OLLAMA_LOCAL_URI, num_ctx=config.OLLAMA_CONTEXT_LENGTH, num_gpu=1, temperature=0),
             )
+            # https://api.python.langchain.com/en/latest/tools/langchain.tools.retriever.create_retriever_tool.html
+            self.retriever = self._vectorStore.as_retriever()
             self.retriever_tool = create_retriever_tool(
-                self._vectorStore.as_retriever(),
+                self.retriever,
                 "retrieve_blog_posts",
                 "Search and return information about the query from the documents available in the store",
             )

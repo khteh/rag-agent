@@ -6,13 +6,15 @@ from pandas import DataFrame, Series
 from src.Infrastructure.VectorStore import VectorStore
 from src.config import config
 _urls = [
-    "https://lilianweng.github.io/posts/2023-06-23-agent/",
-    "https://lilianweng.github.io/posts/2023-03-15-prompt-engineering/",
-    "https://lilianweng.github.io/posts/2023-10-25-adv-attack-llm/",
-    "https://mlflow.org/docs/latest/index.html",
-    "https://mlflow.org/docs/latest/tracking/autolog.html",
-    "https://mlflow.org/docs/latest/getting-started/tracking-server-overview/index.html",
-    "https://mlflow.org/docs/latest/python_api/mlflow.deployments.html",        
+    {"url": "https://lilianweng.github.io/", "type": "article"},
+    {"url": "https://lilianweng.github.io/posts/2023-06-23-agent/", "type": "article", "filter": ("post-content", "post-title", "post-header")},
+    {"url": "https://lilianweng.github.io/posts/2023-03-15-prompt-engineering/", "type": "article", "filter": ("post-content", "post-title", "post-header")},
+    {"url": "https://lilianweng.github.io/posts/2023-10-25-adv-attack-llm/", "type": "article", "filter": ("post-content", "post-title", "post-header")},
+    {"url": "https://mlflow.org/docs/latest/ml/", "type": "article", "filter": ("theme-doc-markdown markdown")},
+    {"url": "https://mlflow.org/docs/latest/ml/tracking/autolog/", "type": "article", "filter": ("theme-doc-markdown markdown")},
+    {"url": "https://mlflow.org/docs/latest/ml/tracking/", "type": "article", "filter": ("theme-doc-markdown markdown")},
+    {"url": "https://mlflow.org/docs/latest/python_api/mlflow.deployments.html", "type": "class", "filter": ("section")},
+    {"url": "https://www.databricks.com/blog/mlops-frameworks-complete-guide-tools-and-platforms-production-ml", "type": "class", "filter": ("article--content rich-text-blog blog-body-serif")}
 ]
 
 _eval_data = DataFrame(

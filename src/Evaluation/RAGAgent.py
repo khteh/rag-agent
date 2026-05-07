@@ -5,22 +5,15 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_classic.chains import create_retrieval_chain
 from langchain_classic.chains.combine_documents import create_stuff_documents_chain
 #from langchain.embeddings.sentence_transformer import SentenceTransformerEmbeddings
-from mlflow.metrics.genai.metric_definitions import relevance
+from mlflow.metrics.genai import relevance
 from psycopg_pool import AsyncConnectionPool, ConnectionPool
 from src.Infrastructure.VectorStore import VectorStore
 from src.config import config
-_urls = [
-    "https://lilianweng.github.io/posts/2023-06-23-agent/",
-    "https://lilianweng.github.io/posts/2023-03-15-prompt-engineering/",
-    "https://lilianweng.github.io/posts/2023-10-25-adv-attack-llm/",
-    "https://mlflow.org/docs/latest/index.html",
-    "https://mlflow.org/docs/latest/tracking/autolog.html",
-    "https://mlflow.org/docs/latest/getting-started/tracking-server-overview/index.html",
-    "https://mlflow.org/docs/latest/python_api/mlflow.deployments.html",        
-]
+# https://mlflow.org/docs/latest/api_reference/python_api/mlflow.metrics.html
 _eval_data = pandas.DataFrame(
   {
       "question": [
+          "What is MLOps?",
           "What is MLflow?",
           "What is Databricks?",
           "How to serve a model on Databricks?",
@@ -52,9 +45,8 @@ def model(input_df):
     return input_df["questions"].map(chain).tolist()
 
 def evaluate_rag():
-    relevance_metric = relevance(
-      model="endpoints:/databricks-llama-2-70b-chat"
-    )  # You can also use any model you have hosted on Databricks, models from the Marketplace or models in the Foundation model API
+    relevance_metric = relevance()
+    print(f"Relevance details: {relevance_metric.metric_details}")
     mlflow.set_experiment(evaluate_rag.__name__)
     mlflow.langchain.autolog()
     if config.OLLAMA_CLOUD_URI:
