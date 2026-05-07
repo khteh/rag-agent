@@ -816,3 +816,11 @@ $ uv run python -m coverage html
 $ (cd htmlcov && uv run python -m http.server 8000)
 
 ```
+
+## MLFlow
+
+### TO run MLFlow server
+
+```
+$ uv run python -m mlflow server --backend-store-uri postgresql+psycopg://guest:P%40%24%24w0rd@IP/MLFlow
+```
