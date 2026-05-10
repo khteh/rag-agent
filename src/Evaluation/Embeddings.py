@@ -41,7 +41,7 @@ def predict_fn(question: str) -> str:
   )
   return response.choices[0].message.content
 
-def evaluate_embedding(vector_store: VectorStore):
+async def evaluate_embedding(vector_store: VectorStore):
     # For VertexAI, use VertexAIEmbeddings, model="text-embedding-005"; "gemini-2.0-flash" model_provider="google_genai"
     def retrieve_doc_ids(question: str) -> list[str]:
         docs = vector_store.retriever.invoke(question)
@@ -94,7 +94,7 @@ async def main():
     )
     vector_store = VectorStore(db_pool)
     await vector_store.CreateResources()
-    result = evaluate_embedding(vector_store)
+    result = await evaluate_embedding(vector_store)
     # To validate the results of a different model, comment out the above line and uncomment the below line:
     # result2 = evaluate_embedding(SentenceTransformerEmbeddings(model_name="all-MiniLM-L6-v2"))
 
