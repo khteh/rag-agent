@@ -106,8 +106,8 @@ async def main():
     print(f"evaluate_k_nearest_neighbours result: {result.tables['eval_results_table']}")
 
 if __name__ == "__main__":
-    with open('/etc/ragagent_config.json', 'r') as f:
-        config = json.load(f)
+    #with open('/etc/ragagent_config.json', 'r') as f:
+    #    config = json.load(f)
     #mlflow.set_tracking_uri(f"postgresql+psycopg://{os.environ.get('DB_USERNAME')}:{parse.quote(os.environ.get('DB_PASSWORD'))}@{config['DB_HOST']}/MLFlow")
-    mlflow.set_tracking_uri(config.MLFLOW_URI)
+    mlflow.set_tracking_uri(appconfig.MLFLOW_URI)
     run(main())
