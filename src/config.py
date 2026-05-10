@@ -43,6 +43,7 @@ class Config(metaclass=ConfigSingleton):
     LLM_RAG_MODEL: str = None
     VECTORSTORE_TABLE: str = None
     connection_kwargs = None
+    MLFLOW_URI: str = None
     def __new__(cls, *args, **kwargs):
         return super().__new__(cls)
     def __init__(self):
@@ -65,6 +66,7 @@ class Config(metaclass=ConfigSingleton):
         self.NEO4J_URI = config['NEO4J_URI']
         self.OLLAMA_CLOUD_URI = config['OLLAMA_CLOUD_URI']
         self.OLLAMA_LOCAL_URI = config['OLLAMA_LOCAL_URI']
+        self.MLFLOW_URI = config['MLFLOW_URI']
         self.EMBEDDING_MODEL = config["EMBEDDING_MODEL"]
         self.EMBEDDING_DIMENSIONS = config["EMBEDDING_DIMENSIONS"]
         self.MODEL_PROVIDER = config["MODEL_PROVIDER"]

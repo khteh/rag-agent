@@ -83,5 +83,6 @@ async def main():
 
 if __name__ == "__main__":
     #mlflow.set_tracking_uri("http://localhost:8080") $ pr mlflow server --host localhost --port 8080
+    mlflow.set_tracking_uri(config.MLFLOW_URI)
     #vertexai.init(project=os.environ.get("GOOGLE_CLOUD_PROJECT"), location=os.environ.get("GOOGLE_CLOUD_LOCATION"))
     run(main())

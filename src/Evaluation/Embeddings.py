@@ -108,5 +108,6 @@ async def main():
 if __name__ == "__main__":
     with open('/etc/ragagent_config.json', 'r') as f:
         config = json.load(f)
-    mlflow.set_tracking_uri(f"postgresql+psycopg://{os.environ.get('DB_USERNAME')}:{parse.quote(os.environ.get('DB_PASSWORD'))}@{config['DB_HOST']}/MLFlow")
+    #mlflow.set_tracking_uri(f"postgresql+psycopg://{os.environ.get('DB_USERNAME')}:{parse.quote(os.environ.get('DB_PASSWORD'))}@{config['DB_HOST']}/MLFlow")
+    mlflow.set_tracking_uri(config.MLFLOW_URI)
     run(main())
