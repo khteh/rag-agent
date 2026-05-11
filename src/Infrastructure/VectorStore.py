@@ -81,13 +81,6 @@ class VectorStore(): #metaclass=VectorStoreSingleton):
         """
         logging.info(f"\n=== {self.__class__.__name__}.{self.CreateResources.__name__} ===")
         # https://docs.langchain.com/oss/python/integrations/vectorstores/pgvectorstore
-        try:
-            await self._pg_engine.ainit_vectorstore_table(
-                table_name = config.VECTORSTORE_TABLE,
-                vector_size = config.EMBEDDING_DIMENSIONS
-            )
-        except ProgrammingError:
-            logging.warning(f"Vector store table {config.VECTORSTORE_TABLE} already exists!")
         if self._vectorStore is None:
             try:
                 await self._pg_engine.ainit_vectorstore_table(
