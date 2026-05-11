@@ -1,4 +1,4 @@
-import mlflow, os, pandas, json
+import mlflow, os, pandas as pd, json
 from asyncio import Queue, run, create_task
 from psycopg_pool import AsyncConnectionPool, ConnectionPool
 from urllib import parse
@@ -6,62 +6,71 @@ from mlflow.genai.scorers import Correctness, Guidelines
 #from langchain.embeddings.sentence_transformer import SentenceTransformerEmbeddings
 from src.Infrastructure.VectorStore import VectorStore
 from src.config import config as appconfig
-_eval_data = pandas.DataFrame(
-  {
-      "question": [
-          "What is MLOps?",
-          "What is MLflow?",
-          "What is Databricks?",
-          "How to serve a model on Databricks?",
-          "How to enable MLflow Autologging for my workspace by default?",
-          "What is the Task Decomposition?",
-          "What is the standard method for Task Decomposition?",
-          "What are the common extensions of standard method for Task Decomposition?"
-      ],
-      "source": [
-          ["https://www.databricks.com/blog/mlops-frameworks-complete-guide-tools-and-platforms-production-ml"],
-          ["https://mlflow.org/docs/latest/index.html"],
-          ["https://mlflow.org/docs/latest/getting-started/tracking-server-overview/index.html"],
-          ["https://mlflow.org/docs/latest/python_api/mlflow.deployments.html"],
-          ["https://mlflow.org/docs/latest/tracking/autolog.html"],
-          ["https://lilianweng.github.io/posts/2023-06-23-agent/"],
-          ["https://lilianweng.github.io/posts/2023-06-23-agent/"],
-          ["https://lilianweng.github.io/posts/2023-06-23-agent/"]
-      ],
-  }
-)
-# Define a function that runs predictions.
-def predict_fn(question: str) -> str:
-  response = openai.OpenAI().chat.completions.create(
-      model="gpt-5-mini",
-      messages=[
-          {"role": "system", "content": "Answer the following question in two sentences"},
-          {"role": "user", "content": question},
-      ],
-  )
-  return response.choices[0].message.content
+eval_data = [
+    {
+        "query": "What is MLOps?",
+        "expected_docs": ["https://www.databricks.com/blog/mlops-frameworks-complete-guide-tools-and-platforms-production-ml"],
+    },
+    {
+        "query":  "What is MLflow?",
+        "expected_docs": ["https://mlflow.org/docs/latest/index.html"],
+    },
+    {
+        "query": "What is the Task Decomposition?",
+        "expected_docs": ["https://lilianweng.github.io/posts/2023-06-23-agent/"],
+    }
+    # ... 30-100 queries for production benchmarks
+]
+eval_df = pd.DataFrame(eval_data)
 
-async def evaluate_embedding(vector_store: VectorStore):
-    # For VertexAI, use VertexAIEmbeddings, model="text-embedding-005"; "gemini-2.0-flash" model_provider="google_genai"
-    def retrieve_doc_ids(question: str) -> list[str]:
-        docs = vector_store.retriever.invoke(question)
-        return [doc.metadata["source"] for doc in docs]
-    def retriever_model_function(question_df: pandas.DataFrame) -> pandas.Series:
-        return question_df["question"].apply(retrieve_doc_ids)
-    mlflow.set_experiment(evaluate_embedding.__name__)
+def benchmark_retriever(
+    run_name: str,
+    retriever_fn,
+    eval_df: pd.DataFrame,
+    extra_params: dict = None,
+):
+    """Benchmark any retriever function and log results to MLflow."""
+    print("=== benchmark_retriever ===")
+    # Wrap the retriever so mlflow.evaluate() can call it on each row
+    def retriever_for_mlflow(df: pd.DataFrame) -> pd.Series:
+        return df["query"].apply(retriever_fn)
+    
     mlflow.langchain.autolog()
-  
-    #with mlflow.start_run():
-    #    return mlflow.models.evaluate(
-    #      model=retriever_model_function,
-    #      data=_eval_data,
-    #      model_type="retriever",
-    #      targets="source",
-    #      evaluators="default",
-    #    )
-    mlflow.genai.evaluate(data=_eval_data, predict_fn=predict_fn, scorers=[
-        # Built-in LLM judge
-        Correctness()])
+    with mlflow.start_run(run_name=run_name):
+        if extra_params:
+            mlflow.log_params(extra_params)
+
+        # Run the retriever against every query and score the results
+        results = mlflow.evaluate(
+            model=retriever_for_mlflow,
+            data=eval_df[["query", "expected_docs"]],
+            model_type="retriever",
+            targets="expected_docs",
+            evaluators="default",
+            extra_metrics=[
+                mlflow.metrics.precision_at_k(1),
+                mlflow.metrics.precision_at_k(3),
+                mlflow.metrics.precision_at_k(5),
+                mlflow.metrics.recall_at_k(1),
+                mlflow.metrics.recall_at_k(3),
+                mlflow.metrics.recall_at_k(5),
+                mlflow.metrics.ndcg_at_k(3),
+                mlflow.metrics.ndcg_at_k(5),
+            ],
+        )
+        return results
+
+def evaluate_embedding(vector_store: VectorStore):
+    print("=== evaluate_embedding ===")
+    # All benchmark runs will be grouped under this experiment
+    mlflow.set_experiment("vector-search-benchmark")
+
+    benchmark_retriever(
+        run_name="evaluate_embedding",
+        retriever_fn=lambda q: vector_store.asimilarity_search(q, top_k=5),  # index uses gte-large
+        eval_df=eval_df,
+        extra_params={"vector_store": "postgresql vector", "embedding_model": appconfig.LLM_RAG_MODEL},
+    )
 
 def evaluate_k_nearest_neighbours(data):
     mlflow.set_experiment(evaluate_k_nearest_neighbours.__name__)
@@ -94,7 +103,7 @@ async def main():
     )
     vector_store = VectorStore(db_pool)
     await vector_store.CreateResources()
-    result = await evaluate_embedding(vector_store)
+    result = evaluate_embedding(vector_store)
     # To validate the results of a different model, comment out the above line and uncomment the below line:
     # result2 = evaluate_embedding(SentenceTransformerEmbeddings(model_name="all-MiniLM-L6-v2"))
 
@@ -109,5 +118,6 @@ if __name__ == "__main__":
     #with open('/etc/ragagent_config.json', 'r') as f:
     #    config = json.load(f)
     #mlflow.set_tracking_uri(f"postgresql+psycopg://{os.environ.get('DB_USERNAME')}:{parse.quote(os.environ.get('DB_PASSWORD'))}@{config['DB_HOST']}/MLFlow")
+    print(f"MLFlow tracking URI: {appconfig.MLFLOW_URI}")
     mlflow.set_tracking_uri(appconfig.MLFLOW_URI)
     run(main())
