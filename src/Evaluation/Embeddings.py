@@ -37,6 +37,7 @@ def exact_match(outputs: dict, expectations: dict) -> bool:
 
 @mlflow.trace(span_type="RETRIEVER")
 async def predict_fn(question: str, n_results: int = 3) -> list[Document]:
+    logging.debug(f"\n=== {predict_fn.__name__} ===")
     global vectorStore
     results = await vectorStore.retriever.ainvoke(question, n_results=n_results)
     """
@@ -50,10 +51,10 @@ async def predict_fn(question: str, n_results: int = 3) -> list[Document]:
     return doc
 
 def evaluate_embedding():
-    logging.debug(f"=== {evaluate_embedding.__name__} ===")
+    logging.debug(f"\n=== {evaluate_embedding.__name__} ===")
     # All benchmark runs will be grouped under this experiment
     mlflow.set_experiment(evaluate_embedding.__name__)
-
+    mlflow.langchain.autolog()
     results = mlflow.genai.evaluate(
         data=eval_df,
         predict_fn=predict_fn,
@@ -67,6 +68,7 @@ def evaluate_embedding():
     return results
 
 def evaluate_k_nearest_neighbours(data):
+    logging.debug(f"\n=== {evaluate_k_nearest_neighbours.__name__} ===")
     mlflow.set_experiment(evaluate_k_nearest_neighbours.__name__)
     mlflow.langchain.autolog()
     with mlflow.start_run() as run:
