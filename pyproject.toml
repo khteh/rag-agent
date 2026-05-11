@@ -53,4 +53,5 @@ dev = [
     "langgraph-cli[inmem]",
     "atheris>=3.0.0",
     "coverage>=7.13.5",
+    "nest-asyncio>=1.6.0",
 ]
