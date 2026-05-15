@@ -23,8 +23,8 @@ jobs:
           method: full
       - restore_cache:
           key: v1-dependencies-{{ .Branch }}-{{ checksum "uv.lock" }}
-      - run: uv sync
-      - run: uv pip install --group dev
+      - run: uv sync --no-dev
+      #- run: uv pip install --group dev
       #- run: uv run pytest -v Needs /etc/ragagent_config.json
       - run:
           name: Build docker image
