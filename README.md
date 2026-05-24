@@ -787,7 +787,7 @@ MATCH (v:Visit)-[r]-(n) where v.id=56 return v,r,n
 MATCH (p:Payer)<-[c:COVERED_BY]-(v:Visit)-[:AT]->(h:Hospital)
 WHERE p.name = "Aetna"
 AND h.state_name = "TX"
-RETURN COUNT(\*) as num_visits,
+RETURN COUNT(*) as num_visits,
 SUM(c.billing_amount) as total_billing_amount;
 
 ```
