@@ -105,6 +105,6 @@ workflows:
 #              only: master
 #      - notification:
 #          context: slack-secrets
-#          name: BuyerPortal2.0
+#          name: RAG Agent Deployment Notification
 #          requires:
 #            - BuildTestAndDeploy
