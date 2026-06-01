@@ -1,4 +1,13 @@
 version: 2.1
+orbs:
+  aws-cli: circleci/aws-cli@5.4.1
+  slack: circleci/slack@6.1.3
+
+executors:
+  node:
+    docker:
+      - image: python:latest
+
 references:
   workspace_root: &workspace_root ~/workspace
 
@@ -28,19 +37,55 @@ jobs:
       #- run: uv run pytest -v Needs /etc/ragagent_config.json
       - run:
           name: Build docker image
-          command: docker build -t khteh/ragagent:latest .
+          command: |
+            VERSION=$(uv run python -c "import tomllib; print(tomllib.load(open('pyproject.toml', 'rb'))['project']['version'])").$CIRCLE_BUILD_NUM
+            docker build -t khteh/ragagent:latest -t khteh/ragagent:$VERSION .
       - run:
           name: Login to docker hub
           command: docker login -u $DOCKER_USER -p $DOCKER_PASS
       - run:
           name: Push images to docker hub
-          command: docker push khteh/ragagent:latest
+          command: |
+            VERSION=$(uv run python -c "import tomllib; print(tomllib.load(open('pyproject.toml', 'rb'))['project']['version'])").$CIRCLE_BUILD_NUM
+            echo ${VERSION} > docker-build_number.txt
+            docker push khteh/ragagent:latest
+            docker push khteh/ragagent:$VERSION
       - save_cache:
           key: v1-dependencies-{{ .Branch }}-{{ checksum "uv.lock" }}
           paths:
             - /home/circleci/.local/bin
             - /home/circleci/.local/lib
+      - persist_to_workspace:
+          root: *workspace_root
+          paths:
+            - .
+  deploy-eks:
+    executor: aws-cli/default
+    <<: *defaults
+    steps:
+      - *attach_workspace
+      - setup_remote_docker:
+          docker_layer_caching: true
+      - aws-cli/setup:
+          profile-name: default
+      - run:
+          name: Use the saved build number here
+          command: |
+            echo 'export CIRCLE_BUILD_NUM_DOCKER="$(cat docker-build_number.txt)"' >> $BASH_ENV
+            . $BASH_ENV
+            echo CIRCLE_BUILD_NUM_DOCKER: $CIRCLE_BUILD_NUM_DOCKER
+      - run:
+          name: Update Python RestAPI application
+          command: |
+            #kubectl patch statefulset ragagent --type='json' -p='[{"op": "replace", "path": "/spec/template/spec/containers/0/image", "value":"'$AWS_ACCOUNT_ID'.dkr.ecr.ap-southeast-1.amazonaws.com/ragagent:'$CIRCLE_BUILD_NUM_DOCKER'"}]'
+            kubectl set image sts/ragagent ragagent=$AWS_ACCOUNT_ID.dkr.ecr.ap-southeast-1.amazonaws.com/ragagent:$CIRCLE_BUILD_NUM_DOCKER
 workflows:
   main:
     jobs:
       - build_and_test
+#      - deploy-eks:
+#          requires:
+#            - build
+#          filters:
+#            branches:
+#              only: master
