@@ -9,11 +9,8 @@ PHYSICIANS_CSV_PATH = "/Healthcare/physicians.csv"
 PATIENTS_CSV_PATH = "/Healthcare/patients.csv"
 VISITS_CSV_PATH = "/Healthcare/visits.csv"
 REVIEWS_CSV_PATH = "/Healthcare/reviews.csv"
-
-"""
-bolt://svc-neo4j-nodeport:7687
-neo4j://svc-neo4j-nodeport:7687
-"""
+# bolt://svc-neo4j-nodeport:7687
+# neo4j://svc-neo4j-nodeport:7687
 NEO4J_URI = config.NEO4J_URI
 NEO4J_USERNAME = config.NEO4J_USERNAME
 NEO4J_PASSWORD = config.NEO4J_PASSWORD
