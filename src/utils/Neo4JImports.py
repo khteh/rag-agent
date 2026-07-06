@@ -3,6 +3,7 @@ from neo4j import GraphDatabase
 from retry import retry
 from pathlib import Path
 from src.config import config
+from langchain_ollama import OllamaEmbeddings
 HOSPITALS_CSV_PATH = "/Healthcare/hospitals.csv"
 PAYERS_CSV_PATH = "/Healthcare/payers.csv"
 PHYSICIANS_CSV_PATH = "/Healthcare/physicians.csv"
@@ -26,6 +27,11 @@ LOGGER = logging.getLogger(__name__)
 NODES = ["Hospital", "Payer", "Physician", "Patient", "Visit", "Review"]
 LOGGER.info(f"Loading {NEO4J_URI}...")
 
+def _generate_embeddings(txt: str) -> list:
+    """Generate and store node embeddings for all nodes in the graph"""
+    model = OllamaEmbeddings(model=config.EMBEDDING_MODEL, base_url=config.OLLAMA_LOCAL_URI, num_ctx=config.OLLAMA_CONTEXT_LENGTH, num_gpu=1, temperature=0)
+    return model.embed_query(txt)
+
 def _set_uniqueness_constraints(tx, node):
     """
     Creates and runs queries enforcing each node to have a unique ID
@@ -43,6 +49,7 @@ def load_hospital_graph_from_csv() -> None:
     driver = GraphDatabase.driver(
         NEO4J_URI, auth=(NEO4J_USERNAME, NEO4J_PASSWORD)
     )
+    driver.verify_connectivity()
 
     LOGGER.info("Setting uniqueness constraints on nodes")
     with driver.session(database="neo4j") as session:
@@ -108,8 +115,7 @@ def load_hospital_graph_from_csv() -> None:
         }})
             ON CREATE SET v.chief_complaint = visits.chief_complaint
             ON MATCH SET v.chief_complaint = visits.chief_complaint
-            ON CREATE SET v.treatment_description =
-            visits.treatment_description
+            ON CREATE SET v.treatment_description = visits.treatment_description
             ON MATCH SET v.treatment_description = visits.treatment_description
             ON CREATE SET v.diagnosis = visits.primary_diagnosis
             ON MATCH SET v.diagnosis = visits.primary_diagnosis
