@@ -1,6 +1,8 @@
 import asyncio, logging, sys
 from datetime import datetime
 from pathlib import Path
+from pyparsing import Optional
+from xmlrpc.client import boolean
 from uuid_extensions import uuid7, uuid7str
 from google.api_core.exceptions import ResourceExhausted
 from langchain.chat_models import init_chat_model
@@ -150,13 +152,15 @@ class EmailRAG():
         else:
             self._llm = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider=appconfig.MODEL_PROVIDER, api_key=appconfig.OLLAMA_API_KEY, streaming=True, temperature=0, think="high")
             self._chainLLM = init_chat_model(appconfig.LLM_RAG_MODEL, model_provider=appconfig.MODEL_PROVIDER, api_key=appconfig.OLLAMA_API_KEY, temperature=0, think="high")
+        # https://docs.langchain.com/oss/python/langchain/structured-output
+        # strict: Optional boolean parameter to enable strict schema adherence. Supported by some providers (e.g., OpenAI and xAI). Defaults to None (disabled).
         self._email_parser_chain = (
             self._email_parser_prompt | self._chainLLM | self._email_model_parser
-            #| self._chainLLM.with_structured_output(EmailModel, method="json_schema")
+            #| self._chainLLM.with_structured_output(EmailModel, method="json_schema", strict=True)
         )
         self._escalation_chain = (
             self._escalation_prompt
-            | self._chainLLM.with_structured_output(EscalationCheckModel, method="json_schema")
+            | self._chainLLM.with_structured_output(EscalationCheckModel, method="json_schema", strict=True)
         )
     def __del__(self):
         #self._in_memory_store.close()
