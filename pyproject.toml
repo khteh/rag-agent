@@ -10,7 +10,6 @@ dependencies = [
     "langchain-community",
     "langgraph",
     "python-dotenv",
-    "langchain[google-genai]",
     "beautifulsoup4",
     "langchain-google-genai",
     "google-genai",
@@ -44,6 +43,7 @@ dependencies = [
     "marshmallow-sqlalchemy",
     "langmem",
     "nest-asyncio2>=1.7.2",
+    "graphdatascience[networkx,ogb,rust-ext]>=1.22",
 ]
 
 [dependency-groups]
