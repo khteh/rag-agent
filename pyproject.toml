@@ -55,3 +55,11 @@ dev = [
     "atheris>=3.0.0",
     "coverage>=7.13.5",
 ]
+# This is an application, not a library: don't try to build/install it as an
+# importable package. `uv sync` just provisions a venv with the deps above.
+[tool.uv]
+package = false
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["test"]

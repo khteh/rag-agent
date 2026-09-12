@@ -99,6 +99,7 @@ async def create_app() -> Quart:
     logging.debug(f"\n=== {create_app.__name__} done! ===")
     return app
 
-app = asyncio.run(create_app())
+#app = asyncio.run(create_app())
 logging.info(f"Running app...")
+app = create_app()
 #asyncio.run(serve(app, config), debug=True)
