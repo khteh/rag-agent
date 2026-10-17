@@ -1,5 +1,6 @@
 import os, logging
 from neo4j import GraphDatabase
+from neo4j.exceptions import ClientError
 from retry import retry
 from pathlib import Path
 from src.config import config
@@ -40,6 +41,40 @@ def _set_uniqueness_constraints(tx, node):
         REQUIRE n.id IS UNIQUE;"""
     _ = tx.run(query, {})
 
+def setup_healthcare_database():
+    """
+    In Community Edition, the CREATE DATABASE command is disabled because you are restricted to exactly one default user database (named neo4j).    
+    Running this in Community Edition will hit Neo.ClientError.Statement.UnsupportedAdministrationCommand exception as it does not support multiple user databases.
+    """
+    driver = GraphDatabase.driver(
+        NEO4J_URI, auth=(NEO4J_USERNAME, NEO4J_PASSWORD)
+    )
+    # 2. Connect explicitly to the 'system' database for administrative commands
+    with driver.session(database="system") as session:
+        LOGGER.info("Checking/Creating 'healthcare' database...")
+        try:
+            # Create the database if it doesn't already exist
+            session.run("CREATE DATABASE healthcare IF NOT EXISTS")
+            
+            # Ensure the database is started/online
+            session.run("START DATABASE healthcare")
+            LOGGER.info("Database 'healthcare' is successfully created and online.")
+            
+        except ClientError as e:
+            LOGGER.error(f"An error occurred: {e}")
+
+def query_healthcare_database():
+    driver = GraphDatabase.driver(
+        NEO4J_URI, auth=(NEO4J_USERNAME, NEO4J_PASSWORD)
+    )
+
+    # 3. Now you can safely connect to the 'healthcare' database to read/write data
+    # Must match the value of initial.dbms.default_database in neo4j.conf
+    with driver.session(database="neo4j") as session:
+        # Example query
+        result = session.run("RETURN 'Connection successful!' AS message")
+        record = result.single()
+        LOGGER.info(f"Query Result: {record['message']}")
 
 @retry(tries=100, delay=10)
 def load_hospital_graph_from_csv() -> None:
@@ -52,6 +87,7 @@ def load_hospital_graph_from_csv() -> None:
     driver.verify_connectivity()
 
     LOGGER.info("Setting uniqueness constraints on nodes")
+    # Must match the value of initial.dbms.default_database in neo4j.conf
     with driver.session(database="neo4j") as session:
         for node in NODES:
             session.execute_write(_set_uniqueness_constraints, node)
@@ -72,6 +108,7 @@ def load_hospital_graph_from_csv() -> None:
 
     #if Path(PAYERS_CSV_PATH).exists() and Path(PAYERS_CSV_PATH).is_file():
     LOGGER.info("Loading payer nodes")
+    # Must match the value of initial.dbms.default_database in neo4j.conf
     with driver.session(database="neo4j") as session:
         query = f"""
         LOAD CSV WITH HEADERS
@@ -85,6 +122,7 @@ def load_hospital_graph_from_csv() -> None:
 
     #if Path(PHYSICIANS_CSV_PATH).exists() and Path(PHYSICIANS_CSV_PATH).is_file():
     LOGGER.info("Loading physician nodes")
+    # Must match the value of initial.dbms.default_database in neo4j.conf
     with driver.session(database="neo4j") as session:
         query = f"""
         LOAD CSV WITH HEADERS
@@ -103,6 +141,7 @@ def load_hospital_graph_from_csv() -> None:
 
     #if Path(VISITS_CSV_PATH).exists() and Path(VISITS_CSV_PATH).is_file():
     LOGGER.info("Loading visit nodes")
+    # Must match the value of initial.dbms.default_database in neo4j.conf
     with driver.session(database="neo4j") as session:
         query = f"""
         LOAD CSV WITH HEADERS FROM '{Path(VISITS_CSV_PATH).as_uri()}' AS visits
@@ -128,6 +167,7 @@ def load_hospital_graph_from_csv() -> None:
 
     #if Path(PATIENTS_CSV_PATH).exists() and Path(PATIENTS_CSV_PATH).is_file():
     LOGGER.info("Loading patient nodes")
+    # Must match the value of initial.dbms.default_database in neo4j.conf
     with driver.session(database="neo4j") as session:
         query = f"""
         LOAD CSV WITH HEADERS
@@ -145,6 +185,7 @@ def load_hospital_graph_from_csv() -> None:
 
     #if Path(REVIEWS_CSV_PATH).exists() and Path(REVIEWS_CSV_PATH).is_file():
     LOGGER.info("Loading review nodes")
+    # Must match the value of initial.dbms.default_database in neo4j.conf
     with driver.session(database="neo4j") as session:
         query = f"""
         LOAD CSV WITH HEADERS
@@ -162,6 +203,7 @@ def load_hospital_graph_from_csv() -> None:
 
     #if Path(VISITS_CSV_PATH).exists() and Path(VISITS_CSV_PATH).is_file():
     LOGGER.info("Loading 'AT' relationships")
+    # Must match the value of initial.dbms.default_database in neo4j.conf
     with driver.session(database="neo4j") as session:
         query = f"""
         LOAD CSV WITH HEADERS FROM '{Path(VISITS_CSV_PATH).as_uri()}' AS row
@@ -176,6 +218,7 @@ def load_hospital_graph_from_csv() -> None:
 
     #if Path(REVIEWS_CSV_PATH).exists() and Path(REVIEWS_CSV_PATH).is_file():
     LOGGER.info("Loading 'WRITES' relationships")
+    # Must match the value of initial.dbms.default_database in neo4j.conf
     with driver.session(database="neo4j") as session:
         query = f"""
         LOAD CSV WITH HEADERS FROM '{Path(REVIEWS_CSV_PATH).as_uri()}' AS reviews
@@ -189,6 +232,7 @@ def load_hospital_graph_from_csv() -> None:
 
     #if Path(VISITS_CSV_PATH).exists() and Path(VISITS_CSV_PATH).is_file():
     LOGGER.info("Loading 'TREATS' relationships")
+    # Must match the value of initial.dbms.default_database in neo4j.conf
     with driver.session(database="neo4j") as session:
         query = f"""
         LOAD CSV WITH HEADERS FROM '{Path(VISITS_CSV_PATH).as_uri()}' AS visits
@@ -202,6 +246,7 @@ def load_hospital_graph_from_csv() -> None:
 
     #if Path(VISITS_CSV_PATH).exists() and Path(VISITS_CSV_PATH).is_file():
     LOGGER.info("Loading 'COVERED_BY' relationships")
+    # Must match the value of initial.dbms.default_database in neo4j.conf
     with driver.session(database="neo4j") as session:
         query = f"""
         LOAD CSV WITH HEADERS FROM '{Path(VISITS_CSV_PATH).as_uri()}' AS visits
@@ -218,6 +263,7 @@ def load_hospital_graph_from_csv() -> None:
 
     #if Path(VISITS_CSV_PATH).exists() and Path(VISITS_CSV_PATH).is_file():
     LOGGER.info("Loading 'HAS' relationships")
+    # Must match the value of initial.dbms.default_database in neo4j.conf
     with driver.session(database="neo4j") as session:
         query = f"""
         LOAD CSV WITH HEADERS FROM '{Path(VISITS_CSV_PATH).as_uri()}' AS visits
@@ -231,6 +277,7 @@ def load_hospital_graph_from_csv() -> None:
 
     #if Path(VISITS_CSV_PATH).exists() and Path(VISITS_CSV_PATH).is_file():
     LOGGER.info("Loading 'EMPLOYS' relationships")
+    # Must match the value of initial.dbms.default_database in neo4j.conf
     with driver.session(database="neo4j") as session:
         query = f"""
         LOAD CSV WITH HEADERS FROM '{Path(VISITS_CSV_PATH).as_uri()}' AS visits
@@ -244,4 +291,9 @@ def load_hospital_graph_from_csv() -> None:
 
 
 if __name__ == "__main__":
-    load_hospital_graph_from_csv()
+    try:
+        #setup_healthcare_database()
+        query_healthcare_database()
+        load_hospital_graph_from_csv()
+    except Exception as e:
+        LOGGER.error(f"Error occurred while loading hospital graph: {e}")

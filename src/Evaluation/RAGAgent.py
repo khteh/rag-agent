@@ -5,26 +5,78 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_classic.chains import create_retrieval_chain
 from langchain_classic.chains.combine_documents import create_stuff_documents_chain
 #from langchain.embeddings.sentence_transformer import SentenceTransformerEmbeddings
+from mlflow.entities import Document
+from mlflow.genai.scorers import (
+    Correctness, Guidelines,
+    RelevanceToQuery,
+    RetrievalGroundedness,
+    RetrievalSufficiency,
+)
 from mlflow.metrics.genai import relevance
 from psycopg_pool import AsyncConnectionPool, ConnectionPool
 from src.Infrastructure.VectorStore import VectorStore
 from src.config import config
 # https://mlflow.org/docs/latest/api_reference/python_api/mlflow.metrics.html
-_eval_data = pandas.DataFrame(
-  {
-      "question": [
-          "What is MLOps?",
-          "What is MLflow?",
-          "What is Databricks?",
-          "How to serve a model on Databricks?",
-          "How to enable MLflow Autologging for my workspace by default?",
-          "What is the Task Decomposition?",
-          "What is the standard method for Task Decomposition?",
-          "What are the common extensions of standard method for Task Decomposition?"
-      ],
-  }
-)
+eval_data = [
+    {
+        "inputs": {"question": "What is MLOps?"},
+        "expectations": {
+            "expected_facts": [
+                "machine learning operations",
+                "applies automation, version control, and continuous delivery — to the full machine learning lifecycle",
+            ]
+        },
+    },
+    {
+        "inputs": {"question": "What is MLflow?"},
+        "expectations": {
+            "expected_facts": [
+                "open-source platform",
+                "managing the ML lifecycle",
+            ]
+        },
+    },
+    {
+        "inputs": {"question": "What is the Task Decomposition?"},
+        "expectations": {
+            "expected_facts": [
+                "breaks down large tasks into smaller, manageable subgoals, enabling efficient handling of complex tasks.",
+                "Chain of thought",
+                "Tree of thought",
+            ]
+        },
+    }
+]
+eval_df = pandas.DataFrame(eval_data)
 vectorStore: VectorStore = None
+
+@mlflow.trace(span_type="RETRIEVER")
+async def retrieve(question: str, n_results: int = 3) -> list[Document]:
+    results = vectorStore.invoke(query_texts=[question], n_results=n_results)
+    return [
+        Document(page_content=doc, metadata={"doc_id": doc_id})
+        for doc, doc_id in zip(results["documents"][0], results["ids"][0])
+    ]
+
+@mlflow.trace
+async def rag_answer(question: str) -> str:
+    docs = retrieve(question)
+    context = "\n".join(doc.page_content for doc in docs)
+
+    response = client.chat.completions.create(
+        model="gpt-5.4-mini",
+        messages=[
+            {
+                "role": "system",
+                "content": f"Answer the question based only on the following context:\n\n{context}",
+            },
+            {"role": "user", "content": question},
+        ],
+    )
+    return response.choices[0].message.content
+
+def predict_fn(question):
+    return rag_answer(question)
 
 def model(input_df):
     # For VertexAI, use VertexAIEmbeddings, model="text-embedding-005"; "gemini-2.0-flash" model_provider="google_genai"
@@ -56,16 +108,14 @@ def evaluate_rag():
   
     with mlflow.start_run():
       results = mlflow.genai.evaluate(
-          llm,
-          _eval_data,
-          predictions="result",
-          extra_metrics=[relevance_metric, mlflow.metrics.latency()],
-          evaluator_config={
-              "col_mapping": {
-                  "inputs": "questions",
-                  "context": "source_documents",
-              }
-          },
+            llm,
+            data=eval_data,
+            predict_fn=predict_fn,
+            scorers=[
+                RelevanceToQuery(),
+                RetrievalGroundedness(),
+                RetrievalSufficiency(),
+            ],
       )
     print(results.metrics)
     print(results.tables["eval_results_table"])
@@ -83,6 +133,7 @@ async def main():
 
 if __name__ == "__main__":
     #mlflow.set_tracking_uri("http://localhost:8080") $ pr mlflow server --host localhost --port 8080
+    print(f"MLFlow tracking URI: {config.MLFLOW_URI}")
     mlflow.set_tracking_uri(config.MLFLOW_URI)
     #vertexai.init(project=os.environ.get("GOOGLE_CLOUD_PROJECT"), location=os.environ.get("GOOGLE_CLOUD_LOCATION"))
     run(main())
