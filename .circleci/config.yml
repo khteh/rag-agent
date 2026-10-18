@@ -24,6 +24,13 @@ jobs:
     docker:
       #- image: circleci/python:latest
       - image: khteh/ubuntu:latest
+      - image: postgres:latest
+        environment:
+          POSTGRESQL_HOST: 127.0.0.1
+          POSTGRESQL_DB: Langchain
+          POSTGRESQL_ALLOW_EMPTY_PASSWORD: true
+          POSTGRESQL_USER: $DB_USERNAME
+          POSTGRES_PASSWORD: $DB_PASSWORD
     #    restart: on-failure # Restart the container if it exits due to an error
     steps:
       - setup_remote_docker:
@@ -33,8 +40,43 @@ jobs:
       - restore_cache:
           key: v1-dependencies-{{ .Branch }}-{{ checksum "uv.lock" }}
       - run: uv sync --no-dev
-      #- run: uv pip install --group dev
+      - run:
+          name: Wait for PostgreSQL Server
+          #command: dockerize -wait tcp://localhost:5432 -timeout 1m
+          command: pg_isready -U "postgres" -h 127.0.0.1 -p 5432
+      - run:
+          name: Prepare database for tests
+          command: |
+            psql -h localhost -U postgres -c "CREATE USER $DB_USERNAME WITH PASSWORD '$DB_PASSWORD' ;"
+            psql -h localhost -U postgres -c "CREATE DATABASE Langchain WITH OWNER = $DB_USERNAME ;"
+            psql -h localhost -U $DB_USERNAME -w -d Langchain < Langchain.sql
       - run: uv sync --group dev
+      - run:
+          name: Create required config file
+          command: |
+            sudo mkdir -p /etc
+            sudo tee /etc/ragagent_config.json > /dev/null \<<EOF
+            {
+              "ENVIRONMENT": "development",
+              "DEBUG": true,
+              "TESTING": true,
+              "LOGLEVEL": "DEBUG",
+              "SECRET_KEY": "RAGAgent",
+              "DB_HOST": "127.0.0.1",
+              "DB_DATABASE": "Langchain",
+              "DB_MAX_CONNECTIONS": 10,
+              "EMBEDDING_MODEL": "embeddinggemma",
+              "EMBEDDING_DIMENSIONS": 768,
+              "VECTORSTORE_TABLE": "ragagent_vectorstore",
+              "MODEL_PROVIDER": "ollama",
+              "LLM_RAG_MODEL": "gpt-oss:120b-cloud",
+              "NEO4J_URI": "neo4j://127.0.0.1:7687",
+              "OLLAMA_CONTEXT_LENGTH": "8192",
+              "OLLAMA_CLOUD_URI": "https://ollama.com",
+              "OLLAMA_LOCAL_URI": "http://127.0.0.1",
+              "MLFLOW_URI": "http://127.0.0.1"
+            }
+            EOF
       #- run: uv run pytest -v Needs /etc/ragagent_config.json
       - run:
           name: Run tests
