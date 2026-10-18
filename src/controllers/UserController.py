@@ -79,7 +79,7 @@ async def create():
             logging.exception(f"create() exception! {err.messages}")
             await flash(f"Failed to create user! {err.messages}", "danger")
             return redirect(url_for("user.create"))
-    return await Respond("user_create.html", title="Welcome to Python Flask RESTful API")
+    return await Respond("user_create.html", title="Welcome to LLM-RAG 💬")
 
 @user_api.route("/all")
 @Authentication.auth_required("user.get_all")

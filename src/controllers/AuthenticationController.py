@@ -26,19 +26,19 @@ async def login():
             data = user_schema.load(req_data, partial=True)
             if not data:
                 await flash("Invalid input!", "danger")
-                return await Respond("login.html", title="Welcome to Python Flask RESTful API", error=data["Invalid input!"])
+                return await Respond("login.html", title="Welcome to LLM-RAG 💬", error=data["Invalid input!"])
             if not data.email or not data.password:
                 await flash("You need an email and password to login", "danger")
-                return await Respond("login.html", title="Welcome to Python Flask RESTful API", error="You need an email and password to login")
+                return await Respond("login.html", title="Welcome to LLM-RAG 💬", error="You need an email and password to login")
             user = await UserModel.get_user_by_email(data.email)
             if not user:
                 await flash("Invalid user!", "danger")
                 logging.warning(f"[Auth] Invalid user {data.email}!")
-                return await Respond("login.html", title="Welcome to Python Flask RESTful API", error="Invalid user!")
+                return await Respond("login.html", title="Welcome to LLM-RAG 💬", error="Invalid user!")
             if not user.check_hash(data.password):
                 await flash("Invalid email or password!", "danger")
                 logging.warning(f"[Auth] Invalid email or password {user.email}!")
-                return await Respond("login.html", title="Welcome to Python Flask RESTful API", error="Invalid email or password!")
+                return await Respond("login.html", title="Welcome to LLM-RAG 💬", error="Invalid email or password!")
             user.token = Authentication.generate_token(user.id) # decoded_token: {'data': {'user_id': 1}, 'error': {}}
             session["user"] = {"id": user.id, "email": user.email, "token": user.token}
             logging.debug(f"login(): {session["user"]}")
@@ -59,8 +59,8 @@ async def login():
             errors = err.messages
             valid_data = err.valid_data
             logging.exception(f"[Auth] login() exception! {errors}")
-            return await Respond("login.html", title="Welcome to Python Flask RESTful API", error=errors)
-    return await Respond("login.html", title="Welcome to Python Flask RESTful API")
+            return await Respond("login.html", title="Welcome to LLM-RAG 💬", error=errors)
+    return await Respond("login.html", title="Welcome to LLM-RAG 💬")
 
 #@auth_api.route("/login_oidc", methods=["GET", "POST"])
 #@oidc.require_login
