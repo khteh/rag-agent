@@ -22,7 +22,6 @@ jobs:
   build_and_test:
     <<: *defaults
     docker:
-      #- image: circleci/python:latest
       - image: khteh/ubuntu:latest
       - image: postgres:latest
         environment:
@@ -40,6 +39,7 @@ jobs:
       - restore_cache:
           key: v1-dependencies-{{ .Branch }}-{{ checksum "uv.lock" }}
       - run: uv sync --no-dev
+      - run: uv sync --group dev
       - run:
           name: Wait for PostgreSQL Server
           #command: dockerize -wait tcp://localhost:5432 -timeout 1m
@@ -55,11 +55,10 @@ jobs:
       - run:
           name: Check if PostgreSQL Database exists
           command: |
-            psql -lqt -h localhost -U postgres | cut -d \| -f 1 | grep Langchain
+            psql -lqt -h localhost -U $DB_USERNAME | cut -d \| -f 1 | grep Langchain
       - run:
           name: Load PostgreSQL Schema
           command: psql -h localhost -U $DB_USERNAME -w -d Langchain < Langchain.sql
-      - run: uv sync --group dev
       - run:
           name: Create required config file
           command: |
