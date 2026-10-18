@@ -2,6 +2,7 @@ accesslog = "/var/log/hypercorn/access.log"
 errorlog = "/var/log/hypercorn/errors.log"
 loglevel = "DEBUG"
 alt_svc_headers = ["h3=\":4433\"; ma=2592000"]
+# Keep the following TCP+TLS for healthcheck. kubelet httpGet probe with HTTPS scheme does not have HTTP/3/QUIC client.
 bind = "0.0.0.0:4433"
 quic_bind = ["0.0.0.0:4433", "[::]:4433"]
 insecure_bind = "0.0.0.0:8080"
