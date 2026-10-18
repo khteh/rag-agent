@@ -47,18 +47,18 @@ jobs:
       - run:
           name: Create PostgreSQL User
           command: |
-            psql -h localhost -U postgres -c "CREATE USER $DB_USERNAME WITH PASSWORD '$DB_PASSWORD' ;"
+            psql -v ON_ERROR_STOP=1 -h localhost -U postgres -c "CREATE USER $DB_USERNAME WITH PASSWORD '$DB_PASSWORD' ;"
       - run:
           name: Create PostgreSQL Database
           command: |
-            psql -h localhost -U postgres -c "CREATE DATABASE Langchain WITH OWNER = $DB_USERNAME ;"
+            psql -v ON_ERROR_STOP=1 -h localhost -U postgres -c "CREATE DATABASE \"Langchain\" WITH OWNER = $DB_USERNAME ;"
       - run:
           name: Check if PostgreSQL Database exists
           command: |
             psql -lqt -h localhost -U $DB_USERNAME | cut -d \| -f 1 | grep Langchain
       - run:
           name: Load PostgreSQL Schema
-          command: psql -h localhost -U $DB_USERNAME -w -d Langchain < Langchain.sql
+          command: psql -v ON_ERROR_STOP=1 -h localhost -U $DB_USERNAME -w -d Langchain < Langchain.sql
       - run:
           name: Create required config file
           command: |
