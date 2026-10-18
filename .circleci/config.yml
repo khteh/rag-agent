@@ -58,7 +58,7 @@ jobs:
             psql -lqt -h localhost -U $DB_USERNAME | cut -d \| -f 1 | grep Langchain
       - run:
           name: Load PostgreSQL Schema
-          command: psql -v ON_ERROR_STOP=1 -h localhost -U $DB_USERNAME -w -d Langchain < Langchain.sql
+          command: psql -v ON_ERROR_STOP=1 -h localhost -U postgres -w -d Langchain < Langchain.sql
       - run:
           name: Create required config file
           command: |
