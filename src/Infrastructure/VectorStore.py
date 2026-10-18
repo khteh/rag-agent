@@ -171,6 +171,9 @@ class VectorStore(): #metaclass=VectorStoreSingleton):
                         url["url"],
                         parse_only = bs4.SoupStrainer("article")
                     )
+                else:
+                    logging.warning(f"Unknown type '{url['type']}' for {url['url']}, skipping")
+                    continue                    
                 if doc is not None and len(doc.page_content):
                     logging.debug(f"Total characters: {len(doc.page_content)}")
                     if len(doc.page_content):
