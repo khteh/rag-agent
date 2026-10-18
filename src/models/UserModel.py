@@ -3,10 +3,10 @@ from marshmallow_sqlalchemy import SQLAlchemyAutoSchema, auto_field
 from sqlalchemy import Integer, String, DateTime, select
 from marshmallow import fields, Schema
 from sqlalchemy.sql import func
-from sqlalchemy.orm import Mapped, mapped_column, Session
+from sqlalchemy.orm import Mapped, mapped_column
 from src.common.Bcrypt import bcrypt
 from .base import Base
-from . import engine
+from . import SessionLocal
 class UserModel(Base):
     """
     User Model
@@ -33,21 +33,28 @@ class UserModel(Base):
         user.created_at = func.now()
         user.modified_at = func.now()
         return user
-    def save(self):
-        with Session(engine) as session:
-            session.commit()
-    def update(self, data):
-        for attribute, value in vars(data).items():
-            if attribute == "password":
-                value = self.__generate_hash(value)
-            setattr(self, attribute, value)
-        self.modified_at = func.now()
-        with Session(engine) as session:
-            session.commit()
-    def delete(self):
-        with Session(engine) as session:
-            session.delete(self)
-            session.commit()
+    async def save(self):
+        async with SessionLocal() as session:
+            session.add(self)
+            await session.commit()
+            await session.refresh(self)
+    async def update(self, data):
+        async with SessionLocal() as session:
+            session.add(self) # Re-attach this detached instance to the new session
+            for attribute, value in vars(data).items():
+                if attribute.startswith("_"): # Skip SQLAlchemy internals such as _sa_instance_state
+                    continue
+                if attribute == "password":
+                    value = self.__generate_hash(value)
+                setattr(self, attribute, value)
+            self.modified_at = func.now()
+            await session.commit()
+            # modified_at is a server-side expression; reload so the detached instance stays readable.
+            await session.refresh(self)
+    async def delete(self):
+        async with SessionLocal() as session:
+            await session.delete(self)
+            await session.commit()
     def __generate_hash(self, password):
         return bcrypt.generate_password_hash(password, rounds=10).decode("utf-8")
     def check_hash(self, password):
@@ -66,37 +73,37 @@ class UserModel(Base):
             'modified_at': self.modified_at
         }
     @staticmethod
-    def add(user) -> int:
-        with Session(engine) as session:
+    async def add(user) -> int:
+        async with SessionLocal() as session:
             user.password = user.__generate_hash(user.password)
             session.add(user)
             # Flush the session
             # This operation sends the INSERT statement to the database.
             # The database generates the primary key and returns it to SQLAlchemy,
             # which updates the 'id' attribute of the 'new_user' object *in memory*.
-            session.flush()
-            session.commit()
+            await session.flush()
+            await session.commit()
             return user.id
     @staticmethod
-    def get_user(id):
-        # Usage and parameters are the same as that of Session.execute(); the return result is a ScalarResult filtering object which will return single elements rather than Row objects.
-        with Session(engine) as session:
-            return session.get(UserModel, id)
+    async def get_user(id):
+        async with SessionLocal() as session:
+            return await session.get(UserModel, id)
     @staticmethod
-    def get_user_by_email(email):
+    async def get_user_by_email(email):
         stmt = select(UserModel).filter_by(email=email).execution_options(populate_existing=True)
-        with Session(engine) as session:
-            return session.scalars(stmt).first()
+        async with SessionLocal() as session:
+            # Usage and parameters are the same as that of AsyncSession.execute(); the return result is a ScalarResult filtering object which will return single elements rather than Row objects.
+            return (await session.scalars(stmt)).first()
     @staticmethod
-    def isExistingUser(email):
-        with Session(engine) as session:
-            return session.query(UserModel).filter_by(email=email).count() > 0
+    async def isExistingUser(email):
+        stmt = select(func.count()).select_from(UserModel).where(UserModel.email == email)
+        async with SessionLocal() as session:
+            return (await session.scalar(stmt)) > 0
     @staticmethod
-    def get_users():
+    async def get_users():
         stmt = select(UserModel).execution_options(populate_existing=True)
-        # Usage and parameters are the same as that of Session.execute(); the return result is a ScalarResult filtering object which will return single elements rather than Row objects.
-        with Session(engine) as session:
-            return session.scalars(stmt).all()
+        async with SessionLocal() as session:
+            return (await session.scalars(stmt)).all()
     def __repl__(self): # return a printable representation of UserModel object, in this case we're only returning the id
         return "<id {}>".format(self.id)
 class UserSchema(SQLAlchemyAutoSchema):
@@ -108,7 +115,9 @@ class UserSchema(SQLAlchemyAutoSchema):
         # Optional: include relationships, foreign keys, etc.
         include_relationships = True
         # Optional: deserialize to model instances
-        load_instance = True 
+        load_instance = True
+        # Build new instances without a database session (AsyncSession cannot be used by marshmallow-sqlalchemy's sync lookups)
+        transient = True
     id = fields.Int(dump_only=True)
     firstname = fields.Str(required=True)
     lastname = fields.Str(required=True)

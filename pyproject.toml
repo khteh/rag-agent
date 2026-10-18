@@ -7,7 +7,6 @@ requires-python = ">=3.14"
 dependencies = [
     "PyJWT",
     "langchain-text-splitters",
-    "langchain-community",
     "langgraph",
     "python-dotenv",
     "beautifulsoup4",
@@ -37,13 +36,15 @@ dependencies = [
     "deepagents",
     "google-api-core",
     "grpcio-status",
-    "flask-sqlalchemy",
-    "quart-flask-patch",
+    "sqlalchemy[asyncio]",
     "marshmallow",
     "marshmallow-sqlalchemy",
     "langmem",
     "nest-asyncio2>=1.7.2",
     "graphdatascience[networkx,ogb,rust-ext]>=1.22",
+    "langchain-tavily>=0.2.18",
+    "langchain-aws>=1.9.0",
+    "langchain-fireworks>=1.7.1",
 ]
 
 [dependency-groups]
@@ -51,6 +52,7 @@ dev = [
     "pytest-flask",
     "pytest",
     "pytest-asyncio",
+    "aiosqlite",
     "langgraph-cli[inmem]",
     "langgraph-api>=0.16.1",
     "atheris>=3.0.0",

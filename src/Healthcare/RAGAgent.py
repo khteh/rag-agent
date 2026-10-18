@@ -35,6 +35,7 @@ class RAGAgent():
     _db_pool: AsyncConnectionPool = None
     _self_managed_db_pool: bool = False
     _vectorStore = None
+    _self_managed_vectorStore: bool = False    
     _checkpointer = None
     _tools: List[Callable[..., Any]] = None
     agent: CompiledStateGraph = None
@@ -82,6 +83,8 @@ class RAGAgent():
     async def _Cleanup(self):
         #await self._store.close() AttributeError: 'AsyncPostgresStore' object has no attribute 'close'
         logging.info(f"\n=== {self.__class__.__name__}.{self._Cleanup.__name__} ===")
+        if self._self_managed_vectorStore and self._vectorStore is not None:
+            await self._vectorStore.close() # Only a VectorStore created here. One provided by rag_agent.RAGAgent is closed by its owner.        
         if self._self_managed_db_pool:
             await self._db_pool.close()
         self._closed = True
@@ -96,6 +99,7 @@ class RAGAgent():
             #await self._db_pool.open()
             if self._vectorStore is None:
                 self._vectorStore = VectorStore(self._db_pool)
+                self._self_managed_vectorStore = True
                 await self._vectorStore.CreateResources()
             if self._checkpointer is None:
                 self._checkpointer = AsyncPostgresSaver(self._db_pool)

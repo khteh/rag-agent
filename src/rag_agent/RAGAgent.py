@@ -19,6 +19,7 @@ from langchain_core.callbacks import AsyncCallbackHandler
 from psycopg_pool import AsyncConnectionPool
 from sqlalchemy.exc import ProgrammingError
 from langchain_ollama import OllamaEmbeddings
+from langchain.agents.middleware import TodoListMiddleware
 from deepagents import create_deep_agent, CompiledSubAgent
 from src.config import config as appconfig
 from src.rag_agent.RAGPrompts import RAG_INSTRUCTIONS, SUBAGENT_DELEGATION_INSTRUCTIONS, RAG_WORKFLOW_INSTRUCTIONS
@@ -144,6 +145,8 @@ class RAGAgent():
         # https://github.com/minrk/asyncio-atexit/issues/11
         #await self._store.close() AttributeError: 'AsyncPostgresStore' object has no attribute 'close'
         logging.info(f"\n=== {self.__class__.__name__}.{self._Cleanup.__name__} ===")
+        if self._vectorStore is not None:
+            await self._vectorStore.close() # Release the PGEngine's connections. The VectorStore is created by CreateGraph() and owned by this agent.        
         if self._self_managed_db_pool:
             await self._db_pool.close()
         self._closed = True
@@ -172,6 +175,7 @@ class RAGAgent():
                 await self._db_pool.open()
                 if self._vectorStore is None:
                     self._vectorStore = VectorStore(self._db_pool)
+                    self._self_managed_vectorStore = True
                     await self._vectorStore.CreateResources()
                 self._tools = [self._vectorStore.retriever_tool, RAGMemoryManager, RAGMemorySearcher, think_tool]
                 if self._checkpointer is None:
@@ -199,6 +203,7 @@ class RAGAgent():
                 self._agent = create_deep_agent(
                     model = self._llm,
                     #tools = [upsert_memory, think_tool], # [ground_search]
+                    middleware=[TodoListMiddleware()],
                     tools = [RAGMemoryManager, RAGMemorySearcher, think_tool],
                     backend = composite_backend,
                     checkpointer = self._checkpointer, # https://github.com/langchain-ai/langgraph/blob/main/libs/langgraph/langgraph/graph/state.py#L828
@@ -209,6 +214,7 @@ class RAGAgent():
                 # self.ShowGraph() # This blocks
             except Exception as e:
                 logging.exception(f"Exception! {e}")
+                raise # Let a failed startup show as a failed startup and Kubernetes health check can catch it. The CLI entry points would also stop after a failed CreateGraph instead of carrying on with None.
         return self._agent
 
     def ShowGraph(self):

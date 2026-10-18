@@ -4,6 +4,6 @@ composite_backend = CompositeBackend(
     #default = StateBackend(rt), ephemeral
     default = FilesystemBackend(root_dir="output", virtual_mode=True),
     routes = {
-        "/memories/": StoreBackend(), # Note that the tools access Store through the runtime.store
+        "/memories/": StoreBackend(namespace=lambda rt: (rt.server_info.user.identity,)), # Note that the tools access Store through the runtime.store
     }
 )

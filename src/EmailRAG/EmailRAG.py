@@ -174,6 +174,8 @@ class EmailRAG():
 
     async def _Cleanup(self):
         #await self._store.close() AttributeError: 'AsyncPostgresStore' object has no attribute 'close'
+        if self._vectorStore is not None:
+            await self._vectorStore.close() # Release the PGEngine's connections. The VectorStore is created by CreateGraph() and owned by this agent.        
         if self._self_managed_db_pool:
             await self._db_pool.close()
         self._closed = True

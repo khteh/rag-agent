@@ -6,7 +6,7 @@ from langchain.chat_models import init_chat_model
 from langchain_neo4j import Neo4jGraph, GraphCypherQAChain
 from langchain_core.prompts import PromptTemplate
 from langchain_core.prompts import ChatPromptTemplate, HumanMessagePromptTemplate, PromptTemplate, SystemMessagePromptTemplate
-from langchain_community.vectorstores import Neo4jVector
+from langchain_neo4j import Neo4jVector
 from langchain_ollama import OllamaEmbeddings
 from langchain_classic.chains import create_retrieval_chain
 from langchain_classic.chains.combine_documents import create_stuff_documents_chain

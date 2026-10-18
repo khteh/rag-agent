@@ -1,4 +1,6 @@
-import atexit, bs4, hashlib, logging
+from annotated_types import doc
+import atexit, bs4, hashlib, logging, httpx
+from unittest import loader
 from uuid_extensions import uuid7, uuid7str
 from psycopg_pool import AsyncConnectionPool, ConnectionPool
 from sqlalchemy.exc import ProgrammingError
@@ -11,7 +13,7 @@ from langchain_core.tools.retriever import create_retriever_tool
 from langchain_ollama import OllamaEmbeddings
 from langchain_core.documents import Document
 from langchain_postgres import PGEngine, PGVectorStore
-from langchain_community.document_loaders import WebBaseLoader
+from langchain_core.documents import Document
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langgraph.store.postgres.aio import AsyncPostgresStore
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
@@ -116,6 +118,21 @@ class VectorStore(): #metaclass=VectorStoreSingleton):
             )
             await PostgreSQLStoreSetup(self._db_pool, self.store) # store is needed when creating the ReAct agent / StateGraph for InjectedStore to work
 
+    async def close(self):
+        """
+        Release the connections held by the PGEngine created in __init__().
+        The psycopg pool is deliberately not closed here: it is created and owned by the caller, which passes it in.
+        Safe to call more than once.
+        """
+        logging.info(f"\n=== {self.__class__.__name__}.{self.close.__name__} ===")
+        engine, self._pg_engine = self._pg_engine, None
+        if engine is None:
+            return
+        try:
+            await engine.close() # PGEngine.close() disposes its SQLAlchemy connection pool
+        except Exception as e:
+            logging.exception(f"{self.close.__name__} exception! {e}")
+
     def Cleanup(self):
         logging.info(f"\n=== {self.__class__.__name__}.{self.Cleanup.__name__} ===")
         # self._embeddings.close() 'OllamaEmbeddings' object has no attribute 'close'
@@ -123,6 +140,14 @@ class VectorStore(): #metaclass=VectorStoreSingleton):
         # self.vector_store.close()
         self.retriever_tool = None
 
+    async def _load_web_document(self, url: str, parse_only: bs4.SoupStrainer | None = None, timeout: float = 30.0) -> Document:
+        async with httpx.AsyncClient(follow_redirects=True, timeout=timeout, headers={"User-Agent": "rag-agent/1.0"}) as client:
+            response = await client.get(url)
+            response.raise_for_status()
+        soup = bs4.BeautifulSoup(response.text, "html.parser", parse_only=parse_only)
+        text = soup.get_text(separator="\n", strip=True)  # this is what becomes page_content
+        return Document(page_content = text, metadata={"source": url})
+    
     async def LoadDocuments(self, urls: List[dict], chunk_size, chunk_overlap) -> int:
         """
         Load and chunk contents of the blog
@@ -134,26 +159,22 @@ class VectorStore(): #metaclass=VectorStoreSingleton):
             if url["url"] not in self._docs:
                 logging.info(f"\n=== {self.LoadDocuments.__name__} loading {url["url"]}... ===")
                 if url["type"] == "class":
-                    loader = WebBaseLoader(
-                        web_paths=(url["url"],),
-                        bs_kwargs=dict(
-                            parse_only=bs4.SoupStrainer(
-                                #class_=("post-content", "post-title", "post-header")
-                                class_ = url["filter"]
+                    doc = await self._load_web_document(
+                        url["url"],
+                        parse_only = bs4.SoupStrainer(
+                            #class_=("post-content", "post-title", "post-header")
+                            class_ = url["filter"]
                             )
                         ),
-                    )
                 elif url["type"] == "article":
-                    loader = WebBaseLoader(
-                        web_paths=(url["url"],),
-                        bs_kwargs=dict(
-                            parse_only=bs4.SoupStrainer("article")))
-                if loader:
-                    docs = loader.load()
-                    assert len(docs) == 1
-                    logging.debug(f"Total characters: {len(docs[0].page_content)}")
-                    if len(docs[0].page_content):
-                        subdocs = self._SplitDocuments(docs, chunk_size, chunk_overlap)
+                    doc = await self._load_web_document(
+                        url["url"],
+                        parse_only = bs4.SoupStrainer("article")
+                    )
+                if doc is not None and len(doc.page_content):
+                    logging.debug(f"Total characters: {len(doc.page_content)}")
+                    if len(doc.page_content):
+                        subdocs = self._SplitDocuments([doc], chunk_size, chunk_overlap)
                         count += await self._IndexChunks(subdocs)
                         self._docs.add(url["url"])
         return count

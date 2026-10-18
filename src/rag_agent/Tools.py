@@ -7,7 +7,7 @@ import asyncio, logging
 from datetime import datetime
 from typing import Any, Callable, List, Optional, cast
 from langgraph.runtime import Runtime
-from langchain_community.tools.tavily_search import TavilySearchResults
+from langchain_tavily import TavilySearch
 from langchain_core.runnables import RunnableConfig, ensure_config
 from langchain_core.tools import InjectedToolArg, tool
 from langgraph.store.base import BaseStore
@@ -44,7 +44,7 @@ async def search(
     #wrapped = TavilySearchResults(max_results=configuration.max_search_results)
     config = ensure_config(config)
     max_search_results = config.get("configurable", {}).get("max_search_results")
-    wrapped = TavilySearchResults(max_results=max_search_results)
+    wrapped = TavilySearch(max_results=max_search_results)
     result = await wrapped.ainvoke({"query": query})
     return cast(list[dict[str, Any]], result)
 

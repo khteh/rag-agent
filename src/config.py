@@ -70,5 +70,5 @@ class Config:
             TimedRotatingFileHandler(filename='/var/log/ragagent/log', when='d', interval=1, backupCount=3),
             logging.StreamHandler(sys.stdout)
         ], format='%(asctime)s %(levelname)-8s %(message)s', level=LOGLEVEL, datefmt='%Y-%m-%d %H:%M:%S')
-    logging.info(f"OLLAMA_API_KEY: {OLLAMA_API_KEY}")
+    logging.debug(f"OLLAMA_API_KEY: {OLLAMA_API_KEY}")
 config = Config()

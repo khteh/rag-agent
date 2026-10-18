@@ -1,4 +1,3 @@
-import quart_flask_patch
 import logging, os, re, json, asyncio, psycopg, json
 from datetime import date, datetime, timedelta, timezone
 from hypercorn.config import Config
@@ -8,6 +7,7 @@ from langchain_postgres.v2.indexes import HNSWIndex
 from langchain_postgres import PGEngine, PGVectorStore
 from quart import Quart, Response, json, Blueprint, session, render_template, session, redirect, url_for, flash
 from src.common.Bcrypt import bcrypt
+from src.models import engine as sqlalchemy_engine
 from quart_wtf.csrf import CSRFProtect, CSRFError
 from quart_cors import cors
 from langgraph.store.postgres.aio import AsyncPostgresStore
@@ -34,7 +34,7 @@ def _add_secure_headers(response: Response) -> Response:
     response.headers["X-Content-Type-Options"] = "nosniff"
     return response
 
-async def create_app() -> Quart:
+def create_app() -> Quart:
     """
     Create App
     """
@@ -67,8 +67,9 @@ async def create_app() -> Quart:
             conninfo = appconfig.POSTGRESQL_DATABASE_URI,
             max_size = appconfig.DB_MAX_CONNECTIONS,
             kwargs = appconfig.connection_kwargs,
-            open = True
+            open = False # Opening an async pool in the constructor (open=True) is deprecated. Open it explicitly below.
         )
+        await app.db_pool.open()
         from src.rag_agent.RAGAgent import RAGAgent
         app.agent = RAGAgent(app.db_pool)
         await app.agent.CreateGraph()
@@ -76,7 +77,11 @@ async def create_app() -> Quart:
     @app.after_serving
     async def after_serving():
         logging.info(f"\n=== {after_serving.__name__} ===")
+        agent = getattr(app, "agent", None)
+        if agent is not None:
+            await agent._Cleanup() # Releases the vector store's PGEngine connections        
         await app.db_pool.close()
+        await sqlalchemy_engine.dispose()
 
     app.after_request(_add_secure_headers)
     from src.controllers.AuthenticationController import auth_api as auth_blueprint
