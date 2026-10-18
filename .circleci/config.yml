@@ -49,6 +49,7 @@ jobs:
           command: |
             psql -h localhost -U postgres -c "CREATE USER $DB_USERNAME WITH PASSWORD '$DB_PASSWORD' ;"
             psql -h localhost -U postgres -c "CREATE DATABASE Langchain WITH OWNER = $DB_USERNAME ;"
+            psql -lqt -h localhost -U postgres | cut -d \| -f 1 | grep Langchain
             psql -h localhost -U $DB_USERNAME -w -d Langchain < Langchain.sql
       - run: uv sync --group dev
       - run:
