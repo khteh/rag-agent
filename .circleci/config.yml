@@ -52,6 +52,9 @@ jobs:
           name: Create PostgreSQL Database
           command: |
             psql -h localhost -U postgres -c "CREATE DATABASE Langchain WITH OWNER = $DB_USERNAME ;"
+      - run:
+          name: Check if PostgreSQL Database exists
+          command: |
             psql -lqt -h localhost -U postgres | cut -d \| -f 1 | grep Langchain
       - run:
           name: Load PostgreSQL Schema
