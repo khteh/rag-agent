@@ -45,12 +45,17 @@ jobs:
           #command: dockerize -wait tcp://localhost:5432 -timeout 1m
           command: pg_isready -U "postgres" -h 127.0.0.1 -p 5432
       - run:
-          name: Prepare database for tests
+          name: Create PostgreSQL User
           command: |
             psql -h localhost -U postgres -c "CREATE USER $DB_USERNAME WITH PASSWORD '$DB_PASSWORD' ;"
+      - run:
+          name: Create PostgreSQL Database
+          command: |
             psql -h localhost -U postgres -c "CREATE DATABASE Langchain WITH OWNER = $DB_USERNAME ;"
             psql -lqt -h localhost -U postgres | cut -d \| -f 1 | grep Langchain
-            psql -h localhost -U $DB_USERNAME -w -d Langchain < Langchain.sql
+      - run:
+          name: Load PostgreSQL Schema
+          command: psql -h localhost -U $DB_USERNAME -w -d Langchain < Langchain.sql
       - run: uv sync --group dev
       - run:
           name: Create required config file
