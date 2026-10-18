@@ -165,7 +165,7 @@ class VectorStore(): #metaclass=VectorStoreSingleton):
                             #class_=("post-content", "post-title", "post-header")
                             class_ = url["filter"]
                             )
-                        ),
+                        )
                 elif url["type"] == "article":
                     doc = await self._load_web_document(
                         url["url"],
