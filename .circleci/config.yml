@@ -23,7 +23,7 @@ jobs:
     <<: *defaults
     docker:
       - image: khteh/ubuntu:latest
-      - image: postgres:latest
+      - image: khteh/postgresql:latest
         environment:
           POSTGRESQL_HOST: 127.0.0.1
           POSTGRESQL_DB: Langchain
