@@ -20,6 +20,7 @@ from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
 from psycopg_pool import AsyncConnectionPool, ConnectionPool
 from langchain_core.prompts import ChatPromptTemplate, HumanMessagePromptTemplate, PromptTemplate, SystemMessagePromptTemplate
 from typing_extensions import List, TypedDict
+from langchain.agents.middleware import TodoListMiddleware
 from deepagents import create_deep_agent, CompiledSubAgent
 from langchain_ollama import OllamaEmbeddings
 """
@@ -342,6 +343,7 @@ class EmailRAG():
                 self._subagents = [self._parser_subagent]
                 self._agent = create_deep_agent(
                     model = self._llm,
+                    middleware=[TodoListMiddleware()],
                     tools = [RAGMemoryManager, RAGMemorySearcher],
                     backend = composite_backend,
                     store = self._vectorStore.store,
