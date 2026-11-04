@@ -824,5 +824,3 @@ $ (cd htmlcov && uv run python -m http.server 8000)
 ```
 $ uv run python -m mlflow server --backend-store-uri postgresql+psycopg://guest:P%40%24%24w0rd@IP/MLFlow
 ```
-
-Test github ruleset
