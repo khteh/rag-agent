@@ -87,7 +87,7 @@ jobs:
       - run:
           name: Run tests
           command: |
-            uv run pytest -v test/test_schema.py test/test_user_model.py test/test_vectorstore_close.py test/test_value_error.py
+            ENVIRONMENT=test uv run pytest -v test/test_schema.py test/test_user_model.py test/test_vectorstore_close.py test/test_value_error.py
       - run:
           name: Build docker image
           command: |
