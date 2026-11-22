@@ -63,8 +63,10 @@ def create_app() -> Quart:
     async def before_serving() -> None:
         logging.info(f"\n=== {before_serving.__name__} ===")
         # This stays here as it is needed by k8s healthcheck endpoint
+        # Used by the LangGraph checkpointer and store. They do short queries.
         app.db_pool = AsyncConnectionPool(
             conninfo = appconfig.POSTGRESQL_DATABASE_URI,
+            min_size = 2,
             max_size = appconfig.DB_MAX_CONNECTIONS,
             kwargs = appconfig.connection_kwargs,
             open = False # Opening an async pool in the constructor (open=True) is deprecated. Open it explicitly below.

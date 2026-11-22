@@ -5,7 +5,6 @@ from uuid_extensions import uuid7, uuid7str
 from psycopg_pool import AsyncConnectionPool, ConnectionPool
 from sqlalchemy.exc import ProgrammingError
 from typing_extensions import List, TypedDict, Optional, Any
-from langchain_postgres import PGEngine
 from langchain_postgres.v2.indexes import HNSWIndex
 from langchain_core.vectorstores import VectorStoreRetriever
 from langchain_core.tools.retriever import create_retriever_tool
