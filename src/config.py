@@ -63,7 +63,7 @@ class Config:
     The Hyphen-Minus Flag (-)
     When a formatted value is shorter than the specified field width, it’s usually right-justified in the field. The hyphen-minus (-) flag causes the value to be left-justified in the specified field instead.
     """
-    if config["ENVIRONMENT"] == "development":
+    if os.environ.get('ENVIRONMENT') == "development":
         logging.basicConfig(filename='/var/log/ragagent/log', filemode='w', format='%(asctime)s %(levelname)-8s %(message)s', level=LOGLEVEL, datefmt='%Y-%m-%d %H:%M:%S')
     else:
         logging.basicConfig(handlers=[

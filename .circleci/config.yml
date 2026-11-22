@@ -65,7 +65,6 @@ jobs:
             sudo mkdir -p /etc
             sudo tee /etc/ragagent_config.json > /dev/null \<<EOF
             {
-              "ENVIRONMENT": "development",
               "DEBUG": true,
               "TESTING": true,
               "LOGLEVEL": "DEBUG",
